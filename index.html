@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coming Soon</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 500px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+      color: #38bdf8;
+    }
+    p {
+      color: #94a3b8;
+      margin-bottom: 24px;
+      font-size: 1rem;
+    }
+    form {
+      display: flex;
+      gap: 8px;
+    }
+    input[type="email"] {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #fff;
+      outline: none;
+    }
+    button {
+      padding: 12px 20px;
+      border-radius: 6px;
+      border: none;
+      background: #38bdf8;
+      color: #0f172a;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0ea5e9;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Coming Soon</h1>
+    <p>Fiction Tale Website Under Maintenance Come back later!</p>
+    <form onsubmit="event.preventDefault(); alert('Thank you for subscribing!');">
+      <input type="email" placeholder="Enter your email address" required>
+      <button type="submit">Notify Me</button>
+    </form>
+  </div>
+
+</body>
+</html>
