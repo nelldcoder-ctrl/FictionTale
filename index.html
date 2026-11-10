@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#50b7c8">
+  <meta name="theme-color" content="#d4e7f5">
   <meta name="description" content="A private, offline-friendly home for your characters and stories.">
   <script>
     (() => {
@@ -17,10 +17,13 @@
       }
       if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       document.documentElement.dataset.theme = theme;
-      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#10223d' : '#eef8fb';
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#16284a' : '#d4e7f5';
     })();
   </script>
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icon-192.png">
   <title>Fiction Tale</title>
   <script src="app-version.js"></script>
   <script src="storage.js"></script>
@@ -42,6 +45,7 @@
         <a class="nav-link" href="#places" aria-label="Places"><span class="nav-icon">◈</span><span class="nav-label">Places</span><span class="nav-count" id="place-sidebar-count">0</span></a>
         <a class="nav-link" href="#world-entries" aria-label="World entries"><span class="nav-icon">✧</span><span class="nav-label">World</span><span class="nav-count" id="world-entry-sidebar-count">0</span></a>
         <a class="nav-link" href="#planning" aria-label="Story planning"><span class="nav-icon">⌘</span><span class="nav-label">Plan</span></a>
+        <button class="nav-link settings-nav-link" id="settings-open" type="button" aria-label="Settings" aria-haspopup="dialog"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-label">Settings</span></button>
       </nav>
       <button class="mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
         <span aria-hidden="true">☷</span><span>Sections</span>
@@ -53,7 +57,7 @@
         <p class="note-copy">Make a little room for the characters who live in your head.</p>
         <button class="text-button" id="sidebar-new" type="button">Create a character <span>↗</span></button>
       </div>
-      <div class="sidebar-footer"><span class="status-dot"></span> Saved privately on this device<span class="storage-meter" id="storage-meter"></span></div>
+      <div class="sidebar-footer"><span class="status-dot"></span> Saved privately on this device</div>
     </aside>
 
     <main class="main-content">
@@ -65,16 +69,9 @@
         </a>
         <div class="topbar-tools">
           <label class="global-search" for="global-search-input"><span aria-hidden="true">⌕</span><input id="global-search-input" type="search" placeholder="Search everything…" autocomplete="off"><kbd>Ctrl K</kbd></label>
-          <button class="button button-quiet" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false">☾ <span>Dark mode</span></button>
           <button class="button button-quiet hidden" id="install-app" type="button">Install app</button>
         </div>
       </header>
-      <section class="backup-reminder hidden" id="backup-reminder" aria-live="polite">
-        <span class="backup-reminder-icon" aria-hidden="true">↗</span>
-        <p><strong id="backup-reminder-title">Keep a copy of your work.</strong><span id="backup-reminder-copy">A backup protects your writing if browser data is cleared.</span></p>
-        <button class="button button-primary" id="backup-reminder-export" type="button">Export backup</button>
-        <button class="backup-reminder-dismiss" id="backup-reminder-dismiss" type="button" aria-label="Remind me later">×</button>
-      </section>
       <section class="global-search-results hidden" id="global-search-results" aria-label="Search results">
         <div class="global-search-results-heading"><strong>Search your workspace</strong><span id="global-search-count"></span><button type="button" id="global-search-close" aria-label="Close search results">×</button></div>
         <div id="global-search-list"></div>
@@ -113,9 +110,15 @@
 
       <section class="studio-section" id="studio">
         <div class="studio-intro">
-          <p class="eyebrow">START WITH A SPARK</p>
-          <h2>Bring someone to life</h2>
-          <p>Begin with a name. The details can come whenever you're ready.</p>
+          <div class="studio-intro-copy">
+            <p class="eyebrow">CHARACTER STUDIO</p>
+            <h2>Create a character</h2>
+            <p>Start with the essentials. You can fill in the rest whenever you're ready.</p>
+          </div>
+          <div class="studio-intro-actions">
+            <button class="button button-outline" id="studio-preview-open" type="button"><span aria-hidden="true">◉</span> Live preview</button>
+            <button class="button button-primary" id="studio-new-character" type="button"><span aria-hidden="true">+</span> New character</button>
+          </div>
         </div>
       <section class="studio-grid" aria-label="Character editor">
         <div class="panel editor-panel">
@@ -149,8 +152,15 @@
                 <label class="field">Character name <span class="required">*</span>
                   <input id="name" name="name" type="text" placeholder="e.g. Rowan Vale" maxlength="48" required>
                 </label>
-                <label class="field">Role or type
-                  <input id="role" name="role" type="text" placeholder="e.g. reluctant botanist" maxlength="60">
+                <label class="field">Story role <span class="optional-label">Optional</span>
+                  <input id="role" name="role" type="text" list="character-role-options" placeholder="e.g. Protagonist, side character, or your own" maxlength="60">
+                  <datalist id="character-role-options">
+                    <option value="Protagonist"></option>
+                    <option value="Side character"></option>
+                    <option value="Antagonist"></option>
+                    <option value="Narrator"></option>
+                    <option value="Ensemble character"></option>
+                  </datalist>
                 </label>
               </div>
               <div class="form-row three-columns">
@@ -305,7 +315,7 @@
             </details>
 
             <details class="optional-section profile-extras" id="profile-extras">
-              <summary><span><strong>More profile sections</strong><small>Add gallery images, relationships, links, or a world.</small></span><span class="optional-label">Optional</span></summary>
+              <summary><span><strong>More profile sections</strong><small>Optional extras; only details you add appear on the profile.</small></span><span class="optional-label">Optional</span></summary>
               <div class="profile-extra-fields">
                 <div class="field gallery-field">
                   <label for="gallery-url">More images <span class="field-hint inline-hint">Upload images or add image links. They show up below as thumbnails.</span></label>
@@ -322,16 +332,18 @@
                   <span class="bond-title">Connections <span class="field-hint inline-hint">Describe what they are to each other, their current status, and their shared history</span></span>
                   <div class="bond-add bond-editor-add">
                     <select id="bond-character" aria-label="Character to connect"></select>
-                    <select id="bond-type" aria-label="Relationship type">
-                      <option value="ally">Ally</option><option value="rival">Rival</option><option value="family">Family</option>
-                      <option value="secret-crush">Secret crush</option><option value="betrayed">Betrayed</option><option value="other">Other</option>
+                    <select id="bond-type" aria-label="Optional connection type">
+                      <option value="">Type (optional)</option>
+                      <option value="ally">Friend</option><option value="rival">Rival</option><option value="family">Family</option>
+                      <option value="secret-crush">Romantic connection</option><option value="betrayed">Trust changed</option><option value="other">Other</option>
                     </select>
-                    <select id="bond-status" aria-label="Current relationship status">
-                      <option value="active">Active</option><option value="complicated">Complicated</option>
-                      <option value="strained">Strained</option><option value="broken">Broken</option><option value="reconciled">Reconciled</option>
+                    <select id="bond-status" aria-label="Optional connection status">
+                      <option value="">Status (optional)</option>
+                      <option value="active">Ongoing</option><option value="complicated">Complicated</option>
+                      <option value="strained">Distant</option><option value="broken">No contact</option><option value="reconciled">Reconnected</option>
                     </select>
-                    <input id="bond-label" type="text" maxlength="40" placeholder="Optional detail, e.g. older sister" aria-label="Connection detail">
-                    <textarea id="bond-history-note" rows="2" maxlength="500" placeholder="History between them: how did this connection begin?" aria-label="History between them"></textarea>
+                    <input id="bond-label" type="text" maxlength="40" placeholder="Optional detail, e.g. sibling, friend, coworker" aria-label="Optional connection detail">
+                    <textarea id="bond-history-note" rows="2" maxlength="500" placeholder="Optional history: how did this connection begin?" aria-label="Optional shared history"></textarea>
                     <button class="button button-quiet" id="bond-add" type="button">Add</button>
                   </div>
                   <ul class="bond-list" id="bond-list"></ul>
@@ -396,32 +408,6 @@
             </div>
           </form>
         </div>
-        <aside class="preview-column" aria-label="Live character profile preview">
-          <div class="preview-heading"><p class="eyebrow">A GLIMPSE INTO THEIR WORLD</p><span>LIVE PROFILE PREVIEW</span></div>
-          <article class="profile-card" id="profile-preview" style="--card-accent: #4385e8">
-            <div class="card-art" id="preview-art">
-              <img class="cover-preview hidden" id="cover-preview" alt="Character cover preview">
-              <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
-              <span class="art-star star-one">✳</span><span class="art-star star-two">✦</span>
-              <div class="portrait-placeholder" id="portrait-placeholder"><span>✳</span><small>YOUR CHARACTER</small></div>
-              <span class="card-index">NO. <span id="preview-index">01</span></span>
-            </div>
-            <div class="card-content">
-              <div class="preview-avatar-wrap" id="preview-avatar-wrap">
-                <img class="preview-avatar hidden" id="portrait-image" alt="Character profile picture preview">
-                <span class="preview-avatar-placeholder" id="preview-avatar-placeholder">✳</span>
-              </div>
-              <div class="card-kicker" id="preview-role">A STORY WAITING TO HAPPEN</div>
-              <h3 id="preview-name">Your character</h3>
-              <div class="card-meta"><span id="preview-pronouns">pronouns</span><i></i><span id="preview-age">age</span><i></i><span id="preview-species">species</span></div>
-              <p class="card-description" id="preview-description">Give them a name and a few details. Their profile will come together right here.</p>
-              <div class="trait-list" id="preview-traits"><span class="trait-placeholder">YOUR TRAITS</span></div>
-              <div class="card-bottom"><span>MADE OF STORIES</span><span class="card-sparkle">✳</span></div>
-            </div>
-          </article>
-          <div class="live-sections" id="live-sections" aria-live="polite"></div>
-          <p class="preview-caption">Everything you add shows up here as you type. <span>✦</span></p>
-        </aside>
       </section>
       </section>
 
@@ -429,21 +415,7 @@
         <div class="section-heading">
           <div><p class="eyebrow">THE PEOPLE IN YOUR HEAD</p><h2>Character Cards <span id="cast-total">(0)</span></h2></div>
           <div class="cast-tools">
-            <div class="data-folder-control">
-              <button class="button button-quiet" id="connect-data-folder" type="button">Choose data folder</button>
-              <span class="data-folder-status" id="data-folder-status" role="status">Using this browser for autosave</span>
-              <span class="data-folder-help">Keeps one full backup of characters, stories, places, and world entries in a folder you choose.</span>
-            </div>
-            <label class="export-format">Export as
-              <select id="export-format" aria-label="Choose export format">
-                <option value="json">JSON</option>
-                <option value="yaml">YAML</option>
-              </select>
-            </label>
-            <button class="button button-quiet" id="export-library" type="button">Export all data</button>
-            <button class="button button-quiet" id="import-library" type="button" title="Import a full Fiction Tale backup">Import backup</button>
             <button class="button button-outline" id="compare-characters" type="button" disabled>Compare characters</button>
-            <input class="visually-hidden" id="import-file" type="file" accept=".json,.yaml,.yml,.csv,application/json,text/yaml,text/csv">
             <select class="cast-select hidden" id="cast-group-filter" aria-label="Filter by group"></select>
             <select class="cast-select" id="cast-sort" aria-label="Sort characters">
               <option value="added">Newest added</option>
@@ -500,10 +472,7 @@
               <option value="epub">EPUB</option>
             </select>
           </label>
-          <button class="button button-quiet" id="story-export" type="button">Export all data</button>
           <button class="button button-quiet" id="story-export-stories" type="button">Export stories</button>
-          <button class="button button-quiet" id="story-import" type="button">Import backup</button>
-          <input class="visually-hidden" id="story-import-file" type="file" accept=".json,.yaml,.yml,.csv,application/json,text/yaml,text/csv">
         </div>
         <div class="story-library" id="story-library" aria-live="polite"></div>
         <p class="story-no-results hidden" id="story-no-results">No stories match those filters. Try clearing the search or choosing “All types”.</p>
@@ -531,17 +500,6 @@
             <option value="name">Name A–Z</option>
           </select>
         </div>
-        <div class="story-library-tools">
-          <label class="export-format">Export as
-            <select id="place-export-format" aria-label="Choose place export format">
-              <option value="json">JSON</option>
-              <option value="yaml">YAML</option>
-            </select>
-          </label>
-          <button class="button button-quiet" id="place-export" type="button">Export all data</button>
-          <button class="button button-quiet" id="place-import" type="button">Import backup</button>
-          <input class="visually-hidden" id="place-import-file" type="file" accept=".json,.yaml,.yml,.csv,application/json,text/yaml,text/csv" tabindex="-1">
-        </div>
         <div class="story-library" id="place-library" aria-live="polite"></div>
         <p class="story-no-results hidden" id="place-no-results">No places match those filters. Try clearing the search or choosing “All types”.</p>
         <div class="story-empty" id="place-empty">
@@ -565,14 +523,6 @@
             <option value="">All categories</option><option value="faction">Factions &amp; organizations</option><option value="artifact">Items &amp; artifacts</option><option value="system">Magic &amp; technology</option><option value="species">Species</option><option value="language">Languages</option><option value="religion">Religions</option><option value="glossary">Glossary</option><option value="other">Other</option>
           </select>
           <select id="world-entry-sort" aria-label="Sort world entries"><option value="newest">Recently edited</option><option value="name">Name A–Z</option><option value="category">Category</option></select>
-        </div>
-        <div class="story-library-tools">
-          <label class="export-format">Export as
-            <select id="world-entry-export-format" aria-label="Choose world entry backup format"><option value="json">JSON</option><option value="yaml">YAML</option></select>
-          </label>
-          <button class="button button-quiet" id="world-entry-export" type="button">Export all data</button>
-          <button class="button button-quiet" id="world-entry-import" type="button">Import backup</button>
-          <input class="visually-hidden" id="world-entry-import-file" type="file" accept=".json,.yaml,.yml,.csv,application/json,text/yaml,text/csv" tabindex="-1">
         </div>
         <div class="story-library" id="world-entry-library" aria-live="polite"></div>
         <p class="story-no-results hidden" id="world-entry-no-results">No entries match those filters. Try clearing the search or choosing “All categories”.</p>
@@ -613,8 +563,8 @@
           <p class="planning-hint">Connections use each character profile’s relationship type, current status, and shared history. Record status changes at chapter or timeline points; line color shows relationship type and line style shows status. Select a character or matrix cell to inspect the details.</p>
           <div id="relationship-graph" class="relationship-graph"></div>
           <div class="relationship-legend" aria-label="Relationship line colors">
-            <span class="legend-ally">Ally</span><span class="legend-rival">Rival</span><span class="legend-family">Family</span>
-            <span class="legend-secret-crush">Secret crush</span><span class="legend-betrayed">Betrayed</span><span class="legend-other">Other</span>
+            <span class="legend-ally">Friend</span><span class="legend-rival">Rival</span><span class="legend-family">Family</span>
+            <span class="legend-secret-crush">Romantic connection</span><span class="legend-betrayed">Trust changed</span><span class="legend-other">Other</span>
           </div>
           <div id="relationship-details" class="relationship-details" aria-live="polite">Choose a character or relationship to see its details.</div>
           <div id="relationship-matrix" class="relationship-matrix hidden"></div>
@@ -695,13 +645,15 @@
   <dialog class="character-dialog" id="character-dialog" aria-labelledby="profile-name">
     <div class="profile-window">
       <div class="profile-window-toolbar">
-        <button class="profile-back" id="profile-back" type="button"><span aria-hidden="true">←</span> Back to characters</button>
+        <button class="profile-back" id="profile-back" type="button"><span aria-hidden="true">←</span> <span id="profile-back-label">Back to characters</span></button>
         <button class="profile-close" id="profile-close" type="button" aria-label="Close character profile">×</button>
       </div>
       <div class="profile-scroll">
         <header class="full-profile-hero" id="full-profile-hero">
-          <img class="profile-cover-image hidden" id="profile-cover-image" alt="">
-          <div class="profile-hero-shade"></div>
+          <div class="profile-cover">
+            <img class="profile-cover-image hidden" id="profile-cover-image" alt="">
+            <div class="profile-hero-shade"></div>
+          </div>
           <div class="profile-hero-content">
             <div class="profile-avatar-wrap">
               <img class="profile-avatar hidden" id="profile-avatar" alt="">
@@ -709,18 +661,19 @@
             </div>
             <h1 id="profile-name">Character name</h1>
             <p class="profile-role" id="profile-role"></p>
-            <p class="profile-quote" id="profile-quote"></p>
             <div class="profile-tag-list" id="profile-tags"></div>
-            <button class="button profile-edit-button" id="profile-edit" type="button">Edit this character</button>
-            <button class="button profile-edit-button" id="profile-print" type="button">Print / Save PDF</button>
-            <button class="button profile-edit-button" id="profile-export-image" type="button">Export character sheet image</button>
+            <p class="profile-about" id="profile-about"></p>
+            <div class="profile-actions" aria-label="Character profile actions">
+              <button class="button profile-edit-button" id="profile-edit" type="button">Edit this character</button>
+              <button class="button profile-edit-button" id="profile-print" type="button">Print / Save PDF</button>
+              <button class="button profile-edit-button" id="profile-export-image" type="button">Export character sheet image</button>
+            </div>
           </div>
         </header>
         <nav class="profile-sections" aria-label="Character profile sections">
           <details class="profile-section" open>
-            <summary>About <span class="profile-section-icon">⌄</span></summary>
+            <summary>Background <span class="profile-section-icon">⌄</span></summary>
             <div class="profile-section-content">
-              <p class="profile-about" id="profile-about"></p>
               <div class="profile-story-block hidden" id="profile-story-block"><h3>Background</h3><p id="profile-story"></p></div>
             </div>
           </details>
@@ -802,6 +755,54 @@
           <label class="field">Second character<select id="compare-character-b"></select></label>
         </div>
         <div class="character-comparison" id="character-comparison" aria-live="polite"></div>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-heading">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="settings-toolbar-label">SETTINGS</span>
+        <button class="profile-close" id="settings-close" type="button" aria-label="Close settings">×</button>
+      </div>
+      <div class="profile-scroll settings-scroll">
+        <section class="settings-content" aria-labelledby="settings-heading">
+          <p class="eyebrow"><span class="eyebrow-line"></span> YOUR WORKSPACE</p>
+          <h1 id="settings-heading">Settings</h1>
+          <section class="settings-group" aria-labelledby="settings-appearance-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-appearance-heading">Appearance</h2>
+              <p>Choose the look that feels right for your workspace.</p>
+            </div>
+            <button class="button button-quiet" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false">☾ <span>Dark mode</span></button>
+          </section>
+          <section class="settings-group settings-data-group" aria-labelledby="settings-data-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-data-heading">Data &amp; Storage</h2>
+              <p>Manage your library backup and see current browser storage usage.</p>
+            </div>
+            <div class="settings-storage-usage" aria-live="polite">
+              <p><span>Fiction Tale data</span><strong id="settings-app-usage">Calculating…</strong></p>
+              <p><span>Browser storage</span><strong id="settings-browser-usage">Checking availability…</strong></p>
+            </div>
+            <div class="settings-data-actions">
+              <label class="export-format" for="settings-export-format">Backup format
+                <select id="settings-export-format" aria-label="Choose full backup format"><option value="json">JSON</option><option value="yaml">YAML</option></select>
+              </label>
+              <button class="button button-quiet" id="settings-export" type="button">Export full backup</button>
+              <button class="button button-quiet" id="settings-import" type="button">Import backup</button>
+              <input class="visually-hidden" id="settings-import-file" type="file" accept=".json,.yaml,.yml,.csv,application/json,text/yaml,text/csv">
+            </div>
+            <div class="settings-backup-info" aria-live="polite">
+              <h3>Backup information</h3>
+              <p id="settings-backup-last">No backup recorded yet.</p>
+              <p>Browser autosave is active. You can also keep an additional copy in a folder on this device.</p>
+              <div class="settings-folder-control">
+                <button class="button button-quiet" id="connect-data-folder" type="button">Choose backup folder</button>
+                <span id="settings-folder-status" role="status">Using this browser for autosave</span>
+              </div>
+            </div>
+          </section>
+        </section>
       </div>
     </div>
   </dialog>
@@ -1066,8 +1067,8 @@
               <li><strong>Create a character.</strong> Choose <strong>New character</strong>, add a name, then save. The profile and preview grow with your ideas.</li>
               <li><strong>Start writing.</strong> Open <strong>Stories</strong>, choose <strong>New story</strong>, and begin. Drafts autosave on this device.</li>
               <li><strong>Build your world.</strong> Add a place or a World Entry such as a faction, artifact, magic system, species, language, religion, or glossary term.</li>
-              <li><strong>Find things quickly.</strong> Use the search at the top to find characters, stories, places, and world entries. Switch to dark mode whenever you like.</li>
-              <li><strong>Keep a backup.</strong> Export all data regularly. Export stories as Markdown, text, Word, or EPUB; print to PDF or save a character-sheet image when you want a shareable copy.</li>
+              <li><strong>Find things quickly.</strong> Use the search at the top to find characters, stories, places, and world entries. Switch themes in Settings under Appearance.</li>
+              <li><strong>Keep a backup.</strong> Open Settings → Data &amp; Storage to export a full backup or import one. Export stories as Markdown, text, Word, or EPUB; print to PDF or save a character-sheet image when you want a shareable copy.</li>
             </ol>
             <p class="tutorial-privacy-note">Your work stays in this browser unless you export it or connect a backup folder. Browser data can be cleared, so keep a separate backup.</p>
           </section>
@@ -1092,15 +1093,15 @@
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">05</span>
-              <div><h3>Save, export, and share</h3><p>Full-data backups contain your library and planning data; export or import them as JSON or YAML. The story export menu offers Markdown, plain text, Word (.docx), and EPUB. Print profiles or story previews to PDF, or export a text-based character-sheet image. Choose a backup folder for an additional local copy.</p></div>
+              <div><h3>Save, export, and share</h3><p>Full-data backups contain your library and planning data; export or import them as JSON or YAML from Settings under Data &amp; Storage. The story export menu offers Markdown, plain text, Word (.docx), and EPUB. Print profiles or story previews to PDF, or export a text-based character-sheet image. Choose a backup folder for an additional local copy.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">06</span>
-              <div><h3>Theme, install, and offline use</h3><p>Switch between light and dark themes from the top bar. When served from localhost or HTTPS, Fiction Tale can be installed and caches its app shell for offline access. Large images, drafts, and version history are stored in IndexedDB to reduce localStorage pressure. External fonts may fall back while offline; your writing remains stored locally in the browser.</p></div>
+              <div><h3>Theme, install, and offline use</h3><p>Switch between light and dark themes in Settings under Appearance. When served from localhost or HTTPS, Fiction Tale can be installed and caches its app shell for offline access. Large images, drafts, and version history are stored in IndexedDB to reduce localStorage pressure. External fonts may fall back while offline; your writing remains stored locally in the browser.</p></div>
             </section>
             <aside class="about-note">
               <span class="status-dot" aria-hidden="true"></span>
-              <p><strong>Protect your work:</strong> browser storage is local, not cloud backup. Export a full backup occasionally and keep it somewhere separate from this browser.</p>
+              <p><strong>Protect your work:</strong> browser storage is local, not cloud backup. Export a full backup from Settings occasionally and keep it somewhere separate from this browser.</p>
             </aside>
           </section>
         </div>
@@ -1155,6 +1156,7 @@
           </div>
           <div class="place-actions">
             <button class="button button-quiet hidden" id="place-delete" type="button">Delete place</button>
+            <button class="button button-outline" id="place-preview" type="button">Open full preview <span aria-hidden="true">↗</span></button>
             <button class="button button-outline" id="place-cancel" type="button">Cancel</button>
             <button class="button button-primary" id="place-save" type="submit">Save place</button>
           </div>
@@ -1185,6 +1187,7 @@
           <label class="field">Tags<input id="world-entry-tags" name="tags" type="text" maxlength="200" placeholder="e.g. forbidden, coastal, ancient"></label>
           <div class="place-actions">
             <button class="button button-quiet hidden" id="world-entry-delete" type="button">Delete entry</button>
+            <button class="button button-outline" id="world-entry-preview" type="button">Open full preview <span aria-hidden="true">↗</span></button>
             <button class="button button-outline" id="world-entry-cancel" type="button">Cancel</button>
             <button class="button button-primary" type="submit">Save entry</button>
           </div>
@@ -1205,6 +1208,29 @@
           <p>Every update to Fiction Tale, newest first.</p>
         </header>
         <div class="changelog-list" id="changelog-list"></div>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog entity-preview-dialog" id="entity-preview-dialog" aria-labelledby="entity-preview-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label" id="entity-preview-label">PREVIEW</span>
+        <button class="profile-close" id="entity-preview-close" type="button" aria-label="Close preview">×</button>
+      </div>
+      <div class="profile-scroll about-scroll">
+        <article class="entity-preview">
+          <img class="entity-preview-cover hidden" id="entity-preview-cover" alt="">
+          <p class="eyebrow" id="entity-preview-kind"></p>
+          <h1 id="entity-preview-title"></h1>
+          <p class="entity-preview-summary hidden" id="entity-preview-summary"></p>
+          <div class="entity-preview-facts" id="entity-preview-meta"></div>
+          <div class="entity-preview-body" id="entity-preview-body"></div>
+          <div class="entity-preview-tags hidden" id="entity-preview-tags"></div>
+          <div class="entity-preview-actions">
+            <button class="button button-primary profile-edit-button" id="entity-preview-edit" type="button">Edit</button>
+            <button class="button button-outline profile-edit-button" id="entity-preview-print" type="button">Print / Save PDF</button>
+          </div>
+        </article>
       </div>
     </div>
   </dialog>

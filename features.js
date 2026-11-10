@@ -167,6 +167,28 @@
       betrayed: '#c17a3d',
       other: '#88b8c5',
     };
+    const typeLabels = {
+      ally: 'Friend',
+      rival: 'Rival',
+      family: 'Family',
+      'secret-crush': 'Romantic connection',
+      betrayed: 'Trust changed',
+      other: 'Other',
+    };
+    const statusLabels = {
+      active: 'Ongoing',
+      complicated: 'Complicated',
+      strained: 'Distant',
+      broken: 'No contact',
+      reconciled: 'Reconnected',
+    };
+    const relationDetails = (relation) => [
+      typeLabels[relation.type],
+      statusLabels[relation.status],
+      relation.label,
+      relation.history,
+      ...relation.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${statusLabels[entry.status]}${entry.note ? ` (${entry.note})` : ''}`),
+    ].filter(Boolean);
     const edges = [];
     const seen = new Set();
     cast.forEach((character) => {
@@ -193,7 +215,10 @@
         });
       });
     });
-    const lines = edges.map((edge) => `<line class="relationship-edge status-${escapeHtml(edge.status)}" style="--relationship-color:${edge.color}" x1="${edge.x1}" y1="${edge.y1}" x2="${edge.x2}" y2="${edge.y2}"><title>${escapeHtml(`${edge.type}: ${edge.status}${edge.label ? ` · ${edge.label}` : ''}`)}</title></line>`).join('');
+    const lines = edges.map((edge) => {
+      const details = [typeLabels[edge.type], statusLabels[edge.status], edge.label].filter(Boolean).join(' · ') || 'Connection';
+      return `<line class="relationship-edge status-${escapeHtml(edge.status || 'unspecified')}" style="--relationship-color:${edge.color}" x1="${edge.x1}" y1="${edge.y1}" x2="${edge.x2}" y2="${edge.y2}"><title>${escapeHtml(details)}</title></line>`;
+    }).join('');
     const nodes = cast.map((character, index) => {
       const position = positions[index];
       return `<button type="button" class="relationship-node" data-relationship-character="${escapeHtml(character.id)}" style="--node-x:${position.x / 10}%;--node-y:${position.y / 4.1}%" title="${escapeHtml(character.name)}">${escapeHtml(character.name)}</button>`;
@@ -207,7 +232,9 @@
         const bond = bonds.find((item) => item.id === other.id);
         const reverse = window.FictionTalesData.parseBonds(other.bonds).find((item) => item.id === character.id);
         const relation = bond || reverse;
-        const label = relation ? `${relation.type}: ${relation.status}` : '';
+        const label = relation
+          ? [typeLabels[relation.type], statusLabels[relation.status]].filter(Boolean).join(': ') || 'Connected'
+          : '';
         return `<td><button type="button" class="matrix-cell${relation ? ' has-relationship' : ''}" data-relationship-cell="${escapeHtml(character.id)}" data-relationship-target="${escapeHtml(other.id)}">${escapeHtml(label || '—')}</button></td>`;
       }).join('');
       return `<tr><th scope="row">${escapeHtml(character.name)}</th>${cells}</tr>`;
@@ -221,8 +248,8 @@
         const bonds = window.FictionTalesData.parseBonds(character.bonds);
         const linked = bonds.map((bond) => {
           const target = cast.find((item) => item.id === bond.id);
-          const history = bond.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${entry.status}${entry.note ? ` (${entry.note})` : ''}`).join('; ');
-          return target ? `${target.name} — ${bond.type} (${bond.status})${bond.label ? `, ${bond.label}` : ''}${bond.history ? `. History: ${bond.history}` : ''}${history ? `. Changes: ${history}` : ''}` : '';
+          const details = relationDetails(bond).join('; ');
+          return target ? `${target.name}${details ? ` — ${details}` : ''}` : '';
         }).filter(Boolean);
         details.textContent = linked.length
           ? `${character.name} is connected to ${linked.join('; ')}.`
@@ -235,9 +262,9 @@
         const other = cast.find((item) => item.id === button.dataset.relationshipTarget);
         const relation = window.FictionTalesData.parseBonds(character.bonds).find((bond) => bond.id === other.id)
           || window.FictionTalesData.parseBonds(other.bonds).find((bond) => bond.id === character.id);
-        const history = relation?.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${entry.status}${entry.note ? ` (${entry.note})` : ''}`).join('; ');
+        const relationshipDetails = relation ? relationDetails(relation).join('; ') : '';
         details.textContent = relation
-          ? `${character.name} and ${other.name}: ${relation.type} (${relation.status})${relation.label ? `, ${relation.label}` : ''}.${relation.history ? ` History: ${relation.history}` : ''}${history ? ` Status changes: ${history}` : ''}`
+          ? `${character.name} and ${other.name}${relationshipDetails ? `: ${relationshipDetails}` : ' are connected.'}`
           : `${character.name} and ${other.name} do not have a saved connection.`;
       });
     });

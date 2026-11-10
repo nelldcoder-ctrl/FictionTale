@@ -18,10 +18,6 @@ const form = document.querySelector('#character-form');
 const characterGrid = document.querySelector('#character-grid');
 const emptyState = document.querySelector('#empty-state');
 const toast = document.querySelector('#toast');
-const imagePreview = document.querySelector('#portrait-image');
-const placeholder = document.querySelector('#portrait-placeholder');
-const coverPreview = document.querySelector('#cover-preview');
-const previewAvatarPlaceholder = document.querySelector('#preview-avatar-placeholder');
 const characterDialog = document.querySelector('#character-dialog');
 const compareDialog = document.querySelector('#compare-dialog');
 const aboutDialog = document.querySelector('#about-dialog');
@@ -46,161 +42,24 @@ let changelogReturnFocus = null;
 // Add new releases at the top, using the same fields: version, date, notes.
 const CHANGELOG = [
   {
-    version: window.FICTION_TALE_VERSION,
-    date: '2026/11/06',
+    version: '1.0',
+    date: '2026/11/10',
     notes: [
-      'Mobile navigation now opens from a floating Sections button, while the back-to-top control stays accessible beside it.',
-    ],
-  },
-  {
-    version: '0.3.9',
-    date: '2026/11/06',
-    notes: [
-      'Refreshed the workspace with a calmer cyan-to-navy visual system, clearer section hierarchy, and an easier-to-use mobile navigation.',
-    ],
-  },
-  {
-    version: '0.3.8',
-    date: '2026/11/06',
-    notes: [
-      'Large saves now use IndexedDB, reducing pressure on localStorage.',
-      'The app and offline cache share one release version; optional story fonts load only when selected.',
-    ],
-  },
-  {
-    version: '0.3.7',
-    date: '2026/11/06',
-    notes: [
-      'Renamed About the Website to TaleTutorial, with separate simple and detailed guides for the current writing and worldbuilding tools.',
-    ],
-  },
-  {
-    version: '0.3.6',
-    date: '2026/11/06',
-    notes: [
-      'Rebranded the workspace as Fiction Tale with an immersive gradient logo.',
-      'Existing browser saves are migrated to the new FictionTales storage namespace automatically.',
-    ],
-  },
-  {
-    version: '0.3.5',
-    date: '2026/11/06',
-    notes: [
-      'Characters: added a 20-question personality questionnaire, dialogue samples, and targeted profile completeness nudges.',
-      'Character Cards: compare two character profiles side by side to explore foils, rivals, and contrasts.',
-    ],
-  },
-  {
-    version: '0.3.4',
-    date: '2026/11/06',
-    notes: [
-      'Worldbuilding: added a searchable World Entries library for factions, artifacts, magic or technology, species, languages, religions, and glossary terms.',
-      'World Entries are included in full and folder backups, and can be previewed in the story editor Quick peek panel.',
-    ],
-  },
-  {
-    version: '0.3.3',
-    date: '2026/11/06',
-    notes: [
-      'Lore & Story: added a daily writing goal with saved progress and a writing streak.',
-      'Lore & Story: added Focus mode, story-specific margin notes and to-do lists, linked outline scenes, and chapter pacing and reading-time stats.',
-    ],
-  },
-  {
-    version: '0.3.2',
-    date: '2026/11/06',
-    notes: [
-      'Lore & Story: type @ to link character mentions; profiles show the chapters where each character appears, including drafts.',
-      'Lore & Story: assign a place to each chapter and check character snapshots for location, absence, or death conflicts.',
-      'Lore & Story: use Quick peek to review character and place details without leaving the draft.',
-    ],
-  },
-  {
-    version: '0.3.1',
-    date: '2026/11/06',
-    notes: [
-      'Characters: connections now include a relationship type, current status, a history note, and timeline-dated status changes.',
-      'Story Planning: relationship map lines are color-coded by type and styled by current status; the matrix and character profiles show connection histories.',
-    ],
-  },
-  {
-    version: '0.3.0',
-    date: '2026/11/06',
-    notes: [
-      'Characters: added a lie-to-truth arc tracker, chapter snapshots for appearance, knowledge, and trust, and character knowledge notes for timeline events.',
-      'Story Planning: world events can now record what a linked character knows at that point in the story.',
-    ],
-  },
-  {
-    version: '0.2.9',
-    date: '2026/11/06',
-    notes: [
-      'Story Planning: added a Start here guide with clear actions for prompts, scene cards, and exploring your world.',
-      'Story Planning: moved optional story links, scene acts, summaries, mood-board tags, and palette settings out of the way until you need them.',
-      'Navigation: replaced the cramped small-screen menu with a labeled, thumb-friendly bottom bar.',
-    ],
-  },
-  {
-    version: '0.2.8',
-    date: '2026/11/06',
-    notes: [
-      'Story Planning: added a relationship map and matrix, a shared chronology, per-character/story/place mood boards, universe-aware writing prompts, and an Act I–III scene outline board.',
-      'Story Planning data is autosaved on this device and included in full JSON/YAML backups and folder backups.',
-      'Backups: export and import one JSON or YAML file containing your characters, stories, drafts, places, and links from any library section.',
-      'Places: added a Lore & Story field with a live word count and autosaved drafts that can be recovered or included in backups.',
-      'Connections: link stories to places and see related stories and places in both libraries; deleting a place also clears its story links.',
-      'Images: uploads and imported backup files can now be up to 5 MB.',
-      'Added: a footer reset button opens after a 1.4-second hold, then requires a separate confirmation before clearing saved Fiction Tale content.',
-    ],
-  },
-  {
-    version: '0.2.5',
-    date: '2026/10/26',
-    notes: [
-      'Lore & Story: link stories to your characters, and see every story a character appears in on their profile.',
-      'Lore & Story: added type, progress, a one-line summary, setting and tags to each story, plus a live word count and reading time.',
-      'Lore & Story: split long stories into chapters with a chapters panel (jump and reorder), and format text with bold, italic, quotes and scene breaks. The reader shows it all, with a contents list.',
-      'Lore & Story: added version history, undo and redo, Discard changes, Save & close, and starter prompts for scenes, world notes and plot outlines.',
-      'Lore & Story: search, filter and sort your story library, export stories as Markdown or plain text, and cover images are now resized on upload to save browser storage.',
-      'Characters: link characters to each other with Connections, shown on both profiles.',
-      'Characters: added a Go deeper section (goal, fear, secret, flaw, voice, appearance) and a life timeline.',
-      'Characters: added groups or factions with cast filtering and sorting, a Duplicate button, a profile completeness bar, and “Need a nudge?” writing prompts.',
-      'Characters: added version history with Restore, and raised the backstory limit to 4,000 characters with a counter.',
-      'Characters: starting a new character now asks before discarding unsaved changes.',
-      'Images: uploaded profile pictures, covers, story covers and extra images now show as thumbnails with a Remove button, instead of a block of raw text. Extra images can also be added by link.',
-      'Fixed: deleting a story now removes it completely in one step, instead of leaving a leftover card.',
-      'Fixed: editing a character with a portrait but no cover no longer copies the portrait into the cover.',
-      'Places & Settings: a new section below Lore & Story for cities, buildings and other locations. Add a type, summary, description, atmosphere, notes, tags, an image, and the characters who belong there. Linked places show on character profiles.',
-      'Characters: added custom sections. Name your own sections (like Weapons or Home town) and they appear on the profile.',
-      'Characters: rebuilt the live profile preview. It now shows everything you add (backstory, depth, timeline, connections, links, extra images, custom sections and more) as you type.',
-      'Performance: typing feels faster in every editor. Drafts now save in short batches instead of on every keystroke, searches wait a moment before filtering, and image previews no longer reload on each keystroke.',
-      'Images: uploaded pictures, covers and gallery images are now resized and compressed when you upload them (transparent PNGs stay transparent), so far more fit in your browser storage.',
-      'Tweaks: press Ctrl/Cmd+S to save your character, story or place. The sidebar shows how much browser storage you have used. Your sort and export choices are remembered.',
-      'Fixed: deleting a character now also removes them from story and place links.',
-      'About the Website: rewrote the guide in simpler words, removed the side menu, and restyled it to match the rest of the site.',
-      'Added this changelog.',
-    ],
-  },
-  {
-    version: '0.2.0',
-    date: '2026-10-25',
-    notes: [
-      'Added Lore&Story (Simple Story writing)',
-      'Create a story with customized and personalized draft craft. NOTE! The style is limited.',
-      'Changed functionality of some features',
-      'Changed UI layout of Character Creation',
-      'Changed how Profile colors functioned',
-      'Fixed some details that were difficult to read and redefined them.',
-      'Other new features to be added in future updates.',
-    ],
-  },
-  {
-    version: '0.1.0',
-    date: '2026-10-24',
-    notes: [
-      'Redesigned the whole page into simplicity',
-      'Added Landing page - divided into Character Studio and Character Cards',
-      'Changed the UI of “Created Characters”',
+      'Test version 1.0 — Current version: v.1.0 release: Style redesign, and functionality changes.',
+      'Redesigned and rebranded the workspace with a simpler, modern visual hierarchy, refreshed colors and typography, clearer section layouts, and responsive desktop, tablet, and mobile interfaces. Unified the site styling into one stylesheet.',
+      'Character Studio: create characters from a dedicated studio with a New character action, a reorganized editor, and an on-demand Live preview popup that stays out of the page while you scroll.',
+      'Character profiles: introduced a two-column desktop layout with cover, centered portrait, identity, personality, quick description, type, and basic details alongside the rest of the profile; smaller screens use a responsive single-column layout. Profile actions are easier to reach, and the profile scrolls as one view without scrolling the page behind it.',
+      'Character creation: expanded profiles with a 20-question personality questionnaire, dialogue samples, goals, fears, secrets, flaws, voice, appearance, custom sections, life timelines, chapter snapshots for appearance, knowledge, and trust, and a 4,000-character backstory limit.',
+      'Character management: added connections with relationship type, status, history, and dated changes; groups and factions; search, filtering, sorting, comparison, duplication, completeness guidance, writing prompts, and restorable profile version history.',
+      'Stories: create linked stories and recoverable drafts with types, progress, summaries, settings, tags, chapters, rich text, contents, word counts, reading time, version history, undo and redo, autosave, search, filters, sorting, and Markdown or plain-text export.',
+      'Story writing: added character mentions and chapter appearances, chapter locations and continuity checks for character presence or status, place links, character, place, and world-entry Quick peek, story-specific notes and to-dos, linked outline scenes, Focus mode, chapter pacing, daily writing goals, and writing streaks.',
+      'Story Planning: added relationship maps and matrices, a shared timeline, character knowledge at world events, mood boards, universe-aware prompts, and an Act I–III scene outline with a Start here guide. Planning data autosaves.',
+      'Places and World: create searchable places and world entries for factions, artifacts, systems, species, languages, religions, and glossary terms; add place atmosphere and story notes, link entries to stories and characters, preview and print them, and include them in backups.',
+      'Settings: added Appearance controls for light and dark themes and a Data & Storage section for full-library import and export, live storage usage, backup information, and optional backup-folder management.',
+      'Backups and privacy: keep character, story, draft, place, world, and planning data on this device; export or restore full JSON/YAML backups, with legacy CSV import support and folder backups. Uploads and backup files support up to 5 MB. Existing browser saves migrate to the Fiction Tales storage namespace.',
+      'Images and storage: added image galleries and linked images, removable previews, and automatic image resizing and compression; larger saves use IndexedDB to reduce localStorage pressure.',
+      'Usability and reliability: added keyboard save shortcuts, unsaved-change protection, autosaved and recoverable drafts, a deliberate hold-and-confirm reset, remembered sort and export choices, improved deletion and link cleanup, corrected image handling, and faster editor updates.',
+      'Offline and guidance: added installable offline app support with a shared app/cache version, optional story fonts, the TaleTutorial guides, and this consolidated changelog. Mobile navigation and install controls were refined for smaller screens.',
     ],
   },
 ];
@@ -208,6 +67,7 @@ let pendingDeleteId = '';
 let pendingDeleteKind = '';
 let activeProfile = null;
 let profileGalleryRendered = false;
+let profileDraftPreview = false;
 let draftSaveWarningShown = false;
 let characterFormHasChanges = false;
 let imageCropState = {
@@ -811,6 +671,7 @@ const modalDialogs = [
   changelogDialog,
   document.querySelector('#place-dialog'),
   document.querySelector('#world-entry-dialog'),
+  document.querySelector('#entity-preview-dialog'),
   compareDialog,
   deleteDialog,
   imageCropDialog,
@@ -1094,12 +955,10 @@ function renderProfileTimeline(profile) {
   list.replaceChildren();
   const events = parseTimeline(profile.timeline);
   if (!events.length) {
-    const hint = document.createElement('li');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No timeline yet. Add key moments under “More profile sections” in the editor.';
-    list.append(hint);
+    setProfileSectionVisible(list, false);
     return;
   }
+  setProfileSectionVisible(list, true);
   events.forEach((event) => {
     const item = document.createElement('li');
     const when = document.createElement('span');
@@ -1138,12 +997,8 @@ function renderProfileArc(profile) {
   });
   if (list.childElementCount) {
     container.append(list);
-  } else {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No character arc yet. Add a starting belief, turning point, or learned truth in the editor.';
-    container.append(hint);
   }
+  setProfileSectionVisible(container, Boolean(list.childElementCount));
 }
 
 function renderProfileSnapshots(profile) {
@@ -1151,12 +1006,10 @@ function renderProfileSnapshots(profile) {
   list.replaceChildren();
   const snapshots = parseCharacterSnapshots(profile.snapshots);
   if (!snapshots.length) {
-    const hint = document.createElement('li');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No snapshots yet. Add a chapter or timeline moment in the editor.';
-    list.append(hint);
+    setProfileSectionVisible(list, false);
     return;
   }
+  setProfileSectionVisible(list, true);
   snapshots.forEach((snapshot) => {
     const item = document.createElement('li');
     const when = document.createElement('span');
@@ -1407,10 +1260,12 @@ function renderProfileCustom(profile) {
     summary.append(' ', icon);
     const body = document.createElement('div');
     body.className = 'profile-section-content';
-    const paragraph = document.createElement('p');
-    paragraph.className = 'profile-custom-text';
-    paragraph.textContent = section.text || 'Nothing written yet.';
-    body.append(paragraph);
+    if (section.text) {
+      const paragraph = document.createElement('p');
+      paragraph.className = 'profile-custom-text';
+      paragraph.textContent = section.text;
+      body.append(paragraph);
+    }
     details.append(summary, body);
     box.append(details);
   });
@@ -1545,12 +1400,7 @@ function buildLiveSections(profile) {
   }
   const connections = characterBonds(profile).map((bond) => ({
     title: characters.find((item) => item.id === bond.id).name,
-    detail: [
-      `${BOND_TYPE_LABELS[bond.type]} · ${BOND_STATUS_LABELS[bond.status]}`,
-      bond.label,
-      bond.history,
-      ...bond.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${BOND_STATUS_LABELS[entry.status]}${entry.note ? ` — ${entry.note}` : ''}`),
-    ].filter(Boolean).join(' · '),
+    detail: bondDetailParts(bond).join(' · '),
   }));
   if (profile.id) {
     characters.forEach((other) => {
@@ -1559,12 +1409,9 @@ function buildLiveSections(profile) {
       if (back) connections.push({
         title: other.name,
         detail: [
-          `${BOND_TYPE_LABELS[back.type]} · ${BOND_STATUS_LABELS[back.status]}`,
-          back.label,
-          back.history,
-          ...back.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${BOND_STATUS_LABELS[entry.status]}${entry.note ? ` — ${entry.note}` : ''}`),
+          ...bondDetailParts(back),
           `Added on ${other.name}’s profile`,
-        ].filter(Boolean).join(' · '),
+        ].join(' · '),
       });
     });
   }
@@ -1609,7 +1456,9 @@ function buildLiveSections(profile) {
     });
   }
   parseCustomSections(profile.customSections).forEach((section, index) => {
-    add(`custom-${index}`, section.title || 'Untitled section', section, () => liveTextBlock(section.text || 'Nothing written yet.'));
+    add(`custom-${index}`, section.title || 'Untitled section', section, () => (
+      section.text ? liveTextBlock(section.text) : document.createDocumentFragment()
+    ));
   });
   return sections;
 }
@@ -1651,12 +1500,10 @@ function renderProfilePlaces(profile) {
   box.replaceChildren();
   const linked = places.filter((place) => place.characterIds.includes(profile.id));
   if (!linked.length) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'Not linked to any place yet. Pick this character when you edit a place.';
-    box.append(hint);
+    setProfileSectionVisible(box, false);
     return;
   }
+  setProfileSectionVisible(box, true);
   linked.forEach((place) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -1677,6 +1524,86 @@ function renderProfilePlaces(profile) {
 function placeCharacterNames(place) {
   return (place.characterIds || [])
     .map((id) => characters.find((character) => character.id === id)?.name).filter(Boolean);
+}
+
+let entityPreview = null;
+let entityPreviewReturnFocus = null;
+
+function openEntityPreview(kind, record, returnFocus = document.activeElement, fromEditor = false) {
+  if (!record) return;
+  const isPlace = kind === 'place';
+  entityPreview = { kind, id: record.id, fromEditor };
+  entityPreviewReturnFocus = returnFocus;
+  const setText = (selector, text) => { document.querySelector(selector).textContent = text; };
+  setText('#entity-preview-label', isPlace ? 'PLACE PREVIEW' : 'WORLD ENTRY PREVIEW');
+  setText('#entity-preview-kind', (isPlace ? PLACE_KINDS[record.kind] : WORLD_ENTRY_CATEGORIES[record.category]) || '');
+  setText('#entity-preview-title', record.name);
+  const summary = document.querySelector('#entity-preview-summary');
+  summary.textContent = record.summary || '';
+  summary.classList.toggle('hidden', !record.summary);
+  const cover = document.querySelector('#entity-preview-cover');
+  cover.classList.add('hidden');
+  if (isPlace && record.image && validImageSource(record.image)) {
+    cover.classList.remove('hidden');
+    setImageSource(cover, record.image, () => cover.classList.add('hidden'));
+  }
+  const facts = [];
+  if (isPlace) {
+    if (record.partOf) facts.push(['Part of', record.partOf]);
+    const names = placeCharacterNames(record);
+    if (names.length) facts.push(['Characters', names.join(', ')]);
+    const linked = savedStories.filter((story) => (story.placeIds || []).includes(record.id))
+      .map((story) => story.title || 'Untitled story');
+    if (linked.length) facts.push(['Appears in', linked.join(', ')]);
+  }
+  document.querySelector('#entity-preview-meta').replaceChildren(...facts.map(([label, value]) => {
+    const row = document.createElement('p');
+    row.className = 'entity-preview-fact';
+    const name = document.createElement('span');
+    name.className = 'entity-preview-fact-label';
+    name.textContent = label;
+    row.append(name, ` ${value}`);
+    return row;
+  }));
+  const sections = isPlace
+    ? [['Description', record.description], ['Lore & story', record.lore], ['Atmosphere', record.atmosphere], ['Notes', record.notes]]
+    : [['Description', record.description], ['Details', record.details]];
+  const body = document.querySelector('#entity-preview-body');
+  body.replaceChildren(...sections.filter(([, text]) => text).map(([heading, text]) => {
+    const section = document.createElement('section');
+    section.className = 'entity-preview-section';
+    const title = document.createElement('h2');
+    title.textContent = heading;
+    const paragraph = document.createElement('p');
+    paragraph.textContent = text;
+    section.append(title, paragraph);
+    return section;
+  }));
+  if (!body.children.length) {
+    const empty = document.createElement('p');
+    empty.className = 'entity-preview-empty';
+    empty.textContent = 'Nothing written yet. Edit this entry to add a description.';
+    body.append(empty);
+  }
+  const tags = document.querySelector('#entity-preview-tags');
+  tags.replaceChildren(...(record.tags || []).map((tag) => {
+    const chip = document.createElement('span');
+    chip.className = 'story-chip';
+    chip.textContent = `#${tag}`;
+    return chip;
+  }));
+  tags.classList.toggle('hidden', !(record.tags || []).length);
+  setText('#entity-preview-edit', fromEditor ? 'Back to editing' : (isPlace ? 'Edit this place' : 'Edit this entry'));
+  const dialog = document.querySelector('#entity-preview-dialog');
+  if (!dialog.open) dialog.showModal();
+  syncModalScrollLock();
+  dialog.querySelector('.profile-scroll').scrollTop = 0;
+  document.querySelector('#entity-preview-edit').focus();
+}
+
+function closeEntityPreview() {
+  const dialog = document.querySelector('#entity-preview-dialog');
+  if (dialog.open) dialog.close();
 }
 
 function renderPlaces() {
@@ -1773,7 +1700,16 @@ function renderPlaces() {
       event.stopPropagation();
       requestDeleteItem(place.id, 'place', place, remove);
     });
-    item.append(card, remove);
+    const preview = document.createElement('button');
+    preview.className = 'story-card-preview';
+    preview.type = 'button';
+    preview.textContent = 'Full preview ↗';
+    preview.setAttribute('aria-label', `Open full preview: ${place.name}`);
+    preview.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openEntityPreview('place', place, preview);
+    });
+    item.append(card, preview, remove);
     library.append(item);
   });
   library.classList.toggle('is-horizontal', items.length >= 4);
@@ -1783,7 +1719,7 @@ function renderPlaces() {
   document.querySelector('#place-empty').classList.toggle('hidden', places.length > 0);
   document.querySelector('#place-filter-bar').classList.toggle('hidden', places.length === 0);
   document.querySelector('#place-no-results').classList.toggle('hidden', !(places.length > 0 && items.length === 0));
-  renderBackupReminder();
+  renderBackupInformation();
 }
 
 function renderWorldEntries() {
@@ -1847,7 +1783,16 @@ function renderWorldEntries() {
       event.stopPropagation();
       requestDeleteItem(entry.id, 'world-entry', entry, remove);
     });
-    item.append(card, remove);
+    const preview = document.createElement('button');
+    preview.className = 'story-card-preview';
+    preview.type = 'button';
+    preview.textContent = 'Full preview ↗';
+    preview.setAttribute('aria-label', `Open full preview: ${entry.name}`);
+    preview.addEventListener('click', (event) => {
+      event.stopPropagation();
+      openEntityPreview('world', entry, preview);
+    });
+    item.append(card, preview, remove);
     library.append(item);
   });
   library.classList.toggle('is-horizontal', items.length >= 4);
@@ -1857,7 +1802,7 @@ function renderWorldEntries() {
   document.querySelector('#world-entry-empty').classList.toggle('hidden', worldEntries.length > 0);
   document.querySelector('#world-entry-filter-bar').classList.toggle('hidden', worldEntries.length === 0);
   document.querySelector('#world-entry-no-results').classList.toggle('hidden', !(worldEntries.length > 0 && items.length === 0));
-  renderBackupReminder();
+  renderBackupInformation();
 }
 
 function openWorldEntryEditor(id = '', returnFocus = document.activeElement) {
@@ -1876,6 +1821,7 @@ function openWorldEntryEditor(id = '', returnFocus = document.activeElement) {
   const dialog = document.querySelector('#world-entry-dialog');
   if (!dialog.open) dialog.showModal();
   syncModalScrollLock();
+  dialog.querySelector('.profile-scroll').scrollTop = 0;
   document.querySelector('#world-entry-name').focus();
 }
 
@@ -2142,74 +2088,6 @@ function flushPlaceDraft() {
   }
 }
 
-function placesToReadable(items, markdown) {
-  return items.map((place) => {
-    const names = placeCharacterNames(place);
-    const meta = [PLACE_KINDS[place.kind], place.partOf && `Part of ${place.partOf}`,
-      names.length && `Characters: ${names.join(', ')}`, place.tags.length && `Tags: ${place.tags.join(', ')}`]
-      .filter(Boolean).join(' · ');
-    return [
-      markdown ? `# ${place.name}` : `${place.name}\n${'='.repeat(Math.min(place.name.length, 60))}`,
-      meta,
-      place.summary && (markdown ? `> ${place.summary}` : place.summary),
-      place.description,
-      place.lore && `${markdown ? '**Lore & story:**' : 'Lore & story:'}\n\n${place.lore}`,
-      place.atmosphere && `${markdown ? '**Atmosphere:** ' : 'Atmosphere: '}${place.atmosphere}`,
-      place.notes && `${markdown ? '**Notes:** ' : 'Notes: '}${place.notes}`,
-    ].filter(Boolean).join('\n\n');
-  }).join(markdown ? '\n\n---\n\n' : '\n\n\n');
-}
-
-function exportPlaces() {
-  if (!places.length) {
-    showToast('There are no places to export yet.');
-    return;
-  }
-  const format = document.querySelector('#place-export-format').value;
-  const readable = format === 'md' || format === 'txt';
-  const extension = readable ? format : format === 'yaml' ? 'yaml' : 'json';
-  const data = { places: places.map((place) => ({ ...place })) };
-  const content = readable ? placesToReadable(places, format === 'md')
-    : format === 'yaml' ? toYaml(data) : JSON.stringify(data, null, 2);
-  const mimeType = format === 'md' ? 'text/markdown;charset=utf-8' : format === 'txt' ? 'text/plain;charset=utf-8'
-    : format === 'yaml' ? 'text/yaml;charset=utf-8' : 'application/json;charset=utf-8';
-  downloadFile(`FictionTales-places.${extension}`, content, mimeType);
-  showToast(readable
-    ? `Places exported as ${extension.toUpperCase()} for reading. Use JSON or YAML for backups you can import.`
-    : `Places exported as ${extension.toUpperCase()}.`);
-}
-
-async function importPlaces(event) {
-  const input = event.currentTarget;
-  const file = input.files?.[0];
-  if (!file) return;
-  try {
-    if (file.size > MAX_IMPORT_FILE_BYTES) throw new Error('Choose an import file that is 5 MB or smaller.');
-    const extension = file.name.split('.').pop().toLowerCase();
-    if (!['json', 'yaml', 'yml'].includes(extension)) throw new Error('Choose a JSON or YAML places backup.');
-    const contents = await file.text();
-    const parsed = extension === 'json' ? JSON.parse(contents.replace(/^\uFEFF/, '')) : parseYaml(contents);
-    const records = Array.isArray(parsed) ? parsed
-      : Array.isArray(parsed?.places) ? parsed.places : parsed && typeof parsed === 'object' && parsed.name ? [parsed] : [];
-    const imported = records.map(normalizePlace).filter(Boolean);
-    if (!imported.length) throw new Error('No places were found in that file.');
-    const next = [...places];
-    imported.forEach((place) => {
-      const index = next.findIndex((item) => item.id === place.id);
-      if (index >= 0) next[index] = place;
-      else next.unshift(place);
-    });
-    if (!writeStorage(PLACES_STORAGE_KEY, next)) throw new Error('Could not import. Your browser storage may be full.');
-    places.splice(0, places.length, ...next);
-    renderPlaces();
-    showToast(`Imported ${imported.length} place${imported.length === 1 ? '' : 's'}.`);
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : 'Import failed. Check that the file is valid JSON or YAML.');
-  } finally {
-    input.value = '';
-  }
-}
-
 function removeCharacterFromLinks(characterId) {
   const strip = (item) => ((item.characterIds || []).includes(characterId)
     ? { ...item, characterIds: item.characterIds.filter((id) => id !== characterId) } : item);
@@ -2243,11 +2121,21 @@ function renderRelationEditors() {
 const BOND_TYPES = ['ally', 'rival', 'family', 'secret-crush', 'betrayed', 'other'];
 const BOND_STATUSES = ['active', 'complicated', 'strained', 'broken', 'reconciled'];
 const BOND_TYPE_LABELS = {
-  ally: 'Ally', rival: 'Rival', family: 'Family', 'secret-crush': 'Secret crush', betrayed: 'Betrayed', other: 'Other',
+  ally: 'Friend', rival: 'Rival', family: 'Family', 'secret-crush': 'Romantic connection', betrayed: 'Trust changed', other: 'Other',
 };
 const BOND_STATUS_LABELS = {
-  active: 'Active', complicated: 'Complicated', strained: 'Strained', broken: 'Broken', reconciled: 'Reconciled',
+  active: 'Ongoing', complicated: 'Complicated', strained: 'Distant', broken: 'No contact', reconciled: 'Reconnected',
 };
+
+function bondDetailParts(bond) {
+  return [
+    bond.type && BOND_TYPE_LABELS[bond.type],
+    bond.status && BOND_STATUS_LABELS[bond.status],
+    bond.label,
+    bond.history,
+    ...bond.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${BOND_STATUS_LABELS[entry.status]}${entry.note ? ` — ${entry.note}` : ''}`),
+  ].filter(Boolean);
+}
 
 function parseBonds(value) {
   let source = value;
@@ -2280,9 +2168,9 @@ function parseBonds(value) {
     return {
       id: String(bond.id ?? '').trim().slice(0, 100),
       label: String(bond.label ?? '').trim().slice(0, 40),
-      type: BOND_TYPES.includes(bond.type) ? bond.type : 'other',
+      type: bond.type === '' ? '' : BOND_TYPES.includes(bond.type) ? bond.type : 'other',
       status: statusHistory.length ? statusHistory[statusHistory.length - 1].status
-        : BOND_STATUSES.includes(bond.status) ? bond.status : 'active',
+        : bond.status === '' ? '' : BOND_STATUSES.includes(bond.status) ? bond.status : 'active',
       history: String(bond.history ?? '').trim().slice(0, 500),
       statusHistory,
     };
@@ -2344,18 +2232,12 @@ function renderBondsEditor() {
   bonds.forEach((bond) => {
     const target = characters.find((item) => item.id === bond.id);
     const row = document.createElement('li');
-    row.className = `bond-editor-row bond-type-${bond.type} bond-status-${bond.status}`;
+    row.className = `bond-editor-row${bond.type ? ` bond-type-${bond.type}` : ''}${bond.status ? ` bond-status-${bond.status}` : ''}`;
     const name = document.createElement('strong');
     name.textContent = target.name;
     const label = document.createElement('span');
     label.className = 'bond-editor-summary';
-    label.textContent = [
-      BOND_TYPE_LABELS[bond.type],
-      BOND_STATUS_LABELS[bond.status],
-      bond.label,
-      bond.history,
-      ...bond.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${BOND_STATUS_LABELS[entry.status]}${entry.note ? ` — ${entry.note}` : ''}`),
-    ].filter(Boolean).join(' · ');
+    label.textContent = bondDetailParts(bond).join(' · ');
     const detailEditor = document.createElement('details');
     detailEditor.className = 'bond-detail-editor';
     const detailSummary = document.createElement('summary');
@@ -2363,7 +2245,11 @@ function renderBondsEditor() {
     const detailFields = document.createElement('div');
     detailFields.className = 'bond-detail-fields';
     const type = document.createElement('select');
-    type.setAttribute('aria-label', `Relationship type with ${target.name}`);
+    type.setAttribute('aria-label', `Optional connection type with ${target.name}`);
+    const optionalType = document.createElement('option');
+    optionalType.value = '';
+    optionalType.textContent = 'Type not set (optional)';
+    type.append(optionalType);
     BOND_TYPES.forEach((value) => {
       const option = document.createElement('option');
       option.value = value;
@@ -2375,14 +2261,14 @@ function renderBondsEditor() {
     detailInput.type = 'text';
     detailInput.maxLength = 40;
     detailInput.value = bond.label;
-    detailInput.placeholder = 'Connection detail';
+    detailInput.placeholder = 'Optional connection detail';
     detailInput.setAttribute('aria-label', `Connection detail with ${target.name}`);
     const historyNote = document.createElement('textarea');
     historyNote.maxLength = 500;
     historyNote.value = bond.history;
     historyNote.rows = 2;
-    historyNote.placeholder = 'History between them';
-    historyNote.setAttribute('aria-label', `History between ${target.name} and this character`);
+    historyNote.placeholder = 'Optional shared history';
+    historyNote.setAttribute('aria-label', `Optional shared history with ${target.name}`);
     const saveDetails = document.createElement('button');
     saveDetails.type = 'button';
     saveDetails.className = 'button button-quiet bond-details-save';
@@ -2446,7 +2332,9 @@ function renderBondsEditor() {
     const statusEditor = document.createElement('div');
     statusEditor.className = 'bond-status-editor';
     statusEditor.append(historyWhen, status, note, addStatus);
-    row.append(name, label, detailEditor, statusEditor, remove);
+    row.append(name);
+    if (label.textContent) row.append(label);
+    row.append(detailEditor, statusEditor, remove);
     list.append(row);
   });
 }
@@ -2487,12 +2375,7 @@ function renderProfileDepth(profile) {
     wrap.append(term, detail);
     box.append(wrap);
   });
-  if (!box.childElementCount) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No goals, fears, or secrets yet. Add them under “Go deeper” in the editor.';
-    box.append(hint);
-  }
+  setProfileSectionVisible(box, Boolean(box.childElementCount));
 }
 
 function renderProfilePersonality(profile) {
@@ -2508,12 +2391,6 @@ function renderProfilePersonality(profile) {
     item.append(prompt, response);
     questionnaire.append(item);
   });
-  if (!questionnaire.childElementCount) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No questionnaire answers yet. Choose a prompt in the editor when you need an idea.';
-    questionnaire.append(hint);
-  }
   const voice = document.querySelector('#profile-voice');
   voice.replaceChildren();
   const lines = String(profile.voiceSamples || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean).slice(0, 20);
@@ -2528,12 +2405,7 @@ function renderProfilePersonality(profile) {
     sample.textContent = line;
     voice.append(sample);
   });
-  if (!voice.childElementCount) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No dialogue samples yet. Add a few example lines under “Go deeper”.';
-    voice.append(hint);
-  }
+  setProfileSectionVisible(questionnaire, Boolean(questionnaire.childElementCount || voice.childElementCount));
 }
 
 let compareReturnFocus = null;
@@ -2631,12 +2503,10 @@ function renderProfileConnections(profile) {
     if (back) rows.push({ other, bond: back, addedOn: other.name });
   });
   if (!rows.length) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No connections yet. Link characters under “More profile sections” in the editor.';
-    box.append(hint);
+    setProfileSectionVisible(box, false);
     return;
   }
+  setProfileSectionVisible(box, true);
   rows.forEach(({ other, bond, addedOn }) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -2645,13 +2515,11 @@ function renderProfileConnections(profile) {
     name.textContent = other.name;
     const label = document.createElement('span');
     label.textContent = [
-      `${BOND_TYPE_LABELS[bond.type]} · ${BOND_STATUS_LABELS[bond.status]}`,
-      bond.label,
-      bond.history,
-      ...bond.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${BOND_STATUS_LABELS[entry.status]}${entry.note ? ` — ${entry.note}` : ''}`),
+      ...bondDetailParts(bond),
       addedOn && `Added on ${addedOn}’s profile`,
     ].filter(Boolean).join(' · ');
-    button.append(name, label);
+    button.append(name);
+    if (label.textContent) button.append(label);
     button.addEventListener('click', () => {
       requestProfileClose(() => openCharacterProfile(other, document.querySelector('#character-grid')));
     });
@@ -3840,7 +3708,7 @@ function renderStories() {
   document.querySelector('#story-empty').classList.toggle('hidden', all.length > 0);
   document.querySelector('#story-filter-bar').classList.toggle('hidden', all.length === 0);
   document.querySelector('#story-no-results').classList.toggle('hidden', !(all.length > 0 && items.length === 0));
-  renderBackupReminder();
+  renderBackupInformation();
   library.classList.toggle('hidden', items.length === 0);
   const previewStory = all.find((story) => story.id === previewStoryId) || items[0] || all[0];
   if (previewStory) {
@@ -4003,14 +3871,15 @@ var storageMeterTimer = 0;
 var storageWarned = false;
 const UI_PREFS_KEY = 'FictionTales.ui.v1';
 const UI_PREF_FIELDS = {
-  '#cast-sort': 'castSort', '#export-format': 'castExport',
+  '#cast-sort': 'castSort',
   '#story-sort': 'storySort', '#story-filter-kind': 'storyKind', '#story-filter-progress': 'storyProgress', '#story-export-format': 'storyExport',
-  '#place-sort': 'placeSort', '#place-filter-kind': 'placeKind', '#place-export-format': 'placeExport',
+  '#place-sort': 'placeSort', '#place-filter-kind': 'placeKind',
 };
 const BACKUP_LAST_KEY = 'FictionTales.backup.last.v1';
-const BACKUP_REMINDER_DISMISS_KEY = 'FictionTales.backup.reminder-dismissed.v1';
 let deferredInstallPrompt = null;
+let appInstalledThisSession = false;
 let globalSearchTimer = 0;
+let storageEstimateGeneration = 0;
 const globalSearchResults = document.querySelector('#global-search-results');
 
 function estimateStorageBytes() {
@@ -4019,25 +3888,43 @@ function estimateStorageBytes() {
 
 function updateStorageMeter() {
   storageMeterTimer = 0;
-  const meter = document.querySelector('#storage-meter');
-  if (!meter) return;
+  const appUsage = document.querySelector('#settings-app-usage');
+  const browserUsage = document.querySelector('#settings-browser-usage');
   const bytes = estimateStorageBytes();
-  const megabytes = bytes / (1024 * 1024);
-  meter.textContent = `${megabytes < 0.1 ? '<0.1' : megabytes.toFixed(1)} MB used`;
-  meter.title = 'Large character images, drafts, and version history are stored in IndexedDB to avoid the localStorage size limit.';
-  meter.classList.remove('is-high');
+  if (appUsage) appUsage.textContent = formatStorageSize(bytes);
+  if (!browserUsage) return;
+  const estimateGeneration = ++storageEstimateGeneration;
+  browserUsage.textContent = 'Checking browser storage…';
   if (navigator.storage?.estimate) {
     navigator.storage.estimate().then(({ usage, quota }) => {
-      if (!usage || !quota) return;
+      if (estimateGeneration !== storageEstimateGeneration) return;
+      if (typeof usage !== 'number' || typeof quota !== 'number' || quota <= 0) {
+        browserUsage.textContent = 'Usage estimate unavailable.';
+        return;
+      }
       const ratio = usage / quota;
-      meter.title = `Fiction Tale data: ${megabytes.toFixed(1)} MB. Browser storage: ${(usage / (1024 * 1024)).toFixed(1)} of ${(quota / (1024 * 1024)).toFixed(0)} MB used.`;
-      meter.classList.toggle('is-high', ratio > 0.8);
+      browserUsage.textContent = `${formatStorageSize(usage)} of ${formatStorageSize(quota)} used`;
+      browserUsage.classList.toggle('is-high', ratio > 0.8);
       if (ratio > 0.9 && !storageWarned) {
         storageWarned = true;
-        showToast('Browser storage is nearly full. Export a backup and remove unused data to keep saving.');
+        showToast('Browser storage is nearly full. Export a full backup from Settings before clearing unused data.');
       }
-    }).catch((error) => console.warn('Could not estimate browser storage quota.', error));
+    }).catch((error) => {
+      if (estimateGeneration !== storageEstimateGeneration) return;
+      browserUsage.textContent = 'Could not read browser storage usage.';
+      browserUsage.classList.remove('is-high');
+      console.warn('Could not estimate browser storage quota.', error);
+    });
+  } else {
+    browserUsage.textContent = 'Usage estimate unavailable in this browser.';
+    browserUsage.classList.remove('is-high');
   }
+}
+
+function formatStorageSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) return 'Unavailable';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function updateStorageMeterSoon() {
@@ -4049,7 +3936,7 @@ function updateStorageMeterSoon() {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   delete document.body.dataset.theme;
-  document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#18212b' : '#e9f5f8';
+  document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#16284a' : '#d4e7f5';
   updateThemeToggle(theme);
 }
 
@@ -4099,33 +3986,21 @@ function backupAgeLabel(timestamp) {
   return `${months} month${months === 1 ? '' : 's'} ago`;
 }
 
-function renderBackupReminder() {
-  const banner = document.querySelector('#backup-reminder');
-  const hasSavedContent = characters.length || savedStories.length || places.length || worldEntries.length;
-  if (!hasSavedContent) {
-    banner.classList.add('hidden');
-    return;
-  }
-  const dismissedUntil = Number(readStorage(BACKUP_REMINDER_DISMISS_KEY, 0));
-  if (dismissedUntil > Date.now()) {
-    banner.classList.add('hidden');
-    return;
-  }
+function renderBackupInformation() {
   const lastBackup = readStorage(BACKUP_LAST_KEY, '');
   const lastBackupTime = Date.parse(lastBackup);
-  const stale = !Number.isFinite(lastBackupTime) || Date.now() - lastBackupTime >= 7 * 86400000;
-  banner.classList.toggle('hidden', !stale);
-  if (!stale) return;
-  document.querySelector('#backup-reminder-title').textContent = lastBackup
-    ? `Last backup: ${backupAgeLabel(lastBackup)}.`
-    : 'Your first backup is waiting.';
-  document.querySelector('#backup-reminder-copy').textContent = 'Export a copy in case browser data is cleared.';
+  const lastBackupLabel = document.querySelector('#settings-backup-last');
+  if (!lastBackupLabel) return;
+  if (!Number.isFinite(lastBackupTime)) {
+    lastBackupLabel.textContent = 'No backup recorded yet.';
+    return;
+  }
+  lastBackupLabel.textContent = `Last backup: ${backupAgeLabel(lastBackup)} (${new Date(lastBackupTime).toLocaleString()}).`;
 }
 
 function markBackupCreated() {
   writeStorage(BACKUP_LAST_KEY, new Date().toISOString());
-  writeStorage(BACKUP_REMINDER_DISMISS_KEY, 0);
-  renderBackupReminder();
+  renderBackupInformation();
 }
 
 function renderGlobalSearch() {
@@ -4227,34 +4102,67 @@ function initGlobalSearch() {
   });
 }
 
-function initBackupReminder() {
-  document.querySelector('#backup-reminder-export').addEventListener('click', exportLibraryBackup);
-  document.querySelector('#backup-reminder-dismiss').addEventListener('click', () => {
-    writeStorage(BACKUP_REMINDER_DISMISS_KEY, Date.now() + 7 * 86400000);
-    renderBackupReminder();
-  });
-  renderBackupReminder();
-  window.setInterval(renderBackupReminder, 60 * 60 * 1000);
-}
-
 function initPwa() {
   window.addEventListener('beforeinstallprompt', (event) => {
+    if (isAppRunningStandalone() || appInstalledThisSession) return;
     event.preventDefault();
     deferredInstallPrompt = event;
-    document.querySelector('#install-app').classList.remove('hidden');
+    syncInstallButton();
   });
-  document.querySelector('#install-app').addEventListener('click', async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
+  window.addEventListener('appinstalled', () => {
+    appInstalledThisSession = true;
     deferredInstallPrompt = null;
-    document.querySelector('#install-app').classList.add('hidden');
+    syncInstallButton();
   });
+  const standaloneQuery = window.matchMedia('(display-mode: standalone)');
+  if (typeof standaloneQuery.addEventListener === 'function') standaloneQuery.addEventListener('change', syncInstallButton);
+  else standaloneQuery.addListener(syncInstallButton);
+  window.addEventListener('resize', syncInstallButton, { passive: true });
+  window.addEventListener('pageshow', syncInstallButton);
+  document.querySelector('#install-app').addEventListener('click', async () => {
+    if (!deferredInstallPrompt) {
+      showManualInstallInstructions();
+      return;
+    }
+    const installPrompt = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    try {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') appInstalledThisSession = true;
+      syncInstallButton();
+    } catch (error) {
+      console.error('Fiction Tale could not open the install prompt.', error);
+      syncInstallButton();
+      showToast('The install prompt could not be opened. Try your browser’s menu to install the app.');
+    }
+  });
+  syncInstallButton();
   if ('serviceWorker' in navigator && ['https:', 'http:'].includes(location.protocol)) {
     navigator.serviceWorker.register('./service-worker.js').catch((error) => {
       console.error('Fiction Tale offline support could not be enabled.', error);
     });
   }
+}
+
+function isAppRunningStandalone() {
+  return window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+}
+
+function syncInstallButton() {
+  const button = document.querySelector('#install-app');
+  const mobileBrowser = window.matchMedia('(max-width: 780px)').matches
+    || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  button.classList.toggle('hidden', isAppRunningStandalone() || appInstalledThisSession
+    || (!deferredInstallPrompt && !mobileBrowser));
+}
+
+function showManualInstallInstructions() {
+  const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  showToast(isAppleMobile
+    ? 'To install, tap Share, then “Add to Home Screen”.'
+    : 'To install, open your browser menu and choose “Install app” or “Add to Home screen”.');
 }
 
 document.addEventListener('keydown', (event) => {
@@ -4355,7 +4263,7 @@ async function rememberDataDirectory(handle) {
 }
 
 function setFolderStatus(message) {
-  document.querySelector('#data-folder-status').textContent = message;
+  document.querySelector('#settings-folder-status').textContent = message;
 }
 
 function scheduleFolderBackup() {
@@ -4396,8 +4304,8 @@ function persistCharacterLibrary() {
       markBackupCreated();
       setFolderStatus(`Backup updated in ${dataDirectory.name}`);
     } catch {
-      setFolderStatus('Folder backup failed — export a full backup instead');
-      showToast('Could not update the folder backup. Your browser copy is still saved; export a full backup to keep another copy.');
+      setFolderStatus('Folder backup failed — use Export full backup');
+      showToast('Could not update the folder backup. Your browser copy is still saved; use Settings to export a full backup.');
     }
   });
   return folderWritePending;
@@ -4407,8 +4315,8 @@ async function initializeDataFolder() {
   const button = document.querySelector('#connect-data-folder');
   if (!window.showDirectoryPicker || !window.indexedDB) {
     button.disabled = true;
-    button.title = 'Folder access is unavailable in this browser. Use Export all data to save a backup.';
-    setFolderStatus('Folder access unavailable — use Export all data');
+    button.title = 'Folder access is unavailable in this browser. Export a full backup from Settings instead.';
+    setFolderStatus('Folder access unavailable — use Export full backup');
     return;
   }
   try {
@@ -4416,7 +4324,7 @@ async function initializeDataFolder() {
     if (!handle) return;
     const permission = await handle.queryPermission({ mode: 'readwrite' });
     dataDirectory = handle;
-    button.textContent = 'Change data folder';
+    button.textContent = 'Change backup folder';
     setFolderStatus(permission === 'granted'
       ? `Folder connected: ${handle.name}`
       : `Folder remembered: ${handle.name} (reconnect to allow access)`);
@@ -4436,14 +4344,14 @@ document.querySelector('#connect-data-folder').addEventListener('click', async (
     }
     dataDirectory = handle;
     await rememberDataDirectory(handle);
-    document.querySelector('#connect-data-folder').textContent = 'Change data folder';
+    document.querySelector('#connect-data-folder').textContent = 'Change backup folder';
     setFolderStatus(`Folder connected: ${handle.name}`);
     await persistCharacterLibrary();
-    showToast(`Character backups will be saved in ${handle.name}.`);
+    showToast(`Full backups will be saved in ${handle.name}.`);
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') return;
-    setFolderStatus('Could not connect folder — use Export all data');
-    showToast('Could not connect that folder. Browser autosave and manual exports are still available.');
+    setFolderStatus('Could not connect folder — use Export full backup');
+    showToast('Could not connect that folder. Browser autosave and full backup export are still available in Settings.');
   }
 });
 
@@ -4625,62 +4533,11 @@ function debounce(callback, delay = 150) {
 
 function updatePreview() {
   const profile = currentProfile();
-  const position = characters.findIndex((character) => character.id === profile.id);
-  const profileBackground = profile.accent || '#4385e8';
-  document.querySelector('#profile-preview').style.setProperty('--card-accent', profileBackground);
-  document.querySelector('#profile-preview').style.setProperty('--profile-background', profileBackground);
-  setText('#preview-name', profile.name, 'Your character');
-  setText('#preview-role', profile.role, 'A story waiting to happen');
-  setText('#preview-pronouns', profile.pronouns, 'pronouns');
-  setText('#preview-age', profile.age ? `${profile.age} years` : '', 'age');
-  setText('#preview-species', profile.species, 'species');
-  setText('#preview-description', profile.description, 'Give them a name and a few details. Their profile will come together right here.');
-  setText('#preview-index', String(position >= 0 ? position + 1 : characters.length + 1).padStart(2, '0'));
   document.querySelector('#description-count').textContent = String(profile.description.length);
   document.querySelector('#backstory-count').textContent = String(profile.story.length);
   updateProfileMeter(profile);
   syncImageChips();
   syncGalleryThumbs();
-  renderLiveSections(profile);
-
-  const traitsContainer = document.querySelector('#preview-traits');
-  traitsContainer.replaceChildren();
-  if (profile.traits.length) {
-    profile.traits.slice(0, 5).forEach((trait) => {
-      const chip = document.createElement('span');
-      chip.textContent = trait;
-      traitsContainer.append(chip);
-    });
-  } else {
-    const hint = document.createElement('span');
-    hint.className = 'trait-placeholder';
-    hint.textContent = 'YOUR TRAITS';
-    traitsContainer.append(hint);
-  }
-
-  const hasCover = setImageSource(coverPreview, profile.cover, () => {
-    document.querySelector('#preview-art').classList.remove('has-cover');
-    placeholder.classList.remove('hidden');
-    showToast('Could not load the cover image. Use a direct image URL or upload an image file.');
-  });
-  applyImageCrop(coverPreview, profile.coverCrop);
-  if (setImageSource(imagePreview, profile.avatar, () => {
-    previewAvatarPlaceholder.textContent = (profile.name || '?').slice(0, 1).toUpperCase();
-    previewAvatarPlaceholder.classList.remove('hidden');
-    showToast('Could not load the profile picture. Use a direct image URL or upload an image file.');
-  })) {
-    previewAvatarPlaceholder.classList.add('hidden');
-  } else {
-    previewAvatarPlaceholder.textContent = (profile.name || '?').slice(0, 1).toUpperCase();
-    previewAvatarPlaceholder.classList.remove('hidden');
-  }
-  applyImageCrop(imagePreview, profile.avatarCrop);
-  placeholder.classList.toggle('hidden', hasCover);
-  if (hasCover) {
-    document.querySelector('#preview-art').classList.add('has-cover');
-  } else {
-    document.querySelector('#preview-art').classList.remove('has-cover');
-  }
 }
 
 function renderCharacters() {
@@ -4813,7 +4670,7 @@ function renderCharacters() {
     lastCastSignature = castSignature;
     renderPlaces();
   }
-  renderBackupReminder();
+  renderBackupInformation();
 }
 
 var lastCastSignature = null;
@@ -4833,6 +4690,10 @@ function setProfileText(selector, value, fallback = '') {
   element.classList.toggle('hidden', !value && !fallback);
 }
 
+function setProfileSectionVisible(element, visible) {
+  element.closest('.profile-section')?.classList.toggle('hidden', !visible);
+}
+
 function renderProfileStories(characterId) {
   const box = document.querySelector('#profile-stories');
   box.replaceChildren();
@@ -4850,12 +4711,10 @@ function renderProfileStories(characterId) {
     return { story, appearedIn, linked: (story.characterIds || []).includes(characterId) };
   }).filter((entry) => entry.linked || entry.appearedIn.length);
   if (!appearances.length) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No story mentions yet. Type @ followed by this character’s name in a draft or saved story.';
-    box.append(hint);
+    setProfileSectionVisible(box, false);
     return;
   }
+  setProfileSectionVisible(box, true);
   appearances.forEach(({ story, appearedIn, linked }) => {
     const button = document.createElement('button');
     button.type = 'button';
@@ -4874,8 +4733,9 @@ function renderProfileStories(characterId) {
   });
 }
 
-function openCharacterProfile(character, returnFocus = document.activeElement) {
+function openCharacterProfile(character, returnFocus = document.activeElement, draftPreview = false) {
   profileReturnFocus = returnFocus;
+  profileDraftPreview = draftPreview;
   const profile = { ...character, traits: character.traits || [] };
   activeProfile = profile;
   profileGalleryRendered = false;
@@ -4884,9 +4744,10 @@ function openCharacterProfile(character, returnFocus = document.activeElement) {
   characterDialog.style.setProperty('--profile-background', accent);
   document.querySelector('#profile-name').dataset.characterId = profile.id;
   setProfileText('#profile-name', profile.name, 'Your character');
+  document.querySelector('#profile-back-label').textContent = draftPreview ? 'Back to studio' : 'Back to characters';
+  document.querySelector('#profile-edit').textContent = draftPreview ? 'Back to studio' : 'Edit this character';
   setProfileText('#profile-role', profile.role);
-  setProfileText('#profile-quote', profile.description ? `“${profile.description}”` : '');
-  setProfileText('#profile-about', profile.description, 'This character has no introduction yet.');
+  setProfileText('#profile-about', profile.description);
 
   const cover = document.querySelector('#profile-cover-image');
   const avatar = document.querySelector('#profile-avatar');
@@ -4925,7 +4786,10 @@ function openCharacterProfile(character, returnFocus = document.activeElement) {
 
   const storyBlock = document.querySelector('#profile-story-block');
   storyBlock.classList.toggle('hidden', !profile.story);
+  storyBlock.closest('.profile-section')?.classList.toggle('hidden', !profile.story);
   document.querySelector('#profile-story').textContent = profile.story || '';
+  const gallery = document.querySelector('#profile-gallery');
+  setProfileSectionVisible(gallery, profileImageSources(profile).length > 0);
 
   const stats = document.querySelector('#profile-stats');
   stats.replaceChildren();
@@ -4949,15 +4813,12 @@ function openCharacterProfile(character, returnFocus = document.activeElement) {
     item.append(term, description);
     stats.append(item);
   });
-  if (!stats.childElementCount) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'Add age, species, or extra stats in the editor.';
-    stats.append(hint);
-  }
+  setProfileSectionVisible(stats, Boolean(stats.childElementCount));
 
-  setProfileText('#profile-relations', profile.relations, 'No relationships added yet.');
-  setProfileText('#profile-worlds', profile.worlds, 'No world or setting added yet.');
+  setProfileText('#profile-relations', profile.relations);
+  setProfileSectionVisible(document.querySelector('#profile-relations'), Boolean(profile.relations));
+  setProfileText('#profile-worlds', profile.worlds);
+  setProfileSectionVisible(document.querySelector('#profile-worlds'), Boolean(profile.worlds));
   renderProfileStories(profile.id);
   renderProfilePlaces(profile);
   renderProfileCustom(profile);
@@ -4981,14 +4842,14 @@ function openCharacterProfile(character, returnFocus = document.activeElement) {
     link.title = url;
     links.append(link);
   });
-  if (!links.childElementCount) {
-    const hint = document.createElement('p');
-    hint.className = 'profile-empty';
-    hint.textContent = 'No links added yet.';
-    links.append(hint);
-  }
+  setProfileSectionVisible(links, Boolean(links.childElementCount));
 
-  document.querySelectorAll('.profile-section').forEach((section, index) => { section.open = index === 0; });
+  let openedInitialSection = false;
+  document.querySelectorAll('.profile-section').forEach((section) => {
+    const visible = !section.classList.contains('hidden');
+    section.open = visible && !openedInitialSection;
+    if (visible) openedInitialSection = true;
+  });
   document.querySelector('#profile-gallery').replaceChildren();
   document.querySelector('#profile-gallery-empty').classList.add('hidden');
   characterDialog.classList.remove('is-closing');
@@ -5001,9 +4862,7 @@ function openCharacterProfile(character, returnFocus = document.activeElement) {
 function renderProfileGallery() {
   if (!activeProfile || profileGalleryRendered) return;
   const gallery = document.querySelector('#profile-gallery');
-  const images = [activeProfile.cover, activeProfile.avatar, ...(activeProfile.gallery || '').split(/\r?\n/)]
-    .map((url) => (url || '').trim())
-    .filter((url, index, all) => url && all.indexOf(url) === index && (url.startsWith('data:image/') || validWebUrl(url)));
+  const images = profileImageSources(activeProfile);
   images.forEach((url, index) => {
     const image = document.createElement('img');
     image.src = url;
@@ -5014,6 +4873,12 @@ function renderProfileGallery() {
   });
   document.querySelector('#profile-gallery-empty').classList.toggle('hidden', images.length > 0);
   profileGalleryRendered = true;
+}
+
+function profileImageSources(profile) {
+  return [profile.cover, profile.avatar, ...(profile.gallery || '').split(/\r?\n/)]
+    .map((url) => (url || '').trim())
+    .filter((url, index, all) => url && all.indexOf(url) === index && (url.startsWith('data:image/') || validWebUrl(url)));
 }
 
 document.querySelector('#profile-gallery').closest('.profile-section').addEventListener('toggle', (event) => {
@@ -5589,9 +5454,16 @@ characterDialog.addEventListener('close', () => {
   if (typeof afterClose === 'function') afterClose();
 });
 document.querySelector('#profile-edit').addEventListener('click', () => {
+  if (profileDraftPreview) {
+    requestProfileClose(() => document.querySelector('#name').focus());
+    return;
+  }
   const id = document.querySelector('#profile-name').dataset.characterId;
   if (!id) return;
   requestProfileClose(() => loadCharacter(id));
+});
+document.querySelector('#studio-preview-open').addEventListener('click', (event) => {
+  openCharacterProfile(currentProfile(), event.currentTarget, true);
 });
 document.querySelector('#compare-characters').addEventListener('click', (event) => {
   openCharacterComparison(event.currentTarget);
@@ -5843,8 +5715,8 @@ function toText(profiles) {
     .map(([key, label]) => `${label}: ${key === 'bonds'
       ? parseBonds(profile[key]).map((bond) => {
         const name = characters.find((item) => item.id === bond.id)?.name || 'Unknown';
-        const changes = bond.statusHistory.map((entry) => `${entry.when || 'Undated'}: ${BOND_STATUS_LABELS[entry.status]}${entry.note ? ` (${entry.note})` : ''}`).join('; ');
-        return `${name}: ${BOND_TYPE_LABELS[bond.type]} — ${BOND_STATUS_LABELS[bond.status]}${bond.label ? ` (${bond.label})` : ''}${bond.history ? `. History: ${bond.history}` : ''}${changes ? `. Status changes: ${changes}` : ''}`;
+        const details = bondDetailParts(bond).join(' — ');
+        return `${name}${details ? `: ${details}` : ''}`;
       }).join(', ')
       : key === 'customSections' ? parseCustomSections(profile[key]).map((section) => `${section.title}: ${section.text.replace(/\s+/g, ' ')}`).join(' | ')
       : key === 'timeline' ? parseTimeline(profile[key]).map((event) => `${event.when ? `${event.when}: ` : ''}${event.text}${event.knowledge ? ` (Knows: ${event.knowledge})` : ''}`).join('; ')
@@ -6537,11 +6409,10 @@ function exportProfiles(profiles, format, library = false) {
   }
 }
 
-function exportLibraryBackup(event) {
+function exportLibraryBackup() {
   flushPendingDrafts();
   flushPlaceDraft();
-  const selectedFormat = event.currentTarget.closest('.cast-tools, .story-library-tools')
-    ?.querySelector('.export-format select')?.value;
+  const selectedFormat = document.querySelector('#settings-export-format').value;
   const format = selectedFormat === 'yaml' ? 'yaml' : 'json';
   const drafts = { ...storyDrafts };
   const storyDialog = document.querySelector('#story-dialog');
@@ -6727,25 +6598,23 @@ document.querySelector('#export-character').addEventListener('click', () => {
   }
   exportProfiles([profile], document.querySelector('#character-export-format').value);
 });
-document.querySelector('#export-library').addEventListener('click', () => {
-  exportLibraryBackup({ currentTarget: document.querySelector('#export-library') });
-});
-document.querySelector('#import-library').addEventListener('click', () => document.querySelector('#import-file').click());
-document.querySelector('#import-file').addEventListener('change', importLibraryBackup);
+document.querySelector('#settings-export').addEventListener('click', exportLibraryBackup);
+document.querySelector('#settings-import').addEventListener('click', () => document.querySelector('#settings-import-file').click());
+document.querySelector('#settings-import-file').addEventListener('change', importLibraryBackup);
 document.querySelector('#profile-print').addEventListener('click', () => window.print());
 document.querySelector('#profile-export-image').addEventListener('click', () => {
-  const profile = currentProfile();
+  const profile = activeProfile;
+  if (!profile) {
+    showToast('Open a character profile first.');
+    return;
+  }
   if (!profile.name) {
     showToast('Add a character name before exporting a character sheet.');
-    document.querySelector('#name').focus();
     return;
   }
   exportCharacterSheetImage(profile);
 });
-document.querySelector('#story-export').addEventListener('click', exportLibraryBackup);
 document.querySelector('#story-export-stories').addEventListener('click', exportStories);
-document.querySelector('#story-import').addEventListener('click', () => document.querySelector('#story-import-file').click());
-document.querySelector('#story-import-file').addEventListener('change', importLibraryBackup);
 document.querySelector('#story-print').addEventListener('click', () => window.print());
 window.addEventListener('beforeprint', () => {
   if (!characterDialog.open || printSectionState) return;
@@ -6949,7 +6818,7 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
 });
 
 document.querySelector('#search-characters').addEventListener('input', debounce(renderCharacters, 140));
-['sidebar-new', 'empty-create'].forEach((id) => document.getElementById(id).addEventListener('click', (event) => requestNewCharacter(event.currentTarget)));
+['sidebar-new', 'empty-create', 'studio-new-character'].forEach((id) => document.getElementById(id).addEventListener('click', (event) => requestNewCharacter(event.currentTarget)));
 document.querySelector('#duplicate-character').addEventListener('click', duplicateCharacter);
 document.querySelector('#bond-add').addEventListener('click', addBondFromEditor);
 document.querySelector('#bond-label').addEventListener('keydown', (event) => {
@@ -6988,18 +6857,12 @@ document.querySelector('#new-place').addEventListener('click', (event) => openPl
 document.querySelector('#place-empty-create').addEventListener('click', (event) => openPlaceEditor('', event.currentTarget));
 document.querySelector('#place-search').addEventListener('input', debounce(renderPlaces, 140));
 ['#place-filter-kind', '#place-sort'].forEach((selector) => document.querySelector(selector).addEventListener('input', renderPlaces));
-document.querySelector('#place-export').addEventListener('click', exportLibraryBackup);
-document.querySelector('#place-import').addEventListener('click', () => document.querySelector('#place-import-file').click());
-document.querySelector('#place-import-file').addEventListener('change', importLibraryBackup);
 document.querySelector('#new-world-entry').addEventListener('click', (event) => openWorldEntryEditor('', event.currentTarget));
 document.querySelector('#world-entry-empty-create').addEventListener('click', (event) => openWorldEntryEditor('', event.currentTarget));
 document.querySelector('#world-entry-search').addEventListener('input', debounce(renderWorldEntries, 140));
 ['#world-entry-filter-category', '#world-entry-sort'].forEach((selector) => {
   document.querySelector(selector).addEventListener('input', renderWorldEntries);
 });
-document.querySelector('#world-entry-export').addEventListener('click', exportLibraryBackup);
-document.querySelector('#world-entry-import').addEventListener('click', () => document.querySelector('#world-entry-import-file').click());
-document.querySelector('#world-entry-import-file').addEventListener('change', importLibraryBackup);
 document.querySelector('#world-entry-form').addEventListener('submit', saveWorldEntry);
 document.querySelector('#world-entry-close').addEventListener('click', closeWorldEntryEditor);
 document.querySelector('#world-entry-cancel').addEventListener('click', closeWorldEntryEditor);
@@ -7032,6 +6895,47 @@ document.querySelector('#place-form').addEventListener('submit', (event) => {
 });
 document.querySelector('#place-close').addEventListener('click', requestPlaceClose);
 document.querySelector('#place-cancel').addEventListener('click', requestPlaceClose);
+document.querySelector('#place-preview').addEventListener('click', (event) => {
+  if (!document.querySelector('#place-name').value.trim()) {
+    showToast('Add a place name to open its preview.');
+    document.querySelector('#place-name').focus();
+    return;
+  }
+  openEntityPreview('place', currentPlaceDraft(), event.currentTarget, true);
+});
+document.querySelector('#world-entry-preview').addEventListener('click', (event) => {
+  const record = normalizeWorldEntry({
+    id: activeWorldEntryId || createId(),
+    name: document.querySelector('#world-entry-name').value,
+    category: document.querySelector('#world-entry-category').value,
+    summary: document.querySelector('#world-entry-summary').value,
+    description: document.querySelector('#world-entry-description').value,
+    details: document.querySelector('#world-entry-details').value,
+    tags: document.querySelector('#world-entry-tags').value,
+    updatedAt: new Date().toISOString(),
+  });
+  if (!record) {
+    showToast('Add an entry name to open its preview.');
+    document.querySelector('#world-entry-name').focus();
+    return;
+  }
+  openEntityPreview('world', record, event.currentTarget, true);
+});
+document.querySelector('#entity-preview-close').addEventListener('click', closeEntityPreview);
+document.querySelector('#entity-preview-print').addEventListener('click', () => window.print());
+document.querySelector('#entity-preview-edit').addEventListener('click', () => {
+  const current = entityPreview;
+  closeEntityPreview();
+  if (!current || current.fromEditor) return;
+  if (current.kind === 'place') openPlaceEditor(current.id, entityPreviewReturnFocus);
+  else openWorldEntryEditor(current.id, entityPreviewReturnFocus);
+});
+document.querySelector('#entity-preview-dialog').addEventListener('click', (event) => {
+  if (event.target === event.currentTarget) closeEntityPreview();
+});
+document.querySelector('#entity-preview-dialog').addEventListener('close', () => {
+  if (!modalDialogs.some((dialog) => dialog.open)) entityPreviewReturnFocus?.focus?.();
+});
 document.querySelector('#place-delete').addEventListener('click', () => {
   const place = places.find((item) => item.id === activePlaceId);
   if (place) requestDeleteItem(place.id, 'place', place, document.querySelector('#place-delete'));
@@ -7314,10 +7218,11 @@ window.addEventListener('FictionTales:open-outline-scene', (event) => {
   if (chapter) jumpToStoryPosition(chapter.start, chapter.headingLength);
 });
 
-const navLinks = [...document.querySelectorAll('.nav-link')];
+const navLinks = [...document.querySelectorAll('.nav-link[href]')];
 const navSections = ['studio', 'cast', 'lore', 'places', 'world-entries', 'planning'].map((id) => document.getElementById(id));
 const sidebar = document.querySelector('.sidebar');
 const mobileNavigationToggle = document.querySelector('#mobile-nav-toggle');
+const settingsDialog = document.querySelector('#settings-dialog');
 let scrollSpyFrame = 0;
 let pendingNavigationTarget = '';
 let navigationFallbackTimer = 0;
@@ -7331,7 +7236,26 @@ mobileNavigationToggle.addEventListener('click', () => {
   setMobileNavigationOpen(mobileNavigationToggle.getAttribute('aria-expanded') !== 'true');
 });
 
+document.querySelector('#settings-open').addEventListener('click', () => {
+  setMobileNavigationOpen(false);
+  updateStorageMeter();
+  renderBackupInformation();
+  settingsDialog.showModal();
+});
+document.querySelector('#settings-close').addEventListener('click', () => settingsDialog.close());
+settingsDialog.addEventListener('click', (event) => {
+  if (event.target === settingsDialog) settingsDialog.close();
+});
+settingsDialog.addEventListener('cancel', (event) => {
+  event.preventDefault();
+  settingsDialog.close();
+});
+
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && settingsDialog.open) {
+    settingsDialog.close();
+    return;
+  }
   if (event.key === 'Escape' && mobileNavigationToggle.getAttribute('aria-expanded') === 'true') {
     setMobileNavigationOpen(false);
     mobileNavigationToggle.focus();
@@ -7438,13 +7362,14 @@ rememberImageSources();
 initUiPrefs();
 initGlobalSearch();
 initPwa();
-initBackupReminder();
 renderCharacters();
 renderStories();
 renderPlaces();
 renderWorldEntries();
+renderBackupInformation();
 updateStorageMeter();
 window.addEventListener('fictiontale-storage-updated', updateStorageMeterSoon);
+window.addEventListener('storage', updateStorageMeterSoon);
 updatePreview();
 initializeDataFolder();
 if (!window.FictionTaleStorage.isAvailable()) {

@@ -1,7 +1,8 @@
 importScripts('./app-version.js');
 
 const CACHE_NAME = `fictiontales-shell-v${self.FICTION_TALE_VERSION}`;
-const APP_SHELL = [
+// Files the app cannot run offline without. If one of these is missing, installation fails on purpose.
+const CORE_FILES = [
   './',
   './index.html',
   './styles.css',
@@ -9,12 +10,42 @@ const APP_SHELL = [
   './storage.js',
   './script.js',
   './features.js',
-  './manifest.json',
 ];
 
+// Nice to have offline (icons, fonts, manifest). A missing file here is logged but never blocks installation.
+const OPTIONAL_FILES = [
+  './manifest.json',
+  './icon.svg',
+  './icon-192.png',
+  './icon-512.png',
+  './icon-maskable-512.png',
+  './fonts/eb-garamond-400-normal.woff2',
+  './fonts/eb-garamond-500-normal.woff2',
+  './fonts/eb-garamond-600-normal.woff2',
+  './fonts/eb-garamond-400-italic.woff2',
+  './fonts/eb-garamond-500-italic.woff2',
+  './fonts/karla-400-normal.woff2',
+  './fonts/karla-600-normal.woff2',
+];
+
+async function cacheAll(cache, urls) {
+  const results = await Promise.allSettled(urls.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
+  return urls.filter((url, index) => results[index].status === 'rejected');
+}
+
 self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    const missingCore = await cacheAll(cache, CORE_FILES);
+    if (missingCore.length) {
+      throw new Error(`Required files could not be cached: ${missingCore.join(', ')}`);
+    }
+    const missingOptional = await cacheAll(cache, OPTIONAL_FILES);
+    if (missingOptional.length) {
+      console.warn('Fiction Tale: these optional files were not cached (check they exist on the server):', missingOptional.join(', '));
+    }
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (event) => {
