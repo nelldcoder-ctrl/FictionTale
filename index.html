@@ -42,6 +42,9 @@
         <a class="nav-link active" href="#studio" aria-label="Character studio"><span class="nav-icon">✳</span><span class="nav-label">Studio</span></a>
         <a class="nav-link" href="#cast" aria-label="Character cards"><span class="nav-icon">▦</span><span class="nav-label">Cast</span><span class="nav-count" id="sidebar-count">0</span></a>
         <a class="nav-link" href="#lore" aria-label="Lore and story"><span class="nav-icon">✧</span><span class="nav-label">Stories</span><span class="nav-count" id="story-sidebar-count">0</span></a>
+        <a class="nav-link" href="#book-series" aria-label="Book series"><span class="nav-icon">▤</span><span class="nav-label">Series</span><span class="nav-count" id="series-sidebar-count">0</span></a>
+        <a class="nav-link" href="#project-dashboard" aria-label="Project Dashboard"><span class="nav-icon">▤</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="#dialogue-workshop" aria-label="Dialogue Workshop"><span class="nav-icon">❝</span><span class="nav-label">Dialogue</span></a>
         <a class="nav-link" href="#places" aria-label="Places"><span class="nav-icon">◈</span><span class="nav-label">Places</span><span class="nav-count" id="place-sidebar-count">0</span></a>
         <a class="nav-link" href="#world-entries" aria-label="World entries"><span class="nav-icon">✧</span><span class="nav-label">World</span><span class="nav-count" id="world-entry-sidebar-count">0</span></a>
         <a class="nav-link" href="#planning" aria-label="Story planning"><span class="nav-icon">⌘</span><span class="nav-label">Plan</span></a>
@@ -57,7 +60,7 @@
         <p class="note-copy">Make a little room for the characters who live in your head.</p>
         <button class="text-button" id="sidebar-new" type="button">Create a character <span>↗</span></button>
       </div>
-      <div class="sidebar-footer"><span class="status-dot"></span> Saved privately on this device</div>
+      <div class="sidebar-footer"><span class="status-dot"></span> Your work is stored on this device</div>
     </aside>
 
     <main class="main-content">
@@ -88,7 +91,7 @@
             <button class="landing-link about-trigger" id="about-website" type="button">TaleTutorial <span aria-hidden="true">↗</span></button>
             <button class="landing-link about-trigger" id="changelog-open" type="button">Changelog <span aria-hidden="true">↗</span></button>
           </div>
-          <p class="privacy-note"><span class="status-dot"></span> Your characters stay in this browser, on this device.</p>
+          <p class="privacy-note"><span class="status-dot"></span> Your work is stored in this browser on this device.</p>
         </div>
         <div class="intro-doodle" aria-hidden="true"><span>✳</span><i></i></div>
       </section>
@@ -413,7 +416,7 @@
 
       <section class="cast-section" id="cast">
         <div class="section-heading">
-          <div><p class="eyebrow">THE PEOPLE IN YOUR HEAD</p><h2>Character Cards <span id="cast-total">(0)</span></h2></div>
+          <div><p class="eyebrow">THE PEOPLE IN YOUR HEAD</p><h2>Cast <span id="cast-total">(0)</span></h2></div>
           <div class="cast-tools">
             <button class="button button-outline" id="compare-characters" type="button" disabled>Compare characters</button>
             <select class="cast-select hidden" id="cast-group-filter" aria-label="Filter by group"></select>
@@ -433,7 +436,7 @@
       </section>
       <section class="lore-section" id="lore" aria-labelledby="lore-title">
         <div class="section-heading lore-heading">
-          <div><p class="eyebrow">WRITE IT YOUR WAY</p><h2 id="lore-title">Lore &amp; Story <span id="lore-count">(0)</span></h2></div>
+          <div><p class="eyebrow">WRITE IT YOUR WAY</p><h2 id="lore-title">Stories <span id="lore-count">(0)</span></h2></div>
           <div class="lore-heading-actions">
             <button class="button button-primary" id="new-story" type="button"><span>＋</span> New story</button>
             <button class="button button-outline story-preview-open" id="story-preview-open" type="button">Open full preview <span aria-hidden="true">↗</span></button>
@@ -481,6 +484,162 @@
           <h3>Your stories can start anywhere.</h3>
           <p>Write a first idea or build a whole world—use as much or as little detail as you like.</p>
           <button class="button button-outline" id="story-empty-create" type="button">＋ Write your first story</button>
+        </div>
+      </section>
+      <section class="lore-section book-series-section" id="book-series" aria-labelledby="book-series-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">KEEP THE BIG PICTURE</p><h2 id="book-series-title">Book series</h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-primary" id="series-create" type="button">＋ Create a series</button>
+          </div>
+        </div>
+        <p class="lore-intro">Group books in order, keep shared characters and places together, and track events across the series.</p>
+        <div class="series-library-tools">
+          <label for="series-record-select">Edit a series
+            <select id="series-record-select"><option value="">Choose a series</option></select>
+          </label>
+          <button class="button button-outline" id="series-edit-selected" type="button" disabled>Edit series</button>
+        </div>
+        <div class="series-library" id="series-library" aria-live="polite"></div>
+        <div class="project-dashboard-empty" id="series-empty">
+          <h3>No series yet.</h3>
+          <p>Create a series, then add books to it from their story details.</p>
+          <button class="button button-outline" id="series-empty-create" type="button">＋ Create your first series</button>
+        </div>
+        <form class="series-editor hidden" id="series-editor">
+          <input id="series-id" type="hidden">
+          <div class="series-editor-heading">
+            <div><p class="eyebrow">SERIES DETAILS</p><h3 id="series-editor-title">Create a series</h3></div>
+            <button class="button button-quiet" id="series-editor-close" type="button">Close</button>
+          </div>
+          <div class="series-basic-fields">
+            <label for="series-name">Series name <span class="required">*</span>
+              <input id="series-name" type="text" maxlength="100" placeholder="e.g. The Glass Sea trilogy" required>
+            </label>
+            <label for="series-summary">About this series
+              <textarea id="series-summary" rows="2" maxlength="500" placeholder="A short note to help you remember the series’ main idea"></textarea>
+            </label>
+          </div>
+          <div class="series-link-grid">
+            <fieldset>
+              <legend>Shared characters</legend>
+              <p>Choose characters who appear across the series.</p>
+              <div id="series-characters" class="series-shared-picker"></div>
+            </fieldset>
+            <fieldset>
+              <legend>Shared places</legend>
+              <p>Choose places that appear across the series.</p>
+              <div id="series-places" class="series-shared-picker"></div>
+            </fieldset>
+          </div>
+          <section class="series-events-editor" aria-labelledby="series-events-title">
+            <div class="series-events-heading"><div><p class="eyebrow">SERIES TIMELINE</p><h4 id="series-events-title">Events across books</h4></div><p>Add events in story order to keep the shared timeline clear.</p></div>
+            <div class="series-event-fields">
+              <label for="series-event-title">Event
+                <input id="series-event-title" type="text" maxlength="120" placeholder="e.g. The first gate opens">
+              </label>
+              <label for="series-event-book">Book
+                <select id="series-event-book"><option value="">Series-wide / not assigned</option></select>
+              </label>
+              <label for="series-event-chapter">Chapter or point in time
+                <input id="series-event-chapter" type="text" maxlength="100" placeholder="e.g. Chapter 4">
+              </label>
+              <label for="series-event-description" class="series-event-description">What happens?
+                <textarea id="series-event-description" rows="2" maxlength="500" placeholder="Add a short reminder about this event"></textarea>
+              </label>
+              <button class="button button-outline" id="series-event-add" type="button">＋ Add event</button>
+            </div>
+            <ol id="series-events-list" class="series-event-list"></ol>
+            <p id="series-events-empty" class="series-empty-note">No events added yet.</p>
+          </section>
+          <div class="series-editor-actions">
+            <button class="button button-danger hidden" id="series-delete" type="button">Delete series</button>
+            <button class="button button-outline" id="series-cancel" type="button">Cancel</button>
+            <button class="button button-primary" type="submit">Save series</button>
+          </div>
+        </form>
+      </section>
+      <section class="lore-section project-dashboard-section" id="project-dashboard" aria-labelledby="project-dashboard-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">YOUR PROJECT AT A GLANCE</p><h2 id="project-dashboard-title">Project Dashboard</h2></div>
+          <div class="project-dashboard-controls">
+            <label for="project-dashboard-story">Writing project
+              <select id="project-dashboard-story"><option value="">Choose a story</option></select>
+            </label>
+            <button class="button button-outline" id="project-dashboard-open-story" type="button" disabled>Open in editor</button>
+          </div>
+        </div>
+        <div class="project-dashboard-empty" id="project-dashboard-empty">
+          <h3>No writing projects yet.</h3>
+          <p>Create or save a story to see its words, chapters, characters, progress, and unfinished tasks.</p>
+          <button class="button button-outline" id="project-dashboard-create-story" type="button">＋ Create a story</button>
+        </div>
+        <div class="project-dashboard-content hidden" id="project-dashboard-content">
+          <div class="project-dashboard-metrics">
+            <article class="project-metric"><span>Total words</span><strong id="project-dashboard-words">0</strong><small>Chapter headings excluded</small></article>
+            <article class="project-metric"><span>Chapters</span><strong id="project-dashboard-chapters">0</strong><small>Based on your chapter headings</small></article>
+            <article class="project-metric"><span>Characters</span><strong id="project-dashboard-characters">0</strong><small>Linked to this project</small></article>
+            <article class="project-metric"><span>Last edited</span><strong id="project-dashboard-edited">—</strong><small id="project-dashboard-stage">Drafting</small></article>
+          </div>
+          <section class="project-progress-panel" aria-labelledby="project-dashboard-progress-title">
+            <div class="project-progress-heading">
+              <div><p class="eyebrow">KEEP MOVING</p><h3 id="project-dashboard-progress-title">Writing progress</h3></div>
+              <label for="project-dashboard-word-goal">Project word goal
+                <input id="project-dashboard-word-goal" type="number" min="100" max="1000000" step="100" value="50000">
+              </label>
+            </div>
+            <div class="project-progress-summary"><strong id="project-dashboard-progress-label">0 of 50,000 words</strong><span id="project-dashboard-progress-percent">0%</span></div>
+            <div class="project-progress-track" id="project-dashboard-progress" role="progressbar" aria-label="Project writing progress" aria-valuemin="0" aria-valuemax="50000" aria-valuenow="0">
+              <span id="project-dashboard-progress-fill"></span>
+            </div>
+          </section>
+          <section class="project-tasks-panel" aria-labelledby="project-dashboard-tasks-title">
+            <div class="project-tasks-heading"><div><p class="eyebrow">NEXT SMALL STEPS</p><h3 id="project-dashboard-tasks-title">Unfinished tasks</h3></div><span id="project-dashboard-task-count">0</span></div>
+            <ul id="project-dashboard-tasks" class="project-task-list"></ul>
+            <p class="project-tasks-empty hidden" id="project-dashboard-tasks-empty">No unfinished tasks for this project.</p>
+          </section>
+        </div>
+      </section>
+      <section class="lore-section dialogue-workshop-section" id="dialogue-workshop" aria-labelledby="dialogue-workshop-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">LET YOUR CHARACTERS SPEAK</p><h2 id="dialogue-workshop-title">Dialogue Workshop</h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-outline" id="dialogue-new" type="button">＋ New conversation</button>
+          </div>
+        </div>
+        <p class="lore-intro">Draft a conversation on its own, then add it to a story whenever it is ready.</p>
+        <div class="dialogue-workshop-layout">
+          <form class="dialogue-editor-panel" id="dialogue-workshop-form">
+            <input id="dialogue-draft-id" type="hidden">
+            <label class="dialogue-field" for="dialogue-title">Conversation title
+              <input id="dialogue-title" type="text" maxlength="100" placeholder="e.g. The truth at the station" required>
+            </label>
+            <fieldset class="dialogue-participants">
+              <legend>Participating characters <span>Optional</span></legend>
+              <div class="dialogue-character-list" id="dialogue-character-list"></div>
+            </fieldset>
+            <label class="dialogue-field" for="dialogue-context">Emotional context <span>Optional</span>
+              <textarea id="dialogue-context" maxlength="700" rows="3" placeholder="What are they feeling, hiding, or hoping for?"></textarea>
+            </label>
+            <label class="dialogue-field" for="dialogue-text">Dialogue
+              <textarea id="dialogue-text" maxlength="15000" rows="12" placeholder="Write the conversation here. Add speaker names and stage directions as you like." required></textarea>
+            </label>
+            <div class="dialogue-save-status" id="dialogue-save-status" role="status" aria-live="polite">A new conversation is ready.</div>
+            <div class="dialogue-workshop-actions">
+              <button class="button button-outline" id="dialogue-save-draft" type="button">Save draft</button>
+              <label class="dialogue-story-select" for="dialogue-story">
+                Add to story
+                <select id="dialogue-story"><option value="">Choose a story</option></select>
+              </label>
+              <button class="button button-primary" id="dialogue-add-to-story" type="button" disabled>Add conversation</button>
+            </div>
+            <button class="button button-quiet dialogue-create-story hidden" id="dialogue-create-story" type="button">Create a story first</button>
+          </form>
+          <aside class="dialogue-drafts-panel" aria-labelledby="dialogue-drafts-title">
+            <div class="dialogue-drafts-heading"><h3 id="dialogue-drafts-title">Saved conversations</h3><span id="dialogue-draft-count">0</span></div>
+            <div class="dialogue-draft-list" id="dialogue-draft-list" aria-live="polite"></div>
+            <p class="dialogue-drafts-empty" id="dialogue-drafts-empty">Your saved conversations will appear here.</p>
+          </aside>
         </div>
       </section>
       <section class="lore-section places-section" id="places" aria-labelledby="places-title">
@@ -775,6 +934,130 @@
             </div>
             <button class="button button-quiet" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false">☾ <span>Dark mode</span></button>
           </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-editor-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-editor-heading">Editor Preferences</h2>
+              <p>Set the defaults for new stories and your writing space. Existing stories keep their saved appearance.</p>
+            </div>
+            <div class="settings-editor-fields">
+              <label for="settings-default-font">Default font
+                <select id="settings-default-font" aria-label="Default writing font"></select>
+              </label>
+              <label for="settings-font-size">Font size
+                <select id="settings-font-size" aria-label="Writing font size">
+                  <option value="16">16 px</option>
+                  <option value="18">18 px</option>
+                  <option value="19" selected>19 px</option>
+                  <option value="20">20 px</option>
+                  <option value="22">22 px</option>
+                  <option value="24">24 px</option>
+                </select>
+              </label>
+              <label for="settings-line-spacing">Line spacing
+                <select id="settings-line-spacing" aria-label="Writing line spacing">
+                  <option value="1.4">Compact</option>
+                  <option value="1.6">Comfortable</option>
+                  <option value="1.75" selected>Relaxed</option>
+                  <option value="2">Double</option>
+                </select>
+              </label>
+              <label for="settings-editor-width">Editor width
+                <select id="settings-editor-width" aria-label="Writing editor width">
+                  <option value="640px">Narrow</option>
+                  <option value="800px">Standard</option>
+                  <option value="1000px">Wide</option>
+                  <option value="100%" selected>Full width</option>
+                </select>
+              </label>
+              <label for="settings-writing-goal">Default writing goal
+                <span class="settings-goal-input"><input id="settings-writing-goal" type="number" min="50" max="20000" step="50" value="500" aria-label="Default daily writing goal in words"><span>words / day</span></span>
+              </label>
+            </div>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-writing-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-writing-heading">Writing Preferences</h2>
+              <p>Set defaults for new stories and chapter headings, choose the live word-count display, and set the reading background for new stories.</p>
+            </div>
+            <div class="settings-editor-fields">
+              <label for="settings-story-type">Default story type
+                <select id="settings-story-type" aria-label="Default story type">
+                  <option value="story" selected>Story</option>
+                  <option value="scene">Scene</option>
+                  <option value="world">World note</option>
+                  <option value="lore">Lore entry</option>
+                </select>
+              </label>
+              <label for="settings-chapter-format">Default chapter format
+                <select id="settings-chapter-format" aria-label="Default chapter heading format">
+                  <option value="markdown-h2" selected>## Chapter 1 · Standard</option>
+                  <option value="markdown-h1"># Chapter 1 · Large heading</option>
+                  <option value="plain">Chapter 1 · Plain text</option>
+                </select>
+              </label>
+              <label for="settings-word-count">Word count preferences
+                <select id="settings-word-count" aria-label="Story editor word count display">
+                  <option value="words-characters" selected>Words and characters</option>
+                  <option value="words">Words only</option>
+                  <option value="words-reading-time">Words and reading time</option>
+                  <option value="all">Words, characters, and reading time</option>
+                </select>
+              </label>
+              <label for="settings-reading-appearance">Default reading appearance
+                <select id="settings-reading-appearance" aria-label="Default story reading appearance">
+                  <option value="#fbfdff" selected>Cool paper</option>
+                  <option value="#fbf5e8">Warm paper</option>
+                  <option value="#18243a">Night</option>
+                </select>
+              </label>
+            </div>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-accessibility-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-accessibility-heading">Accessibility</h2>
+              <p>Adjust motion, contrast, and interface text size to suit your needs.</p>
+            </div>
+            <div class="settings-accessibility-options">
+              <label class="settings-accessibility-option" for="settings-reduced-motion">
+                <input id="settings-reduced-motion" type="checkbox">
+                <span><strong>Reduced motion</strong><small>Limit animation and smooth scrolling.</small></span>
+              </label>
+              <label class="settings-accessibility-option" for="settings-high-contrast">
+                <input id="settings-high-contrast" type="checkbox">
+                <span><strong>Higher contrast</strong><small>Strengthen text, borders, and focus outlines.</small></span>
+              </label>
+              <label class="settings-accessibility-option" for="settings-large-text">
+                <input id="settings-large-text" type="checkbox">
+                <span><strong>Larger interface text</strong><small>Scale up the interface for easier reading.</small></span>
+              </label>
+            </div>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-about-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-about-heading">About Fiction Tale</h2>
+              <p>Explore information and resources about the application.</p>
+            </div>
+            <div class="settings-about-options" role="group" aria-label="About Fiction Tale">
+              <button class="button button-quiet" type="button" data-about-placeholder="version" aria-controls="settings-about-version" aria-expanded="false">Application version</button>
+              <button class="button button-quiet" type="button" data-about-placeholder="changelog" aria-controls="settings-about-changelog" aria-expanded="false">Changelog</button>
+              <button class="button button-quiet" type="button" data-about-placeholder="tutorial" aria-controls="settings-about-tutorial" aria-expanded="false">Tutorial</button>
+              <button class="button button-quiet" type="button" data-about-placeholder="credits" aria-controls="settings-about-credits" aria-expanded="false">Credits</button>
+            </div>
+            <div class="settings-about-content" aria-live="polite">
+              <p class="hidden" id="settings-about-version">Application version information will appear here.</p>
+              <p class="hidden" id="settings-about-changelog">Changelog information will appear here.</p>
+              <p class="hidden" id="settings-about-tutorial">Tutorial information will appear here.</p>
+              <p class="hidden" id="settings-about-credits">Credits information will appear here.</p>
+            </div>
+          </section>
+          <section class="settings-group settings-data-group" aria-labelledby="settings-deleted-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-deleted-heading">Recently Deleted</h2>
+              <p>Restore deleted characters, stories, places, and world entries, or permanently remove them from this device.</p>
+            </div>
+            <div class="recently-deleted-list" id="recently-deleted-list" aria-live="polite"></div>
+            <p class="recently-deleted-empty" id="recently-deleted-empty">Nothing has been deleted recently.</p>
+          </section>
           <section class="settings-group settings-data-group" aria-labelledby="settings-data-heading">
             <div class="settings-group-copy">
               <h2 id="settings-data-heading">Data &amp; Storage</h2>
@@ -810,7 +1093,7 @@
     <div class="confirm-dialog-content">
       <span class="confirm-dialog-icon" aria-hidden="true">!</span>
       <h2 id="reset-dialog-title">Reset all Fiction Tale content?</h2>
-      <p id="reset-dialog-message">This permanently removes all characters, stories, places, world entries, drafts, version history, and saved preferences from this browser, along with the connected Fiction Tale backup file. Export a backup first if you may want this content later.</p>
+      <p id="reset-dialog-message">This permanently removes all characters, stories, dialogue drafts, places, world entries, drafts, version history, and saved preferences from this browser, along with the connected Fiction Tale backup file. Export a backup first if you may want this content later.</p>
       <div class="confirm-dialog-actions">
         <button class="button button-quiet" id="cancel-reset" type="button">Keep my content</button>
         <button class="button button-danger" id="confirm-reset" type="button">Erase all content</button>
@@ -830,6 +1113,40 @@
           <h1 id="story-editor-title">Write a story</h1>
           <p>Start anywhere. Add a title and write whatever you like—ideas, scenes, or a complete story.</p>
         </div>
+        <section class="story-template-panel" id="story-template-panel" aria-labelledby="story-template-heading">
+          <div class="story-template-controls">
+            <label for="story-template-select" id="story-template-heading">Start with a story template
+              <select id="story-template-select">
+                <option value="">Choose a template</option>
+                <option value="fantasy">Fantasy</option>
+                <option value="mystery">Mystery</option>
+                <option value="adventure">Adventure</option>
+                <option value="romance">Romance</option>
+                <option value="science-fiction">Science fiction</option>
+                <option value="general-fiction">General fiction</option>
+              </select>
+            </label>
+            <button class="button button-outline" id="story-template-apply" type="button" disabled>Apply template</button>
+          </div>
+          <p class="story-template-notice">Applying a template replaces the story text, but keeps your title and story details.</p>
+          <div class="story-template-preview hidden" id="story-template-preview" aria-live="polite">
+            <p id="story-template-description"></p>
+            <div class="story-template-preview-grid">
+              <section>
+                <h2>Character prompts</h2>
+                <ul id="story-template-characters"></ul>
+              </section>
+              <section>
+                <h2>Story structure</h2>
+                <ol id="story-template-structure"></ol>
+              </section>
+              <section class="story-template-chapters">
+                <h2>Chapter outline</h2>
+                <ol id="story-template-chapters"></ol>
+              </section>
+            </div>
+          </div>
+        </section>
         <label class="story-title-label" for="story-title">Story title</label>
         <input class="story-title-input" id="story-title" name="title" type="text" maxlength="100" placeholder="Give your story a name" required>
         <label class="story-text-label" for="story-text">Your story</label>
@@ -924,6 +1241,16 @@
                 <option value="drafting">Drafting</option>
                 <option value="finished">Finished</option>
               </select>
+            </label>
+            <label for="story-series">Series
+              <select id="story-series" name="seriesId"><option value="">Not in a series</option></select>
+            </label>
+            <label for="story-series-order">Book number
+              <input class="story-meta-input" id="story-series-order" name="seriesOrder" type="number" min="1" max="1000" step="1" value="1" aria-describedby="story-series-order-hint">
+              <small id="story-series-order-hint" class="series-book-hint">Set the book’s position in the series.</small>
+            </label>
+            <label for="story-word-goal">Project word goal
+              <input class="story-meta-input" id="story-word-goal" name="wordGoal" type="number" min="100" max="1000000" step="100" value="50000">
             </label>
             <div class="story-wide-field">
               <label for="story-summary">One-line summary</label>
@@ -1045,63 +1372,71 @@
         <header class="about-hero">
           <p class="eyebrow"><span class="eyebrow-line"></span> YOUR WRITING WORKSPACE</p>
           <h1 id="about-title">Welcome to <em>TaleTutorial.</em></h1>
-          <p>Choose the quick tour or explore each tool in detail. Your work is saved in this browser on this device.</p>
+          <p>Choose a quick start or a guide to each area. Your work is saved in this browser on this device.</p>
         </header>
         <div class="about-guide-content">
-          <div class="tutorial-choices" id="tutorial-choices" aria-label="Choose a tutorial">
+          <div class="tutorial-choices" id="tutorial-choices" aria-label="Choose a guide">
             <button class="tutorial-choice-card" id="simple-tutorial-open" type="button" aria-controls="simple-tutorial-panel">
               <span class="tutorial-choice-icon" aria-hidden="true">✦</span>
-              <span class="tutorial-choice-title">Simple tutorial <span aria-hidden="true">→</span></span>
-              <span class="tutorial-choice-copy">A quick start: create, write, and keep your work safe.</span>
+              <span class="tutorial-choice-title">Quick start <span aria-hidden="true">→</span></span>
+              <span class="tutorial-choice-copy">Create a character, start a story, and back up your work.</span>
             </button>
             <button class="tutorial-choice-card" id="detailed-tutorial-open" type="button" aria-controls="detailed-tutorial-panel">
               <span class="tutorial-choice-icon" aria-hidden="true">✧</span>
-              <span class="tutorial-choice-title">Detail tutorial <span aria-hidden="true">→</span></span>
-              <span class="tutorial-choice-copy">A guided tour of character tools, stories, planning, and exports.</span>
+              <span class="tutorial-choice-title">Detailed guide <span aria-hidden="true">→</span></span>
+              <span class="tutorial-choice-copy">Learn how to use characters, stories, planning, and backups.</span>
             </button>
           </div>
           <section class="tutorial-panel hidden" id="simple-tutorial-panel" aria-labelledby="simple-tutorial-title" tabindex="-1">
-            <button class="tutorial-back button button-quiet" type="button">← Tutorial choices</button>
-            <h2 id="simple-tutorial-title">Simple tutorial</h2>
+            <button class="tutorial-back button button-quiet" type="button">← All guides</button>
+            <h2 id="simple-tutorial-title">Quick start</h2>
             <ol class="tutorial-steps">
-              <li><strong>Create a character.</strong> Choose <strong>New character</strong>, add a name, then save. The profile and preview grow with your ideas.</li>
-              <li><strong>Start writing.</strong> Open <strong>Stories</strong>, choose <strong>New story</strong>, and begin. Drafts autosave on this device.</li>
-              <li><strong>Build your world.</strong> Add a place or a World Entry such as a faction, artifact, magic system, species, language, religion, or glossary term.</li>
-              <li><strong>Find things quickly.</strong> Use the search at the top to find characters, stories, places, and world entries. Switch themes in Settings under Appearance.</li>
-              <li><strong>Keep a backup.</strong> Open Settings → Data &amp; Storage to export a full backup or import one. Export stories as Markdown, text, Word, or EPUB; print to PDF or save a character-sheet image when you want a shareable copy.</li>
+              <li><strong>Create a character.</strong> In Studio, choose <strong>New character</strong>, add a name, and save. Add more details whenever you’re ready.</li>
+              <li><strong>Start writing.</strong> Open <strong>Stories</strong>, choose <strong>New story</strong>, and start typing. Your draft saves automatically on this device.</li>
+              <li><strong>Build your world.</strong> Add locations in <strong>Places</strong>. Use <strong>World</strong> for groups, artifacts, magic systems, species, languages, religions, and glossary terms.</li>
+              <li><strong>Find things quickly.</strong> Use the search at the top to find characters, stories, places, and world entries. Change the app’s appearance in <strong>Settings → Appearance</strong>.</li>
+              <li><strong>Back up your work.</strong> In <strong>Settings → Data &amp; Storage</strong>, export a full backup or import one. You can also export stories as Markdown, plain text, Word, or EPUB, and print profiles or story previews to PDF.</li>
             </ol>
-            <p class="tutorial-privacy-note">Your work stays in this browser unless you export it or connect a backup folder. Browser data can be cleared, so keep a separate backup.</p>
+            <p class="tutorial-privacy-note">Your work is stored in this browser, not in the cloud. It can be lost if browser data is cleared, so export a backup and keep a copy somewhere safe.</p>
           </section>
           <section class="tutorial-panel hidden" id="detailed-tutorial-panel" aria-labelledby="detailed-tutorial-title" tabindex="-1">
-            <button class="tutorial-back button button-quiet" type="button">← Tutorial choices</button>
-            <h2 id="detailed-tutorial-title">Detail tutorial</h2>
+            <button class="tutorial-back button button-quiet" type="button">← All guides</button>
+            <h2 id="detailed-tutorial-title">Detailed guide</h2>
             <section class="about-guide-step">
               <span class="creation-step-number">01</span>
-              <div><h3>Characters that grow</h3><p>Create a profile, then explore the questionnaire, dialogue samples, and completeness suggestions. In <strong>Character arc &amp; snapshots</strong>, record the starting belief, turning point, truth learned, and chapter-by-chapter appearance, knowledge, and trust. Connections can have a type, status, history, and status changes over time. Compare two characters side by side from Character Cards.</p></div>
+              <div><h3>Create characters</h3><p>Start with a name, then add personality, background, and other details. Optional sections include a character questionnaire, dialogue samples, goals, fears, and an arc. Use <strong>Character arc &amp; snapshots</strong> to track how a character changes. Add connections to describe how characters relate, or compare two characters in <strong>Cast</strong>.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">02</span>
-              <div><h3>Stories and continuity</h3><p>Open a story to draft, organize chapters, assign characters and places, and use <strong>@Name</strong> mentions to link characters. Character profiles show their story appearances. Add a place to a chapter to check continuity against character locations, absences, and deaths; record what a character knows in timeline events. Use <strong>Quick peek</strong> to look up characters, places, and world entries without leaving the editor.</p></div>
+              <div><h3>Write stories</h3><p>Create a story from scratch or start with a template. Organize it into chapters, link characters and places, and type <strong>@</strong> to mention a character. Add a place to a chapter to check whether characters are present or available there. Use <strong>Quick peek</strong> to look up characters, places, and world entries without leaving the editor.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">03</span>
-              <div><h3>Writing flow and planning</h3><p>Set a daily word goal and track your streak. <strong>Focus mode</strong> hides distractions; chapter stats show pacing and reading time. Keep story notes and to-dos, and link planning scene cards to story chapters. The <strong>Plan</strong> area also includes relationship maps, a shared chronology, prompts, and outline tools.</p></div>
+              <div><h3>Organize a book series</h3><p>Create a series, then open each book’s details and choose that series and book number. Add shared characters and places, and record important events on the series timeline. Series data is included in full backups.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">04</span>
-              <div><h3>Places and worldbuilding</h3><p>Use <strong>Places</strong> for settings, then use <strong>World</strong> for factions, artifacts, magic or technology systems, species, languages, religions, and glossary entries. Add tags to organize characters, stories, places, and world entries, then search across the whole workspace.</p></div>
+              <div><h3>Plan and track your writing</h3><p>Use the <strong>Dashboard</strong> to see a story’s word count, chapters, linked characters, progress, and unfinished tasks. In the editor, set a daily word goal, use <strong>Focus mode</strong>, and add notes or tasks. The <strong>Plan</strong> area includes outlines, timelines, relationship maps, and prompts.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">05</span>
-              <div><h3>Save, export, and share</h3><p>Full-data backups contain your library and planning data; export or import them as JSON or YAML from Settings under Data &amp; Storage. The story export menu offers Markdown, plain text, Word (.docx), and EPUB. Print profiles or story previews to PDF, or export a text-based character-sheet image. Choose a backup folder for an additional local copy.</p></div>
+              <div><h3>Build your world</h3><p>Use <strong>Places</strong> to describe locations. Use <strong>World</strong> for factions, artifacts, magic or technology systems, species, languages, religions, and glossary entries. Add tags to organize your work, then search across the workspace.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">06</span>
-              <div><h3>Theme, install, and offline use</h3><p>Switch between light and dark themes in Settings under Appearance. When served from localhost or HTTPS, Fiction Tale can be installed and caches its app shell for offline access. Large images, drafts, and version history are stored in IndexedDB to reduce localStorage pressure. External fonts may fall back while offline; your writing remains stored locally in the browser.</p></div>
+              <div><h3>Save and back up your work</h3><p>Your work is saved in this browser on this device. In <strong>Settings → Data &amp; Storage</strong>, export a full backup or restore one. Export stories as Markdown, plain text, Word, or EPUB. You can also print profiles and story previews to PDF, or save a character sheet as an image. A backup folder can keep an extra copy on your device.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">07</span>
+              <div><h3>Appearance and offline use</h3><p>Choose a light or dark theme in <strong>Settings → Appearance</strong>. When opened from a secure website or a local server, Fiction Tale can be installed and used offline. Your writing stays in this browser, even when you’re offline. Some optional fonts may not load without an internet connection.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">08</span>
+              <div><h3>Draft conversations</h3><p>Use <strong>Dialogue</strong> to write a conversation separately from your story. Choose participating characters, add emotional context, then add the conversation to a story when it’s ready.</p></div>
             </section>
             <aside class="about-note">
               <span class="status-dot" aria-hidden="true"></span>
-              <p><strong>Protect your work:</strong> browser storage is local, not cloud backup. Export a full backup from Settings occasionally and keep it somewhere separate from this browser.</p>
+              <p><strong>Keep your work safe:</strong> your writing is not backed up online. Export a full backup regularly and keep a copy somewhere separate from this browser.</p>
             </aside>
           </section>
         </div>
