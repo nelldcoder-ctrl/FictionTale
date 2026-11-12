@@ -4,7 +4,6 @@ const LEGACY_STORAGE_PREFIX = 'fable.';
 const PROJECTS_STORAGE_KEY = 'FictionTales.projects.v1';
 const ACTIVE_PROJECT_STORAGE_KEY = 'FictionTales.active-project.v1';
 const PROJECT_COVER_STORAGE_KEY = 'FictionTales.project-cover.v1';
-const PROJECT_DASHBOARD_START_KEY = 'FictionTales.project-dashboard-start';
 const PROJECT_DATA_STORAGE_KEYS = new Set([
   'FictionTales.characters.v1',
   'FictionTales.draft.v1',
@@ -34,6 +33,19 @@ let projectTouchTimer = 0;
 let projectNavigationPending = false;
 let pendingProjectDeleteId = '';
 let pendingProjectDeleteFocus = null;
+
+function shouldReduceMotion() {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    || document.documentElement.classList.contains('accessibility-reduced-motion');
+}
+
+function getMotionScrollBehavior() {
+  return shouldReduceMotion() ? 'auto' : 'smooth';
+}
+
+function getMotionDelay(milliseconds) {
+  return shouldReduceMotion() ? 0 : milliseconds;
+}
 
 function projectStorageKey(projectId, key) {
   const canonicalKey = key.startsWith(LEGACY_STORAGE_PREFIX)
@@ -638,8 +650,7 @@ function renderStoryMarkdown(container, rawText) {
       button.type = 'button';
       button.textContent = title;
       button.addEventListener('click', () => {
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        element.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+        element.scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'start' });
       });
       li.append(button);
       ol.append(li);
@@ -1477,7 +1488,7 @@ function useCharacterPrompt() {
   const section = field.closest('details');
   if (section) section.open = true;
   field.placeholder = currentCharacterPrompt.text;
-  field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  field.scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'center' });
   field.focus({ preventScroll: true });
 }
 
@@ -2213,7 +2224,7 @@ function renderPlaceCharacterPicker(selectedIds = []) {
   if (!characters.length) {
     const hint = document.createElement('p');
     hint.className = 'story-picker-empty';
-    hint.textContent = 'No characters yet. Create one in the Character Studio and they will appear here.';
+    hint.textContent = 'No characters yet. Create one in Characters and they will appear here.';
     picker.append(hint);
     return;
   }
@@ -2318,7 +2329,7 @@ function closePlaceNow() {
   const dialog = document.querySelector('#place-dialog');
   if (!dialog.open || dialog.classList.contains('is-closing')) return;
   dialog.classList.add('is-closing');
-  const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 400;
+  const delay = getMotionDelay(400);
   placeCloseTimer = window.setTimeout(() => {
     dialog.close();
     placeCloseTimer = null;
@@ -2993,7 +3004,7 @@ function updateProfileMeter(profile) {
     button.addEventListener('click', () => {
       if (sectionId) document.getElementById(sectionId).open = true;
       const field = document.querySelector(selector);
-      field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      field?.scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'center' });
       field?.focus({ preventScroll: true });
     });
     const detail = document.createElement('span');
@@ -4078,15 +4089,15 @@ function renderStoryNotesAndTodos(story = {}) {
   document.querySelector('#story-todo-count').textContent = `${remaining} task${remaining === 1 ? '' : 's'} left`;
 }
 
-function openCharacterStudioFromStory() {
+function openCharacterEditorFromStory() {
   storyToResumeAfterCharacterCreate = activeStoryId;
   handleStoryEditorInput();
   document.querySelector('#story-dialog').close();
   window.setTimeout(() => {
-    const studio = document.querySelector('#studio');
-    setActiveNavigation('studio');
-    studio.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-    document.querySelector('#studio-new-character').click();
+    const characters = document.querySelector('#characters');
+    setActiveNavigation('characters');
+    characters.scrollIntoView({ behavior: getMotionScrollBehavior() });
+    document.querySelector('#character-new-button').click();
   }, 0);
 }
 
@@ -4101,7 +4112,7 @@ function renderStoryCharacterPicker(selectedIds = []) {
     create.className = 'button button-outline story-picker-create';
     create.type = 'button';
     create.textContent = '＋ Create a character';
-    create.addEventListener('click', openCharacterStudioFromStory);
+    create.addEventListener('click', openCharacterEditorFromStory);
     picker.append(hint, create);
     return;
   }
@@ -4477,7 +4488,7 @@ function renderDialogueCharacters(selectedIds = []) {
   if (!characters.length) {
     const empty = document.createElement('p');
     empty.className = 'dialogue-empty-hint';
-    empty.textContent = 'Create characters in the Character Studio to add participants.';
+    empty.textContent = 'Add characters in Characters to include them here.';
     list.append(empty);
     return;
   }
@@ -5151,7 +5162,7 @@ function openStoryWorkflowStep(story, step, returnFocus) {
     document.querySelector('[data-planning-tab="timeline"]').click();
     const planning = document.querySelector('#planning');
     setActiveNavigation('planning');
-    planning.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    planning.scrollIntoView({ behavior: getMotionScrollBehavior() });
     const storySelect = document.querySelector('#world-event-story');
     if ([...storySelect.options].some((option) => option.value === story.id)) storySelect.value = story.id;
     document.querySelector('#world-event-form details').open = true;
@@ -5193,7 +5204,7 @@ function openStoryWorkflowStep(story, step, returnFocus) {
   }
   if (target) {
     requestAnimationFrame(() => {
-      target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      target.scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'center' });
       target.focus?.({ preventScroll: true });
     });
   }
@@ -6877,7 +6888,8 @@ function loadCharacter(id) {
   renderCharacterQuestionnaireEditor();
   renderRelationEditors();
   updatePreview();
-  document.querySelector('#studio').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelector('#characters').scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'start' });
+  setActiveNavigation('characters');
 }
 
 function resetForm() {
@@ -6907,8 +6919,13 @@ function resetForm() {
   characterFormHasChanges = false;
   document.querySelector('#autosave-status').textContent = 'Draft autosaves here';
   updatePreview();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-  document.querySelector('#name').focus({ preventScroll: true });
+  const nameInput = document.querySelector('#name');
+  setActiveNavigation('characters');
+  nameInput.focus({ preventScroll: true });
+  const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+  document.documentElement.style.scrollBehavior = 'auto';
+  nameInput.scrollIntoView({ behavior: 'auto', block: 'center' });
+  document.documentElement.style.scrollBehavior = previousScrollBehavior;
 }
 
 function showToast(message) {
@@ -6945,7 +6962,7 @@ function updateBackToTopVisibility() {
 }
 
 document.querySelector('#back-to-top').addEventListener('click', () => {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: getMotionScrollBehavior() });
 });
 window.addEventListener('scroll', updateBackToTopVisibility, { passive: true });
 
@@ -7368,7 +7385,7 @@ function requestProfileClose(afterClose = null) {
   if (!characterDialog.open || characterDialog.classList.contains('is-closing')) return;
   profileAfterClose = typeof afterClose === 'function' ? afterClose : null;
   characterDialog.classList.add('is-closing');
-  const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 400;
+  const delay = getMotionDelay(400);
   profileCloseTimer = window.setTimeout(() => {
     characterDialog.close();
     profileCloseTimer = null;
@@ -7405,7 +7422,7 @@ document.querySelector('#profile-edit').addEventListener('click', () => {
   if (!id) return;
   requestProfileClose(() => loadCharacter(id));
 });
-document.querySelector('#studio-preview-open').addEventListener('click', (event) => {
+document.querySelector('#character-preview-open').addEventListener('click', (event) => {
   openCharacterProfile(currentProfile(), event.currentTarget, true);
 });
 document.querySelector('#compare-characters').addEventListener('click', (event) => {
@@ -7470,7 +7487,7 @@ document.querySelector('#landing-version').textContent = `Version ${window.FICTI
 function requestChangelogClose() {
   if (!changelogDialog.open || changelogDialog.classList.contains('is-closing')) return;
   changelogDialog.classList.add('is-closing');
-  const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 400;
+  const delay = getMotionDelay(400);
   changelogCloseTimer = window.setTimeout(() => {
     changelogDialog.close();
     changelogCloseTimer = null;
@@ -7545,7 +7562,7 @@ document.querySelectorAll('.tutorial-back').forEach((button) => {
 function requestAboutClose() {
   if (!aboutDialog.open || aboutDialog.classList.contains('is-closing')) return;
   aboutDialog.classList.add('is-closing');
-  const delay = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 400;
+  const delay = getMotionDelay(400);
   aboutCloseTimer = window.setTimeout(() => {
     aboutDialog.close();
     aboutCloseTimer = null;
@@ -7646,7 +7663,7 @@ form.addEventListener('submit', (event) => {
     const dashboard = document.querySelector('#project-dashboard');
     const returnFocus = document.querySelector('#project-workflow-list [data-story-workflow-step="characters"]');
     setActiveNavigation('project-dashboard');
-    dashboard.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    dashboard.scrollIntoView({ behavior: getMotionScrollBehavior() });
     openStoryWorkflowStep(storyToResume, 'characters', returnFocus || document.querySelector('#project-dashboard-open-story'));
   } else {
     showToast(`${profile.name} is saved to your cast.`);
@@ -9275,7 +9292,7 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
 });
 
 document.querySelector('#search-characters').addEventListener('input', debounce(renderCharacters, 140));
-['sidebar-new', 'empty-create', 'studio-new-character'].forEach((id) => document.getElementById(id).addEventListener('click', (event) => requestNewCharacter(event.currentTarget)));
+['empty-create', 'character-new-button'].forEach((id) => document.getElementById(id).addEventListener('click', (event) => requestNewCharacter(event.currentTarget)));
 document.querySelector('#duplicate-character').addEventListener('click', duplicateCharacter);
 document.querySelector('#bond-add').addEventListener('click', addBondFromEditor);
 document.querySelector('#bond-label').addEventListener('keydown', (event) => {
@@ -9832,8 +9849,8 @@ function createProjectCard(project, archived = false) {
   openButton.type = 'button';
   openButton.dataset.projectAction = 'open';
   openButton.dataset.projectId = project.id;
-  openButton.textContent = 'Open Studio';
-  openButton.setAttribute('aria-label', `Open ${project.name} in Studio`);
+  openButton.textContent = 'Open workspace';
+  openButton.setAttribute('aria-label', `Open ${project.name} workspace`);
   const archiveButton = document.createElement('button');
   archiveButton.className = 'project-card-archive';
   archiveButton.type = 'button';
@@ -9916,6 +9933,10 @@ function renderProjectLibrary() {
   const currentProject = projects.find((project) => project.id === activeProjectId);
   document.querySelector('#active-project-label').textContent = currentProject?.name || 'YOUR PROJECT';
   document.querySelector('#project-breadcrumb-name').textContent = currentProject?.name || 'YOUR PROJECT';
+  document.querySelector('#workspace-project-title').textContent = currentProject?.name || 'Your project';
+  document.querySelector('#workspace-project-meta').textContent = currentProject
+    ? [currentProject.genre, ...currentProject.tags].filter(Boolean).join(' · ') || 'No genre or tags set yet'
+    : '';
 }
 
 function toggleProjectCreateForm(isOpen) {
@@ -9931,7 +9952,7 @@ function openProjectLibrary() {
   document.body.classList.remove('workspace-active');
   document.body.classList.add('project-library-active');
   document.querySelector('.project-library-page').scrollTo({ top: 0 });
-  window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  window.scrollTo({ top: 0, behavior: getMotionScrollBehavior() });
   setMobileNavigationOpen(false);
   renderProjectLibrary();
 }
@@ -9940,30 +9961,18 @@ function openLandingPage() {
   flushPendingDrafts();
   if (location.hash !== '#landing-page') window.history.pushState(null, '', '#landing-page');
   document.body.classList.remove('workspace-active', 'project-library-active');
-  window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  window.scrollTo({ top: 0, behavior: getMotionScrollBehavior() });
 }
 
-function markProjectDashboardStart() {
-  try {
-    sessionStorage.setItem(PROJECT_DASHBOARD_START_KEY, '1');
-  } catch (error) {
-    console.warn('Could not save the project start location for this session.', error);
-  }
-}
-
-function openProjectDashboardStartIfRequested() {
-  try {
-    if (sessionStorage.getItem(PROJECT_DASHBOARD_START_KEY) !== '1') return;
-    sessionStorage.removeItem(PROJECT_DASHBOARD_START_KEY);
-  } catch (error) {
-    console.warn('Could not restore the project start location for this session.', error);
-    return;
-  }
+function openProjectOverviewOnEntry() {
+  if (location.hash !== '#studio') return;
   requestAnimationFrame(() => {
-    document.querySelector('#project-dashboard').scrollIntoView({
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-    });
-    setActiveNavigation('project-dashboard');
+    const overview = document.querySelector('#project-dashboard');
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior;
+    document.documentElement.style.scrollBehavior = 'auto';
+    overview.scrollIntoView({ behavior: 'auto', block: 'start' });
+    document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    setActiveNavigation(overview.id);
   });
 }
 
@@ -9988,7 +9997,6 @@ function openProject(projectId) {
   projects = nextProjects;
   activeProjectId = project.id;
   projectNavigationPending = true;
-  markProjectDashboardStart();
   window.history.pushState(null, '', '#studio');
   window.location.reload();
 }
@@ -10132,8 +10140,16 @@ function syncEntryRoute() {
   }
 }
 
-const navLinks = [...document.querySelectorAll('.nav-link[href]')];
-const navSections = ['studio', 'cast', 'lore', 'book-series', 'project-dashboard', 'dialogue-workshop', 'places', 'world-entries', 'planning'].map((id) => document.getElementById(id));
+const navLinks = [...document.querySelectorAll('.nav-link[href], .nav-sublink[href], .project-navigation-link[href]')];
+const mainContent = document.querySelector('.main-content');
+let sectionInsertionPoint = document.querySelector('.project-workspace-header');
+const navSections = [...document.querySelectorAll('#main-navigation a[href]')]
+  .map((link) => document.querySelector(link.getAttribute('href')))
+  .filter((section) => section?.parentElement === mainContent);
+navSections.forEach((section) => {
+  sectionInsertionPoint.after(section);
+  sectionInsertionPoint = section;
+});
 const sidebar = document.querySelector('.sidebar');
 const mobileNavigationToggle = document.querySelector('#mobile-nav-toggle');
 const settingsDialog = document.querySelector('#settings-dialog');
@@ -10200,7 +10216,6 @@ document.querySelector('#project-create-panel').addEventListener('submit', (even
   }
   activeProjectId = project.id;
   projectNavigationPending = true;
-  markProjectDashboardStart();
   window.history.pushState(null, '', '#studio');
   window.location.reload();
 });
@@ -10468,11 +10483,19 @@ document.addEventListener('click', (event) => {
 });
 
 function setActiveNavigation(sectionId) {
+  const mainNavigationSectionId = sectionId === 'cast' ? 'characters' : sectionId;
   navLinks.forEach((link) => {
-    const isActive = link.getAttribute('href') === `#${sectionId}`;
+    const isActive = link.getAttribute('href') === `#${sectionId}`
+      || (link.getAttribute('href') === `#${mainNavigationSectionId}`
+        && !(sectionId === 'cast' && link.classList.contains('nav-sublink')));
     link.classList.toggle('active', isActive);
     if (isActive) link.setAttribute('aria-current', 'location');
     else link.removeAttribute('aria-current');
+  });
+  document.querySelectorAll('.nav-group').forEach((group) => {
+    const hasActiveLink = Boolean(group.querySelector('.nav-sublink.active'));
+    group.open = hasActiveLink;
+    group.querySelector('summary').classList.toggle('active', hasActiveLink);
   });
 }
 
@@ -10487,7 +10510,7 @@ function syncNavigationToScroll() {
     ? Math.min(window.innerHeight * 0.45, navigationTop - 24)
     : Math.max(topbarBottom + Math.min(120, window.innerHeight * 0.2), window.innerHeight * 0.4);
   const activeSection = navSections.filter((section) => section.getBoundingClientRect().top <= sectionThreshold).at(-1);
-  setActiveNavigation(activeSection?.id || 'studio');
+  setActiveNavigation(activeSection?.id || 'project-dashboard');
 }
 
 function scheduleNavigationSync() {
@@ -10521,10 +10544,10 @@ navLinks.forEach((link) => link.addEventListener('click', (event) => {
   pendingNavigationTarget = window.matchMedia('(min-width: 781px)').matches ? target.id : '';
   window.clearTimeout(navigationFallbackTimer);
   if (pendingNavigationTarget) {
-    navigationFallbackTimer = window.setTimeout(finishNavigationScroll, 1400);
+    navigationFallbackTimer = window.setTimeout(finishNavigationScroll, getMotionDelay(1400));
   }
   setActiveNavigation(target.id);
-  target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  target.scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'start' });
 }));
 window.addEventListener('scroll', scheduleNavigationSync, { passive: true });
 window.addEventListener('scrollend', finishNavigationScroll);
@@ -10582,7 +10605,7 @@ renderWorldEntries();
 renderRecentlyDeleted();
 renderBackupInformation();
 updateStorageMeter();
-openProjectDashboardStartIfRequested();
+openProjectOverviewOnEntry();
 window.addEventListener('fictiontale-storage-updated', updateStorageMeterSoon);
 window.addEventListener('storage', updateStorageMeterSoon);
 updatePreview();

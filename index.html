@@ -57,8 +57,9 @@
       <section class="landing-hero-panel" aria-labelledby="landing-title">
         <div class="landing-hero-copy">
           <p class="landing-eyebrow"><span></span> A HOME FOR YOUR ORIGINAL CHARACTERS</p>
-          <h1 id="landing-title">Every character<br>has a <em>story to tell.</em></h1>
-          <p class="landing-lede">Dream up someone new, give them a place in your world, and watch their story take shape. Fiction Tale keeps all your creative pieces together in one quiet, private workspace.</p>
+          <h1 id="landing-title">Every story starts<br>with <em>mystery</em></h1>
+          <p class="landing-tagline">An non ending creativity to imagine</p>
+          <p class="landing-lede">Create stories, develop characters, and build entire fictional worlds in one organized creative workspace.</p>
           <div class="landing-hero-actions">
             <a class="button landing-primary-cta" href="#projects" data-open-workspace>Open your workspace <span aria-hidden="true">→</span></a>
             <a class="landing-text-link" href="#features">Explore what you can create <span aria-hidden="true">↓</span></a>
@@ -179,7 +180,7 @@
       <section class="project-library-welcome" aria-labelledby="project-library-title">
         <p class="project-library-eyebrow">YOUR STORIES, YOUR WAY</p>
         <h1 id="project-library-title">A home for every <em>project.</em></h1>
-        <p>Choose a project to enter its Studio, or start a new one. Each project keeps its stories, characters, world, and plans together.</p>
+        <p>Choose a project to enter its workspace, or start a new one. Each project keeps its stories, characters, world, and plans together.</p>
         <p class="project-library-warning hidden" id="project-library-warning" role="alert"></p>
       </section>
       <form class="project-create-panel hidden" id="project-create-panel">
@@ -190,7 +191,7 @@
           <label>Genre <span class="project-field-optional">Optional</span><input id="project-genre" name="genre" maxlength="60" placeholder="e.g. Fantasy, mystery"></label>
           <label>Tags <span class="project-field-optional">Optional · separate with commas</span><input id="project-tags" name="tags" maxlength="200" placeholder="e.g. fantasy, book one, drafting"></label>
         </div>
-        <div class="project-create-actions"><button class="button project-create-cancel" id="project-create-cancel" type="button">Cancel</button><button class="button project-create-submit" type="submit">Create and open Studio <span aria-hidden="true">→</span></button></div>
+        <div class="project-create-actions"><button class="button project-create-cancel" id="project-create-cancel" type="button">Cancel</button><button class="button project-create-submit" type="submit">Create and open workspace <span aria-hidden="true">→</span></button></div>
       </form>
       <section class="project-library-section project-recent-section" aria-labelledby="project-recent-title">
         <div class="project-section-heading"><div><p class="project-library-eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2 id="project-recent-title">Recently opened</h2></div></div>
@@ -231,33 +232,42 @@
 
       <div class="workspace-label" id="active-project-label">YOUR PROJECT</div>
       <nav class="side-nav" id="main-navigation" aria-label="Main navigation">
-        <a class="nav-link" href="#project-dashboard" aria-label="Project Dashboard"><span class="nav-icon">▤</span><span class="nav-label">Dashboard</span></a>
-        <a class="nav-link" href="#book-series" aria-label="Book series"><span class="nav-icon">▤</span><span class="nav-label">Series</span><span class="nav-count" id="series-sidebar-count">0</span></a>
-        <a class="nav-link active" href="#studio" aria-label="Character studio"><span class="nav-icon">✳</span><span class="nav-label">Studio</span></a>
-        <a class="nav-link" href="#cast" aria-label="Character cards"><span class="nav-icon">▦</span><span class="nav-label">Cast</span><span class="nav-count" id="sidebar-count">0</span></a>
-        <a class="nav-link" href="#lore" aria-label="Lore and story"><span class="nav-icon">✧</span><span class="nav-label">Stories</span><span class="nav-count" id="story-sidebar-count">0</span></a>
-        <a class="nav-link" href="#dialogue-workshop" aria-label="Dialogue Workshop"><span class="nav-icon">❝</span><span class="nav-label">Dialogue</span></a>
-        <a class="nav-link" href="#places" aria-label="Places"><span class="nav-icon">◈</span><span class="nav-label">Places</span><span class="nav-count" id="place-sidebar-count">0</span></a>
-        <a class="nav-link" href="#world-entries" aria-label="World entries"><span class="nav-icon">✧</span><span class="nav-label">World</span><span class="nav-count" id="world-entry-sidebar-count">0</span></a>
-        <a class="nav-link" href="#planning" aria-label="Story planning"><span class="nav-icon">⌘</span><span class="nav-label">Plan</span></a>
+        <a class="nav-link" href="#project-dashboard"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Overview</span></a>
+        <details class="nav-group">
+          <summary class="nav-link"><span class="nav-icon" aria-hidden="true">✎</span><span class="nav-label">Writing</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="nav-submenu">
+            <a class="nav-sublink" href="#lore">Stories<span class="nav-count" id="story-sidebar-count">0</span></a>
+            <a class="nav-sublink" href="#dialogue-workshop">Dialogue</a>
+            <a class="nav-sublink" href="#book-series">Series<span class="nav-count" id="series-sidebar-count">0</span></a>
+          </div>
+        </details>
+        <details class="nav-group">
+          <summary class="nav-link"><span class="nav-icon" aria-hidden="true">✳</span><span class="nav-label">Characters</span><span class="nav-count" id="sidebar-count">0</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="nav-submenu">
+            <a class="nav-sublink" href="#characters">Character editor</a>
+            <a class="nav-sublink" href="#cast">Cast</a>
+          </div>
+        </details>
+        <details class="nav-group">
+          <summary class="nav-link"><span class="nav-icon" aria-hidden="true">✧</span><span class="nav-label">Worldbuilding</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="nav-submenu">
+            <a class="nav-sublink" href="#places">Places<span class="nav-count" id="place-sidebar-count">0</span></a>
+            <a class="nav-sublink" href="#world-entries">World Entries<span class="nav-count" id="world-entry-sidebar-count">0</span></a>
+          </div>
+        </details>
+        <a class="nav-link" href="#planning"><span class="nav-icon" aria-hidden="true">⌘</span><span class="nav-label">Planning</span></a>
         <button class="nav-link settings-nav-link" id="settings-open" type="button" aria-label="Settings" aria-haspopup="dialog"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-label">Settings</span></button>
       </nav>
       <button class="mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
-        <span aria-hidden="true">☷</span><span>Sections</span>
+        <span aria-hidden="true">☷</span><span>Menu</span>
       </button>
 
-      <div class="sidebar-note">
-        <div class="note-sparkle">✦</div>
-        <p class="note-title">Every story starts somewhere.</p>
-        <p class="note-copy">Make a little room for the characters who live in your head.</p>
-        <button class="text-button" id="sidebar-new" type="button">Create a character <span>↗</span></button>
-      </div>
       <div class="sidebar-footer"><span class="status-dot"></span> Your work is stored on this device</div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
-        <div class="breadcrumb"><span id="project-breadcrumb-name">YOUR PROJECT</span> <span>/</span> <strong>STUDIO</strong></div>
+        <div class="breadcrumb"><span id="project-breadcrumb-name">YOUR PROJECT</span> <span>/</span> <strong>CHARACTERS</strong></div>
         <a class="brand mobile-brand workspace-home-link" href="#landing-page" aria-label="Fiction Tale home">
           <span class="brand-mark" aria-hidden="true">f.</span>
           <span class="brand-wordmark">Fiction Tale</span>
@@ -277,16 +287,39 @@
         <div id="global-search-list"></div>
       </section>
 
+      <section class="project-workspace-header" aria-label="Project workspace">
+        <div class="project-workspace-heading">
+          <div class="project-workspace-summary">
+            <p class="project-workspace-eyebrow">PROJECT WORKSPACE</p>
+            <h1 id="workspace-project-title">Your project</h1>
+            <p class="project-workspace-meta" id="workspace-project-meta"></p>
+          </div>
+          <span class="project-workspace-status"><span aria-hidden="true"></span> Active project</span>
+        </div>
+        <details class="project-workspace-navigation" open>
+          <summary><span>Project navigation</span><span class="project-workspace-chevron" aria-hidden="true">⌄</span></summary>
+          <nav aria-label="Project navigation links">
+            <a class="project-navigation-link" href="#project-dashboard">Overview</a>
+            <a class="project-navigation-link" href="#lore">Writing</a>
+            <a class="project-navigation-link" href="#characters">Characters</a>
+            <a class="project-navigation-link" href="#world-entries">World</a>
+            <a class="project-navigation-link" href="#planning">Planning</a>
+          </nav>
+        </details>
+      </section>
+
+      <section class="characters-workspace" id="characters" aria-label="Characters">
       <section class="studio-section" id="studio">
         <div class="studio-intro">
           <div class="studio-intro-copy">
-            <p class="eyebrow">CHARACTER STUDIO</p>
+            <p class="eyebrow">CREATE CHARACTERS</p>
             <h2>Create a character</h2>
             <p>Start with the essentials. You can fill in the rest whenever you're ready.</p>
           </div>
           <div class="studio-intro-actions">
-            <button class="button button-outline" id="studio-preview-open" type="button"><span aria-hidden="true">◉</span> Live preview</button>
-            <button class="button button-primary" id="studio-new-character" type="button"><span aria-hidden="true">+</span> New character</button>
+            <a class="project-navigation-link" href="#cast">Browse cast</a>
+            <button class="button button-outline" id="character-preview-open" type="button"><span aria-hidden="true">◉</span> Live preview</button>
+            <button class="button button-primary" id="character-new-button" type="button"><span aria-hidden="true">+</span> New character</button>
           </div>
         </div>
       <section class="studio-grid" aria-label="Character editor">
@@ -584,7 +617,6 @@
         </div>
       </section>
       </section>
-
       <section class="cast-section" id="cast">
         <div class="section-heading">
           <div><p class="eyebrow">THE PEOPLE IN YOUR HEAD</p><h2>Cast <span id="cast-total">(0)</span></h2></div>
@@ -604,6 +636,7 @@
           <div class="empty-icon">✳</div><h3>Your story is a blank page.</h3><p>Create a character to see their card and profile details here.</p>
           <button class="button button-outline" id="empty-create" type="button">＋ Create your first character</button>
         </div>
+      </section>
       </section>
       <section class="lore-section" id="lore" aria-labelledby="lore-title">
         <div class="section-heading lore-heading">
@@ -956,7 +989,7 @@
           </div>
           <div class="planning-guide"><span class="planning-guide-icon" aria-hidden="true">i</span><p><strong>New to story planning?</strong> Start with a prompt or one scene card. Everything saves as you go, and you never need to fill in every section.</p></div>
         </div>
-        <div class="planning-panel" id="planning-relationships" data-planning-panel="relationships">
+        <div class="planning-panel hidden" id="planning-relationships" data-planning-panel="relationships">
           <div class="planning-panel-heading"><div><p class="eyebrow">YOUR CAST AT A GLANCE</p><h3>Character relationship map</h3></div><div class="planning-view-toggle"><button type="button" class="active" data-relationship-view="map">Connection map</button><button type="button" data-relationship-view="matrix">Matrix</button></div></div>
           <p class="planning-hint">Connections use each character profile’s relationship type, current status, and shared history. Line color shows relationship type and line style shows status. Select a character or matrix cell to inspect the details.</p>
           <div id="relationship-graph" class="relationship-graph"></div>
@@ -1729,11 +1762,11 @@
             <button class="tutorial-back button button-quiet" type="button">← All guides</button>
             <h2 id="simple-tutorial-title">Quick start</h2>
             <ol class="tutorial-steps">
-              <li><strong>Create a character.</strong> In Studio, choose <strong>New character</strong>, add a name, and save. Add more details whenever you’re ready.</li>
+              <li><strong>Create a character.</strong> In Characters, choose <strong>New character</strong>, add a name, and save. Add more details whenever you’re ready.</li>
               <li><strong>Start writing.</strong> Open <strong>Stories</strong>, choose <strong>New story</strong>, and start typing. Your draft saves automatically on this device.</li>
               <li><strong>Build your world.</strong> Add locations in <strong>Places</strong>. Use <strong>World</strong> for groups, artifacts, magic systems, species, languages, religions, and glossary terms.</li>
               <li><strong>Find things quickly.</strong> Use the search at the top to find characters, stories, places, and world entries. Change the app’s appearance in <strong>Settings → Appearance</strong>.</li>
-              <li><strong>Back up your work.</strong> Watch the Studio header for your save and backup status. Open it to reach <strong>Settings → Data &amp; Storage</strong>, export a full backup, or import one. You can also export stories as Markdown, plain text, Word, or EPUB, and print profiles or story previews to PDF.</li>
+              <li><strong>Back up your work.</strong> Watch the workspace header for your save and backup status. Open it to reach <strong>Settings → Data &amp; Storage</strong>, export a full backup, or import one. You can also export stories as Markdown, plain text, Word, or EPUB, and print profiles or story previews to PDF.</li>
             </ol>
             <p class="tutorial-privacy-note">Your work is stored in this browser, not in the cloud. Clearing this browser’s site data, switching browser profiles, or losing the device can remove it. Export a full backup and keep it somewhere separate.</p>
           </section>
@@ -1762,7 +1795,7 @@
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">06</span>
-              <div><h3>Save and back up your work</h3><p>Your work is saved in this browser on this device. The Studio header shows save and backup status; open it to reach <strong>Settings → Data &amp; Storage</strong>, export a full backup, or restore one. Clearing site data, changing browser profiles, or losing the device can remove your writing. Keep a backup somewhere separate.</p></div>
+              <div><h3>Save and back up your work</h3><p>Your work is saved in this browser on this device. The workspace header shows save and backup status; open it to reach <strong>Settings → Data &amp; Storage</strong>, export a full backup, or restore one. Clearing site data, changing browser profiles, or losing the device can remove your writing. Keep a backup somewhere separate.</p></div>
             </section>
             <section class="about-guide-step">
               <span class="creation-step-number">07</span>
