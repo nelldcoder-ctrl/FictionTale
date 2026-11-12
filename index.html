@@ -231,11 +231,11 @@
 
       <div class="workspace-label" id="active-project-label">YOUR PROJECT</div>
       <nav class="side-nav" id="main-navigation" aria-label="Main navigation">
+        <a class="nav-link" href="#project-dashboard" aria-label="Project Dashboard"><span class="nav-icon">▤</span><span class="nav-label">Dashboard</span></a>
+        <a class="nav-link" href="#book-series" aria-label="Book series"><span class="nav-icon">▤</span><span class="nav-label">Series</span><span class="nav-count" id="series-sidebar-count">0</span></a>
         <a class="nav-link active" href="#studio" aria-label="Character studio"><span class="nav-icon">✳</span><span class="nav-label">Studio</span></a>
         <a class="nav-link" href="#cast" aria-label="Character cards"><span class="nav-icon">▦</span><span class="nav-label">Cast</span><span class="nav-count" id="sidebar-count">0</span></a>
         <a class="nav-link" href="#lore" aria-label="Lore and story"><span class="nav-icon">✧</span><span class="nav-label">Stories</span><span class="nav-count" id="story-sidebar-count">0</span></a>
-        <a class="nav-link" href="#book-series" aria-label="Book series"><span class="nav-icon">▤</span><span class="nav-label">Series</span><span class="nav-count" id="series-sidebar-count">0</span></a>
-        <a class="nav-link" href="#project-dashboard" aria-label="Project Dashboard"><span class="nav-icon">▤</span><span class="nav-label">Dashboard</span></a>
         <a class="nav-link" href="#dialogue-workshop" aria-label="Dialogue Workshop"><span class="nav-icon">❝</span><span class="nav-label">Dialogue</span></a>
         <a class="nav-link" href="#places" aria-label="Places"><span class="nav-icon">◈</span><span class="nav-label">Places</span><span class="nav-count" id="place-sidebar-count">0</span></a>
         <a class="nav-link" href="#world-entries" aria-label="World entries"><span class="nav-icon">✧</span><span class="nav-label">World</span><span class="nav-count" id="world-entry-sidebar-count">0</span></a>
@@ -1915,6 +1915,22 @@
       <div class="confirm-dialog-actions">
         <button class="button button-quiet" id="cancel-delete" type="button">Keep character</button>
         <button class="button button-danger" id="confirm-delete" type="button">Delete character</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="confirm-dialog" id="project-delete-dialog" aria-labelledby="project-delete-title" aria-describedby="project-delete-message">
+    <div class="confirm-dialog-content">
+      <span class="confirm-dialog-icon" aria-hidden="true">!</span>
+      <h2 id="project-delete-title">Delete project permanently?</h2>
+      <p id="project-delete-message"></p>
+      <label class="project-delete-confirmation" for="project-delete-name-input">
+        Type the project title to confirm
+        <strong id="project-delete-name"></strong>
+        <input id="project-delete-name-input" type="text" autocomplete="off" spellcheck="false" aria-describedby="project-delete-message">
+      </label>
+      <div class="confirm-dialog-actions">
+        <button class="button button-quiet" id="cancel-project-delete" type="button">Keep project</button>
+        <button class="button button-danger" id="confirm-project-delete" type="button" disabled>Delete permanently</button>
       </div>
     </div>
   </dialog>

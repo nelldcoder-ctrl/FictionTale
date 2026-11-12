@@ -2104,6 +2104,25 @@ html[data-theme="dark"] .global-search-result:hover { background: #35414d; }
   gap: 9px;
 }
 .confirm-dialog-actions .button { min-height: 40px; }
+.confirm-dialog .button-danger:disabled { opacity: .55; cursor: not-allowed; }
+.project-delete-confirmation {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 20px;
+  color: var(--sheet-text);
+  font-size: 12px;
+  text-align: left;
+}
+.project-delete-confirmation strong { overflow-wrap: anywhere; }
+.project-delete-confirmation input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--sheet-text);
+  background: var(--sheet-field);
+}
 .image-crop-dialog {
   width: min(560px, calc(100vw - 32px));
   max-width: none;
@@ -8901,6 +8920,8 @@ body.project-library-active .project-library-page { display: block; }
 .project-card-open:hover { color: #152847; background: #f8d998; }
 .project-card-archive { padding: 6px 3px; border: 0; color: #aab9ca; background: transparent; font-size: 8px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .project-card-archive:hover { color: #f0c77b; }
+.project-card-delete { padding: 6px 3px; border: 0; color: #f0a3a0; background: transparent; font-size: 8px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.project-card-delete:hover { color: #ffd1ce; }
 .project-library-empty { padding: 33px 16px; border: 1px dashed #ffffff36; color: var(--library-muted); text-align: center; }
 .project-empty-icon { color: var(--library-gold); font-size: 22px; }
 .project-library-empty h3 { margin: 7px 0; color: #f3efe6; font: 500 22px 'EB Garamond', Georgia, serif; }

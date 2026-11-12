@@ -32,6 +32,8 @@ let activeProjectId = '';
 let projectInitializationError = '';
 let projectTouchTimer = 0;
 let projectNavigationPending = false;
+let pendingProjectDeleteId = '';
+let pendingProjectDeleteFocus = null;
 
 function projectStorageKey(projectId, key) {
   const canonicalKey = key.startsWith(LEGACY_STORAGE_PREFIX)
@@ -183,6 +185,7 @@ const compareDialog = document.querySelector('#compare-dialog');
 const aboutDialog = document.querySelector('#about-dialog');
 const changelogDialog = document.querySelector('#changelog-dialog');
 const deleteDialog = document.querySelector('#delete-dialog');
+const projectDeleteDialog = document.querySelector('#project-delete-dialog');
 const imageCropDialog = document.querySelector('#image-crop-dialog');
 let printSectionState = null;
 const storedCharacters = readStorage(STORAGE_KEY, []);
@@ -1010,6 +1013,7 @@ const modalDialogs = [
   document.querySelector('#entity-preview-dialog'),
   compareDialog,
   deleteDialog,
+  projectDeleteDialog,
   imageCropDialog,
   document.querySelector('#story-dialog'),
 ];
@@ -9837,7 +9841,18 @@ function createProjectCard(project, archived = false) {
   archiveButton.dataset.projectId = project.id;
   archiveButton.textContent = archived ? 'Restore' : 'Archive';
   archiveButton.setAttribute('aria-label', `${archived ? 'Restore' : 'Archive'} ${project.name}`);
-  actions.append(openButton, archiveButton);
+  if (archived) {
+    const deleteButton = document.createElement('button');
+    deleteButton.className = 'project-card-delete';
+    deleteButton.type = 'button';
+    deleteButton.dataset.projectAction = 'delete';
+    deleteButton.dataset.projectId = project.id;
+    deleteButton.textContent = 'Delete permanently';
+    deleteButton.setAttribute('aria-label', `Permanently delete ${project.name}`);
+    actions.append(archiveButton, deleteButton);
+  } else {
+    actions.append(openButton, archiveButton);
+  }
   if (projectSummary.coverImage && validImageSource(projectSummary.coverImage)) {
     const cover = document.createElement('img');
     cover.className = 'project-card-cover';
@@ -9987,6 +10002,120 @@ function updateProjectArchive(projectId, archived) {
   showToast(archived ? 'Project moved to Archived projects.' : 'Project restored to your library.');
 }
 
+function requestProjectDelete(projectId, returnFocus = document.activeElement) {
+  const project = projects.find((entry) => entry.id === projectId && entry.archivedAt);
+  if (!project) {
+    showToast('Only archived projects can be permanently deleted.');
+    return;
+  }
+  pendingProjectDeleteId = project.id;
+  pendingProjectDeleteFocus = returnFocus;
+  document.querySelector('#project-delete-title').textContent = `Delete "${project.name}" permanently?`;
+  document.querySelector('#project-delete-message').textContent =
+    'This permanently removes the project and all of its stories, characters, places, plans, and saved history from this browser. This cannot be undone.';
+  document.querySelector('#project-delete-name').textContent = project.name;
+  const nameInput = document.querySelector('#project-delete-name-input');
+  nameInput.value = '';
+  nameInput.dataset.projectName = project.name;
+  document.querySelector('#confirm-project-delete').disabled = true;
+  projectDeleteDialog.showModal();
+  syncModalScrollLock();
+  nameInput.focus();
+}
+
+async function restoreArchivedProjectData(snapshots) {
+  for (const [key, value] of snapshots) {
+    if (value !== undefined && !writeUnscopedStorage(key, value)) {
+      throw new Error(`Could not restore project data for "${key}" after a failed deletion.`);
+    }
+  }
+  await projectStorage.flush();
+  for (const [key, value] of snapshots) {
+    if (!await projectStorage.verify(key, value)) {
+      throw new Error(`Could not verify restored project data for "${key}".`);
+    }
+  }
+}
+
+async function removeArchivedProjectData(projectId) {
+  const projectKeys = [...PROJECT_DATA_STORAGE_KEYS].map((key) => projectStorageKey(projectId, key));
+  await projectStorage.flush();
+  const snapshots = projectKeys.map((key) => [key, readUnscopedStorage(key, undefined)]);
+  let removed = true;
+  for (const key of projectKeys) {
+    if (!removeUnscopedStorage(key)) {
+      removed = false;
+      break;
+    }
+  }
+  await projectStorage.flush();
+  for (const key of projectKeys) {
+    if (!await projectStorage.verify(key, undefined)) removed = false;
+  }
+  if (!removed) {
+    await restoreArchivedProjectData(snapshots);
+    return null;
+  }
+  return snapshots;
+}
+
+document.querySelector('#project-delete-name-input').addEventListener('input', (event) => {
+  const input = event.currentTarget;
+  document.querySelector('#confirm-project-delete').disabled =
+    input.value.trim() !== input.dataset.projectName;
+});
+document.querySelector('#cancel-project-delete').addEventListener('click', () => projectDeleteDialog.close());
+projectDeleteDialog.addEventListener('click', (event) => {
+  if (event.target === projectDeleteDialog) projectDeleteDialog.close();
+});
+projectDeleteDialog.addEventListener('close', () => {
+  pendingProjectDeleteId = '';
+  if (pendingProjectDeleteFocus instanceof HTMLElement && pendingProjectDeleteFocus.isConnected) {
+    pendingProjectDeleteFocus.focus();
+  }
+  pendingProjectDeleteFocus = null;
+});
+document.querySelector('#confirm-project-delete').addEventListener('click', async (event) => {
+  const projectId = pendingProjectDeleteId;
+  const project = projects.find((entry) => entry.id === projectId && entry.archivedAt);
+  if (!project) {
+    showToast('This archived project is no longer available.');
+    projectDeleteDialog.close();
+    return;
+  }
+  const confirmButton = event.currentTarget;
+  confirmButton.disabled = true;
+  confirmButton.textContent = 'Deleting…';
+  try {
+    const projectDataSnapshots = await removeArchivedProjectData(projectId);
+    if (!projectDataSnapshots) {
+      showToast('Some project data could not be removed. The archived project remains listed; check browser storage and try again.');
+      return;
+    }
+    if (!saveProjectList(projects.filter((entry) => entry.id !== projectId))) {
+      await restoreArchivedProjectData(projectDataSnapshots);
+      return;
+    }
+    if (activeProjectId === projectId) {
+      activeProjectId = '';
+      if (!writeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, '')) {
+        console.error('The archived project was deleted, but its active-project marker could not be cleared.');
+      }
+      renderProjectLibrary();
+    }
+    pendingProjectDeleteFocus = null;
+    projectDeleteDialog.close();
+    showToast('Project permanently deleted.');
+  } catch (error) {
+    console.error('Fiction Tale could not permanently delete the archived project.', error);
+    showToast('The project could not be permanently deleted. Check browser storage and try again.');
+  } finally {
+    confirmButton.textContent = 'Delete permanently';
+    confirmButton.disabled = document.querySelector('#project-delete-name-input').value.trim()
+      !== document.querySelector('#project-delete-name-input').dataset.projectName;
+  }
+});
+
 function syncEntryRoute() {
   const route = location.hash.slice(1);
   if (route === 'studio' && activeProjectId
@@ -10081,6 +10210,7 @@ document.querySelector('.project-library-main').addEventListener('click', (event
   if (button.dataset.projectAction === 'open') openProject(button.dataset.projectId);
   else if (button.dataset.projectAction === 'archive') updateProjectArchive(button.dataset.projectId, true);
   else if (button.dataset.projectAction === 'restore') updateProjectArchive(button.dataset.projectId, false);
+  else if (button.dataset.projectAction === 'delete') requestProjectDelete(button.dataset.projectId, button);
 });
 window.addEventListener('popstate', syncEntryRoute);
 renderProjectLibrary();
