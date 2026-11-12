@@ -1,6 +1,156 @@
 const STORAGE_PREFIX = 'FictionTales.';
 const LEGACY_STORAGE_PREFIX = 'fable.';
 
+const PROJECTS_STORAGE_KEY = 'FictionTales.projects.v1';
+const ACTIVE_PROJECT_STORAGE_KEY = 'FictionTales.active-project.v1';
+const PROJECT_COVER_STORAGE_KEY = 'FictionTales.project-cover.v1';
+const PROJECT_DASHBOARD_START_KEY = 'FictionTales.project-dashboard-start';
+const PROJECT_DATA_STORAGE_KEYS = new Set([
+  'FictionTales.characters.v1',
+  'FictionTales.draft.v1',
+  'FictionTales.stories.v1',
+  'FictionTales.story-drafts.v1',
+  'FictionTales.book-series.v1',
+  'FictionTales.dialogue-drafts.v1',
+  'FictionTales.recently-deleted.v1',
+  'FictionTales.writing-goals.v1',
+  'FictionTales.story-versions.v1',
+  'FictionTales.character-versions.v1',
+  'FictionTales.places.v1',
+  'FictionTales.place-draft.v1',
+  'FictionTales.world-entries.v1',
+  'FictionTales.planning.v1',
+  'FictionTales.lore.v1',
+  PROJECT_COVER_STORAGE_KEY,
+]);
+const projectStorage = window.FictionTaleStorage;
+const readUnscopedStorage = projectStorage.read.bind(projectStorage);
+const writeUnscopedStorage = projectStorage.write.bind(projectStorage);
+const removeUnscopedStorage = projectStorage.remove.bind(projectStorage);
+let projects = [];
+let activeProjectId = '';
+let projectInitializationError = '';
+let projectTouchTimer = 0;
+let projectNavigationPending = false;
+
+function projectStorageKey(projectId, key) {
+  const canonicalKey = key.startsWith(LEGACY_STORAGE_PREFIX)
+    ? `${STORAGE_PREFIX}${key.slice(LEGACY_STORAGE_PREFIX.length)}`
+    : key;
+  if (!projectId || !PROJECT_DATA_STORAGE_KEYS.has(canonicalKey)) return key;
+  return `FictionTales.projects.${projectId}.${canonicalKey.slice(STORAGE_PREFIX.length)}`;
+}
+
+function normalizeProjects(value) {
+  if (!Array.isArray(value)) return [];
+  const ids = new Set();
+  return value.slice(0, 500).flatMap((record) => {
+    if (!record || typeof record !== 'object') return [];
+    const id = typeof record.id === 'string' && /^[\w-]{1,100}$/.test(record.id) ? record.id : '';
+    const name = typeof record.name === 'string' ? record.name.trim().slice(0, 80) : '';
+    if (!id || !name || ids.has(id)) return [];
+    ids.add(id);
+    return [{
+      id,
+      name,
+      description: typeof record.description === 'string' ? record.description.trim().slice(0, 300) : '',
+      genre: typeof record.genre === 'string' ? record.genre.trim().slice(0, 60) : '',
+      tags: [...new Set((Array.isArray(record.tags) ? record.tags : [])
+        .filter((tag) => typeof tag === 'string')
+        .map((tag) => tag.trim().slice(0, 24))
+        .filter(Boolean))].slice(0, 12),
+      createdAt: typeof record.createdAt === 'string' ? record.createdAt.slice(0, 40) : '',
+      updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt.slice(0, 40) : '',
+      lastOpenedAt: typeof record.lastOpenedAt === 'string' ? record.lastOpenedAt.slice(0, 40) : '',
+      archivedAt: typeof record.archivedAt === 'string' ? record.archivedAt.slice(0, 40) : '',
+    }];
+  });
+}
+
+function hasUnscopedProjectData() {
+  return [...PROJECT_DATA_STORAGE_KEYS].some((key) => readUnscopedStorage(key, undefined) !== undefined
+    || readUnscopedStorage(`${LEGACY_STORAGE_PREFIX}${key.slice(STORAGE_PREFIX.length)}`, undefined) !== undefined);
+}
+
+function initializeProjectStorage() {
+  let savedProjects = normalizeProjects(readUnscopedStorage(PROJECTS_STORAGE_KEY, []));
+  let savedActiveProjectId = readUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, '');
+  if (!savedProjects.length && hasUnscopedProjectData()) {
+    const now = new Date().toISOString();
+    const firstProject = {
+      id: 'my-first-project',
+      name: 'My First Project',
+      description: 'Your existing Fiction Tale work, brought together.',
+      tags: [],
+      createdAt: now,
+      updatedAt: now,
+      lastOpenedAt: now,
+      archivedAt: '',
+    };
+    for (const key of PROJECT_DATA_STORAGE_KEYS) {
+      const value = readUnscopedStorage(key, undefined)
+        ?? readUnscopedStorage(`${LEGACY_STORAGE_PREFIX}${key.slice(STORAGE_PREFIX.length)}`, undefined);
+      if (value !== undefined && !writeUnscopedStorage(projectStorageKey(firstProject.id, key), value)) {
+        throw new Error(`Could not move existing data for "${key}" into the first project.`);
+      }
+    }
+    if (!writeUnscopedStorage(PROJECTS_STORAGE_KEY, [firstProject])
+      || !writeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, firstProject.id)) {
+      throw new Error('Could not save your project library. Your existing writing data was left in place.');
+    }
+    savedProjects = [firstProject];
+    savedActiveProjectId = firstProject.id;
+  }
+  if (!savedProjects.some((project) => project.id === savedActiveProjectId)) savedActiveProjectId = '';
+  return { savedProjects, savedActiveProjectId };
+}
+
+function scheduleProjectTouch() {
+  if (!activeProjectId) return;
+  window.clearTimeout(projectTouchTimer);
+  projectTouchTimer = window.setTimeout(() => {
+    const now = new Date().toISOString();
+    const nextProjects = projects.map((project) => project.id === activeProjectId
+      ? { ...project, updatedAt: now }
+      : project);
+    if (writeUnscopedStorage(PROJECTS_STORAGE_KEY, nextProjects)) {
+      projects = nextProjects;
+      renderProjectOverview();
+    }
+    else showToast('Your project changes were saved, but its last-updated date could not be refreshed.');
+  }, 900);
+}
+
+try {
+  const initializedProjects = initializeProjectStorage();
+  projects = initializedProjects.savedProjects;
+  activeProjectId = initializedProjects.savedActiveProjectId;
+} catch (error) {
+  projectInitializationError = error instanceof Error ? error.message : String(error);
+  console.error('Fiction Tale could not initialize the project library.', error);
+}
+
+projectStorage.read = (key, fallback) => readUnscopedStorage(projectStorageKey(activeProjectId, key), fallback);
+projectStorage.write = (key, value) => {
+  const scopedKey = projectStorageKey(activeProjectId, key);
+  const saved = writeUnscopedStorage(scopedKey, value);
+  if (saved && scopedKey !== key) scheduleProjectTouch();
+  return saved;
+};
+projectStorage.remove = (key) => {
+  const scopedKey = projectStorageKey(activeProjectId, key);
+  const removed = removeUnscopedStorage(scopedKey);
+  if (removed && scopedKey !== key) scheduleProjectTouch();
+  return removed;
+};
+
+if (location.hash.slice(1) === 'studio'
+  && (!activeProjectId || !projects.some((project) => project.id === activeProjectId && !project.archivedAt))) {
+  document.body.classList.remove('workspace-active');
+  document.body.classList.add('project-library-active');
+  window.history.replaceState(null, '', '#projects');
+}
+
 const STORAGE_KEY = 'FictionTales.characters.v1';
 const DRAFT_KEY = 'FictionTales.draft.v1';
 const STORIES_STORAGE_KEY = 'FictionTales.stories.v1';
@@ -238,6 +388,23 @@ function normalizeStoryTodos(value) {
     })).filter((item) => item.text);
 }
 
+function normalizeStoryChapterMeta(value) {
+  let list = value;
+  if (typeof list === 'string') {
+    try { list = JSON.parse(list || '[]'); } catch { return []; }
+  }
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, 200).filter((item) => item && typeof item === 'object')
+    .map((item) => ({
+      title: typeof item.title === 'string' ? item.title.trim().slice(0, 100) : '',
+      summary: typeof item.summary === 'string' ? item.summary.trim().slice(0, 500) : '',
+      status: ['draft', 'revising', 'completed'].includes(item.status) ? item.status : 'draft',
+      povCharacterId: typeof item.povCharacterId === 'string' ? item.povCharacterId.slice(0, 100) : '',
+      timelinePoint: typeof item.timelinePoint === 'string' ? item.timelinePoint.trim().slice(0, 60) : '',
+      updatedAt: typeof item.updatedAt === 'string' ? item.updatedAt.slice(0, 40) : '',
+    })).filter((item) => item.title);
+}
+
 function normalizeStoryMeta(record = {}) {
   let chapterPlaceSource = record.chapterPlaces;
   if (typeof chapterPlaceSource === 'string') {
@@ -263,6 +430,7 @@ function normalizeStoryMeta(record = {}) {
     characterIds: parseStoryList(record.characterIds, 40, 100),
     placeIds: parseStoryList(record.placeIds, 60, 100),
     chapterPlaces,
+    chapterMeta: normalizeStoryChapterMeta(record.chapterMeta),
     notes: normalizeStoryNotes(record.notes),
     todos: normalizeStoryTodos(record.todos),
   };
@@ -276,6 +444,7 @@ function storyMetaEqual(a, b) {
     && sorted(a.characterIds) === sorted(b.characterIds)
     && sorted(a.placeIds) === sorted(b.placeIds)
     && JSON.stringify(a.chapterPlaces) === JSON.stringify(b.chapterPlaces)
+    && JSON.stringify(a.chapterMeta) === JSON.stringify(b.chapterMeta)
     && JSON.stringify(a.notes) === JSON.stringify(b.notes)
     && JSON.stringify(a.todos) === JSON.stringify(b.todos);
 }
@@ -791,6 +960,8 @@ window.FictionTalesData = {
   get worldEntries() { return worldEntries; },
   get recentlyDeleted() { return recentlyDeleted; },
   parseBonds,
+  parseCharacterSnapshots,
+  recordCharacterRelationshipEvent,
   parseTimeline,
   writeStorage,
   showToast,
@@ -815,10 +986,13 @@ let placeCloseTimer = null;
 let activeWorldEntryId = '';
 let worldEntryReturnFocus = null;
 let activeStoryId = '';
+let storyToResumeAfterCharacterCreate = '';
+let activeStoryChapterIndex = -1;
 let editingSeriesEvents = [];
 let storyReturnFocus = null;
 let previewStoryId = '';
 let previewFromEditor = false;
+let storyReaderFontSize = 19;
 if (!Array.isArray(storedStories)) {
   const migratedStories = migrateLegacyLore(readStorage('FictionTales.lore.v1', null));
   if (migratedStories.length) {
@@ -900,6 +1074,7 @@ document.addEventListener('visibilitychange', () => {
 window.addEventListener('beforeunload', (event) => {
   flushPendingDrafts();
   flushPlaceDraft();
+  if (projectNavigationPending) return;
   if (!hasWorkInProgress()) return;
   event.preventDefault();
   event.returnValue = 'You have work in progress. Reloading may discard your latest changes.';
@@ -999,8 +1174,9 @@ function parseCharacterSnapshots(value) {
     knowledge: String(snapshot.knowledge ?? '').trim().slice(0, 400),
     trust: String(snapshot.trust ?? '').trim().slice(0, 300),
     location: String(snapshot.location ?? '').trim().slice(0, 120),
+    age: String(snapshot.age ?? '').trim().slice(0, 24),
     availability: ['present', 'absent', 'dead'].includes(snapshot.availability) ? snapshot.availability : '',
-  })).filter((snapshot) => snapshot.when || snapshot.appearance || snapshot.knowledge || snapshot.trust || snapshot.location || snapshot.availability);
+  })).filter((snapshot) => snapshot.when || snapshot.appearance || snapshot.knowledge || snapshot.trust || snapshot.location || snapshot.age || snapshot.availability);
 }
 
 function serializeCharacterSnapshots(list) {
@@ -1029,6 +1205,7 @@ function renderCharacterSnapshotsEditor(focusIndex = -1) {
       snapshot.knowledge && `Knows: ${snapshot.knowledge}`,
       snapshot.trust && `Trusts: ${snapshot.trust}`,
       snapshot.location && `At: ${snapshot.location}`,
+      snapshot.age && `Age: ${snapshot.age}`,
       snapshot.availability && `Availability: ${snapshot.availability}`,
     ].filter(Boolean).join(' · ');
     summary.title = summary.textContent;
@@ -1183,6 +1360,7 @@ function renderProfileSnapshots(profile) {
       ['Knows', snapshot.knowledge],
       ['Trusts', snapshot.trust],
       ['At', snapshot.location],
+      ['Age', snapshot.age],
       ['Availability', snapshot.availability],
     ].filter(([, value]) => value).forEach(([label, value]) => {
       const detail = document.createElement('p');
@@ -1550,6 +1728,7 @@ function buildLiveSections(profile) {
           ['Appearance', snapshot.appearance],
           ['Knows', snapshot.knowledge],
           ['Trusts', snapshot.trust],
+          ['Age', snapshot.age],
         ].filter(([, value]) => value).forEach(([label, value]) => {
           const detail = document.createElement('p');
           detail.textContent = `${label}: ${value}`;
@@ -2054,22 +2233,29 @@ function renderStoryPlacePicker(selectedIds = []) {
   if (!places.length) {
     const hint = document.createElement('p');
     hint.className = 'story-picker-empty';
-    hint.textContent = 'No places yet. Create one in Places & Settings to link it here.';
+    hint.textContent = 'Create a place here and it will be linked to this story.';
     picker.append(hint);
-    return;
+  } else {
+    places.forEach((place) => {
+      const chip = document.createElement('label');
+      chip.className = 'story-character-chip';
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = place.id;
+      input.checked = selectedIds.includes(place.id);
+      const name = document.createElement('span');
+      name.textContent = place.name;
+      chip.append(input, name);
+      picker.append(chip);
+    });
   }
-  places.forEach((place) => {
-    const chip = document.createElement('label');
-    chip.className = 'story-character-chip';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    input.value = place.id;
-    input.checked = selectedIds.includes(place.id);
-    const name = document.createElement('span');
-    name.textContent = place.name;
-    chip.append(input, name);
-    picker.append(chip);
-  });
+  const create = document.createElement('button');
+  create.className = 'button button-outline story-picker-create';
+  create.type = 'button';
+  create.dataset.storyPlaceCreate = 'true';
+  create.textContent = places.length ? '＋ Create and link a place' : '＋ Create a place';
+  create.addEventListener('click', () => openPlaceEditor('', create));
+  picker.append(create);
 }
 
 function syncPlaceImageChip() {
@@ -2185,6 +2371,19 @@ function savePlaceFromForm() {
   persistCharacterLibrary();
   renderPlaces();
   renderStories();
+  const storyDialog = document.querySelector('#story-dialog');
+  const fromStoryPicker = placeReturnFocus instanceof HTMLElement
+    && placeReturnFocus.dataset.storyPlaceCreate === 'true'
+    && storyDialog.open
+    && !document.querySelector('#story-form').classList.contains('hidden');
+  if (fromStoryPicker) {
+    const selectedIds = [...document.querySelectorAll('#story-places input:checked')].map((input) => input.value);
+    renderStoryPlacePicker([...selectedIds, record.id]);
+    renderStoryPeekList();
+    handleStoryEditorInput();
+    flushStoryDraft();
+    placeReturnFocus = [...document.querySelectorAll('#story-places input')].find((input) => input.value === record.id) || null;
+  }
   showToast(draftCleared ? 'Place saved.' : 'Place saved, but its autosaved draft could not be cleared.');
   return true;
 }
@@ -2258,11 +2457,12 @@ function renderRelationEditors() {
 }
 
 const BOND_TYPES = ['ally', 'rival', 'family', 'secret-crush', 'betrayed', 'other'];
-const BOND_STATUSES = ['active', 'complicated', 'strained', 'broken', 'reconciled'];
+const BOND_STATUSES = ['strangers', 'acquaintances', 'friends', 'rivals', 'active', 'complicated', 'strained', 'broken', 'reconciled'];
 const BOND_TYPE_LABELS = {
   ally: 'Friend', rival: 'Rival', family: 'Family', 'secret-crush': 'Romantic connection', betrayed: 'Trust changed', other: 'Other',
 };
 const BOND_STATUS_LABELS = {
+  strangers: 'Strangers', acquaintances: 'Acquaintances', friends: 'Friends', rivals: 'Rivals',
   active: 'Ongoing', complicated: 'Complicated', strained: 'Distant', broken: 'No contact', reconciled: 'Reconnected',
 };
 
@@ -2332,6 +2532,58 @@ function serializeBonds(list) {
     })),
   }));
   return bonds.length ? JSON.stringify(bonds) : '';
+}
+
+function recordCharacterRelationshipEvent(sourceId, targetId, event) {
+  const when = typeof event?.when === 'string' ? event.when.trim().slice(0, 60) : '';
+  const status = event?.status;
+  const note = typeof event?.note === 'string' ? event.note.trim().slice(0, 300) : '';
+  const sourceIndex = characters.findIndex((character) => character.id === sourceId);
+  if (!when || !BOND_STATUSES.includes(status) || sourceId === targetId || sourceIndex < 0
+    || !characters.some((character) => character.id === targetId)) {
+    showToast('Choose a valid connection, timeline point, and relationship status.');
+    return false;
+  }
+  const source = characters[sourceIndex];
+  const bonds = parseBonds(source.bonds);
+  const bondIndex = bonds.findIndex((bond) => bond.id === targetId);
+  if (bondIndex < 0) {
+    showToast('That connection no longer exists. Refresh the relationship history and try again.');
+    return false;
+  }
+  if (bonds[bondIndex].statusHistory.length >= 40) {
+    showToast('A connection can have up to 40 status changes.');
+    return false;
+  }
+  const updatedBonds = bonds.map((bond, index) => index === bondIndex ? {
+    ...bond,
+    status,
+    statusHistory: [...bond.statusHistory, { when, status, note }],
+  } : bond);
+  const nextCharacters = [...characters];
+  const updatedCharacter = {
+    ...source,
+    bonds: serializeBonds(updatedBonds),
+    updatedAt: new Date().toISOString(),
+  };
+  nextCharacters[sourceIndex] = updatedCharacter;
+  if (!writeStorage(STORAGE_KEY, nextCharacters)) {
+    showToast('Could not save this relationship change. Your browser storage may be full.');
+    return false;
+  }
+  characters.splice(0, characters.length, ...nextCharacters);
+  if (activeId === sourceId) {
+    document.querySelector('#bonds').value = updatedCharacter.bonds;
+    characterFormHasChanges = true;
+    renderRelationEditors();
+    updatePreview();
+    saveDraft();
+  }
+  renderCharacters();
+  scheduleFolderBackup();
+  window.dispatchEvent(new CustomEvent('FictionTales:relationship-updated'));
+  showToast('Relationship change recorded.');
+  return true;
 }
 
 function characterBonds(character) {
@@ -2887,6 +3139,7 @@ function currentStoryDraft() {
       characterIds: [...document.querySelectorAll('#story-characters input:checked')].map((input) => input.value),
       placeIds: [...document.querySelectorAll('#story-places input:checked')].map((input) => input.value),
       chapterPlaces: document.querySelector('#story-chapter-places').value,
+      chapterMeta: document.querySelector('#story-chapter-meta-data').value,
       notes: document.querySelector('#story-notes-data').value,
       todos: document.querySelector('#story-todos-data').value,
     }),
@@ -2928,6 +3181,7 @@ function updateStoryPreview(story) {
   readingMeta.classList.toggle('hidden', !metaParts.length);
   readingTitle.style.fontFamily = titleFont;
   readingText.style.fontFamily = bodyFont;
+  readingText.style.setProperty('--story-reader-font-size', `${storyReaderFontSize}px`);
   [document.querySelector('#story-reading-view'), document.querySelector('#story-form')].forEach((element) => {
     element.style.setProperty('--story-background', backgroundColor);
     element.style.setProperty('--story-heading-color', textPalette.heading);
@@ -2948,15 +3202,52 @@ function updateStoryPreview(story) {
     setImageSource(readingCover, '');
     readingCoverWrap.classList.add('hidden');
   }
+  updateStoryReaderFontSize();
+  updateStoryReaderProgress();
 }
 
 function setStoryDialogMode(mode) {
-  const isPreview = mode === 'preview';
+  const isEditor = mode === 'edit';
+  const isReading = mode === 'reading';
   const dialog = document.querySelector('#story-dialog');
-  document.querySelector('#story-form').classList.toggle('hidden', isPreview);
-  document.querySelector('#story-reading-view').classList.toggle('hidden', !isPreview);
-  document.querySelector('#story-back-to-draft').classList.toggle('hidden', !isPreview || !previewFromEditor);
-  dialog.setAttribute('aria-labelledby', isPreview ? 'story-reading-title' : 'story-editor-title');
+  document.querySelector('#story-form').classList.toggle('hidden', !isEditor);
+  document.querySelector('#story-reading-view').classList.toggle('hidden', isEditor);
+  document.querySelector('#story-preview-toolbar').classList.toggle('hidden', isReading);
+  document.querySelector('#story-reader-toolbar').classList.toggle('hidden', !isReading);
+  document.querySelector('#story-back-to-draft').classList.toggle('hidden', mode !== 'preview' || !previewFromEditor);
+  document.querySelector('#story-focus-toggle').classList.toggle('hidden', !isEditor);
+  document.querySelector('#story-save-status').classList.toggle('hidden', !isEditor);
+  dialog.classList.toggle('is-reading-mode', isReading);
+  dialog.setAttribute('aria-labelledby', isEditor ? 'story-editor-title' : 'story-reading-title');
+}
+
+function updateStoryReaderFontSize() {
+  document.querySelector('#story-reading-text').style.setProperty('--story-reader-font-size', `${storyReaderFontSize}px`);
+  document.querySelector('#story-reader-font-size').textContent = `${storyReaderFontSize} px`;
+  document.querySelector('#story-reader-font-down').disabled = storyReaderFontSize <= 16;
+  document.querySelector('#story-reader-font-up').disabled = storyReaderFontSize >= 32;
+  updateStoryReaderProgress();
+}
+
+function updateStoryReaderProgress() {
+  const readingView = document.querySelector('#story-reading-view');
+  const maxScroll = readingView.scrollHeight - readingView.clientHeight;
+  const hasText = Boolean(document.querySelector('#story-reading-text').textContent.trim());
+  const progress = maxScroll <= 0 ? (hasText ? 100 : 0) : Math.round((readingView.scrollTop / maxScroll) * 100);
+  const progressBar = document.querySelector('#story-reader-progress');
+  progressBar.setAttribute('aria-valuenow', String(progress));
+  document.querySelector('#story-reader-progress-fill').style.width = `${progress}%`;
+  document.querySelector('#story-reader-progress-label').textContent = `${progress}% read`;
+}
+
+function openStoryReadingMode() {
+  const readingView = document.querySelector('#story-reading-view');
+  readingView.scrollTop = 0;
+  setStoryDialogMode('reading');
+  requestAnimationFrame(() => {
+    updateStoryReaderProgress();
+    document.querySelector('#story-reader-preview').focus();
+  });
 }
 
 function openStoryPreview() {
@@ -2984,7 +3275,7 @@ function openStoryPreview() {
     dialog.showModal();
     syncModalScrollLock();
   }
-  document.querySelector('#story-preview-edit').focus();
+  document.querySelector('#story-reading-mode-open').focus();
   updateBackToTopVisibility();
 }
 
@@ -3047,24 +3338,121 @@ function jumpToStoryPosition(position, length) {
   textarea.setSelectionRange(position, position + length);
 }
 
-function moveStoryChapter(index, direction) {
+function moveStoryChapter(index, targetIndex) {
   const textarea = document.querySelector('#story-text');
   const text = textarea.value;
   const chapters = parseStoryChapters(text);
-  const target = index + direction;
-  if (!chapters[index] || !chapters[target]) return;
+  if (!chapters[index] || !chapters[targetIndex] || index === targetIndex) return;
   const preamble = text.slice(0, chapters[0].start).trim();
   const segments = chapters.map((chapter) => text.slice(chapter.start, chapter.end).trim());
-  [segments[index], segments[target]] = [segments[target], segments[index]];
+  const [moved] = segments.splice(index, 1);
+  segments.splice(targetIndex, 0, moved);
   const next = `${[preamble, ...segments].filter(Boolean).join('\n\n')}\n`;
+  if (activeStoryChapterIndex === index) activeStoryChapterIndex = targetIndex;
+  else if (index < activeStoryChapterIndex && targetIndex >= activeStoryChapterIndex) activeStoryChapterIndex -= 1;
+  else if (index > activeStoryChapterIndex && targetIndex <= activeStoryChapterIndex) activeStoryChapterIndex += 1;
   textarea.focus();
   textarea.setSelectionRange(0, text.length);
   let done = false;
   try { done = document.execCommand('insertText', false, next) && textarea.value === next; } catch { done = false; }
   if (!done) { textarea.value = next; }
+  activeStoryChapterIndex = targetIndex;
+  updateStoryChapterMetadata(targetIndex, {});
+  const selected = parseStoryChapters(textarea.value)[activeStoryChapterIndex];
+  if (selected) jumpToStoryPosition(selected.start, selected.headingLength);
   handleStoryEditorInput();
-  const moved = parseStoryChapters(textarea.value)[target];
-  if (moved) jumpToStoryPosition(moved.start, moved.headingLength);
+}
+
+function storyChapterMetadata(chapters) {
+  const stored = normalizeStoryChapterMeta(document.querySelector('#story-chapter-meta-data').value);
+  const used = new Set();
+  const metadata = chapters.map((chapter, index) => {
+    const title = chapter.title.toLowerCase();
+    let storedIndex = stored.findIndex((item, candidateIndex) => !used.has(candidateIndex) && item.title.toLowerCase() === title);
+    if (storedIndex < 0 && stored.length === chapters.length && stored[index] && !used.has(index)) storedIndex = index;
+    if (storedIndex >= 0) used.add(storedIndex);
+    return {
+      ...(storedIndex >= 0 ? stored[storedIndex] : {}),
+      title: chapter.title,
+      summary: storedIndex >= 0 ? stored[storedIndex].summary : '',
+      status: storedIndex >= 0 ? stored[storedIndex].status : 'draft',
+      povCharacterId: storedIndex >= 0 ? stored[storedIndex].povCharacterId : '',
+      timelinePoint: storedIndex >= 0 ? stored[storedIndex].timelinePoint : '',
+      updatedAt: storedIndex >= 0 ? stored[storedIndex].updatedAt : '',
+    };
+  });
+  document.querySelector('#story-chapter-meta-data').value = JSON.stringify(metadata);
+  return metadata;
+}
+
+function updateStoryChapterMetadata(index, changes) {
+  const chapters = parseStoryChapters(document.querySelector('#story-text').value);
+  if (!chapters[index]) return;
+  const metadata = storyChapterMetadata(chapters);
+  metadata[index] = {
+    ...metadata[index],
+    ...changes,
+    title: chapters[index].title,
+    updatedAt: new Date().toISOString(),
+  };
+  document.querySelector('#story-chapter-meta-data').value = JSON.stringify(metadata);
+}
+
+function formatChapterLastEdited(value) {
+  if (!value) return 'Last edited time not recorded yet';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Last edited time not recorded yet' : `Last edited ${date.toLocaleString()}`;
+}
+
+function renderStoryChapterDetails(chapters, metadata, placeMap) {
+  const details = document.querySelector('#story-chapter-details');
+  const summary = document.querySelector('#story-chapter-summary');
+  if (!chapters.length) {
+    activeStoryChapterIndex = -1;
+    details.classList.add('hidden');
+    return;
+  }
+  activeStoryChapterIndex = Math.min(Math.max(activeStoryChapterIndex, 0), chapters.length - 1);
+  const index = activeStoryChapterIndex;
+  const chapter = chapters[index];
+  const chapterMeta = metadata[index];
+  const selectedTitle = document.querySelector('#story-chapter-selected-title');
+  selectedTitle.textContent = `Chapter ${index + 1} · ${chapter.title}`;
+  if (document.activeElement !== summary) summary.value = chapterMeta.summary;
+  const timelinePoint = document.querySelector('#story-chapter-timeline-point');
+  if (document.activeElement !== timelinePoint) timelinePoint.value = chapterMeta.timelinePoint;
+  const status = document.querySelector('#story-chapter-status');
+  if (document.activeElement !== status) status.value = chapterMeta.status;
+
+  const pov = document.querySelector('#story-chapter-pov');
+  if (document.activeElement !== pov) {
+    const selectedPov = chapterMeta.povCharacterId;
+    pov.replaceChildren(new Option('No POV character', ''));
+    characters.forEach((character) => pov.add(new Option(character.name, character.id)));
+    pov.value = characters.some((character) => character.id === selectedPov) ? selectedPov : '';
+  }
+  const location = document.querySelector('#story-chapter-location');
+  if (document.activeElement !== location) {
+    const selectedPlaceId = placeMap.find((item) => item.chapter.toLowerCase() === chapter.title.toLowerCase())?.placeId || '';
+    location.replaceChildren(new Option('No location', ''));
+    places.forEach((place) => location.add(new Option(place.name, place.id)));
+    location.value = selectedPlaceId;
+  }
+  const lastEdited = chapterMeta.updatedAt
+    || storyDrafts[activeStoryId]?.updatedAt
+    || savedStories.find((story) => story.id === activeStoryId)?.updatedAt
+    || '';
+  document.querySelector('#story-chapter-last-edited').textContent = formatChapterLastEdited(lastEdited);
+  const previousTitle = document.querySelector('#story-previous-summary-title');
+  const previousText = document.querySelector('#story-previous-summary-text');
+  if (index > 0) {
+    previousTitle.textContent = `Chapter ${index} · ${chapters[index - 1].title}`;
+    previousText.textContent = metadata[index - 1].summary || 'No summary saved for the previous chapter yet.';
+  } else {
+    previousTitle.textContent = 'Previous chapter';
+    previousText.textContent = 'This is the first chapter.';
+  }
+  details.classList.remove('hidden');
 }
 
 function renderStoryChapters() {
@@ -3072,6 +3460,9 @@ function renderStoryChapters() {
   const chapters = parseStoryChapters(text);
   const list = document.querySelector('#story-chapter-list');
   const placeMap = parseStoryChapterPlaces(document.querySelector('#story-chapter-places').value);
+  activeStoryChapterIndex = chapters.length ? Math.min(Math.max(activeStoryChapterIndex, 0), chapters.length - 1) : -1;
+  const metadata = storyChapterMetadata(chapters);
+  renderStoryNoteChapterOptions(chapters);
   const totalWords = countWords(text);
   const averageWords = chapters.length ? Math.round(chapters.reduce((sum, chapter) => sum + chapter.words, 0) / chapters.length) : 0;
   document.querySelector('#story-pacing-summary').textContent = chapters.length
@@ -3083,58 +3474,69 @@ function renderStoryChapters() {
   document.querySelector('#story-chapter-hint').classList.toggle('hidden', chapters.length > 0);
   chapters.forEach((chapter, index) => {
     const row = document.createElement('li');
+    row.draggable = true;
+    row.dataset.chapterIndex = String(index);
     const jump = document.createElement('button');
     jump.type = 'button';
     jump.className = 'story-chapter-jump';
+    jump.setAttribute('aria-current', index === activeStoryChapterIndex ? 'true' : 'false');
+    const number = document.createElement('span');
+    number.className = 'story-chapter-number';
+    number.textContent = String(index + 1).padStart(2, '0');
     const name = document.createElement('strong');
     name.textContent = chapter.title;
     const meta = document.createElement('span');
-    const minutes = chapter.words ? Math.max(1, Math.ceil(chapter.words / 220)) : 0;
-    const pacing = averageWords && chapter.words < averageWords * 0.75 ? ' · Short'
-      : averageWords && chapter.words > averageWords * 1.25 ? ' · Long' : '';
-    meta.textContent = `${chapter.words.toLocaleString()} words · ${minutes} min${pacing}`;
-    jump.append(name, meta);
-    jump.addEventListener('click', () => jumpToStoryPosition(chapter.start, chapter.headingLength));
+    const status = metadata[index].status;
+    meta.textContent = `${chapter.words.toLocaleString()} words · ${status[0].toUpperCase()}${status.slice(1)}`;
+    jump.append(number, name, meta);
+    jump.addEventListener('click', () => {
+      activeStoryChapterIndex = index;
+      renderStoryChapters();
+      updateStoryCounter(text);
+      jumpToStoryPosition(chapter.start, chapter.headingLength);
+    });
     const up = document.createElement('button');
     up.type = 'button';
     up.className = 'story-chapter-move';
     up.textContent = '↑';
     up.disabled = index === 0;
     up.setAttribute('aria-label', `Move ${chapter.title} up`);
-    up.addEventListener('click', () => moveStoryChapter(index, -1));
+    up.addEventListener('click', () => moveStoryChapter(index, index - 1));
     const down = document.createElement('button');
     down.type = 'button';
     down.className = 'story-chapter-move';
     down.textContent = '↓';
     down.disabled = index === chapters.length - 1;
     down.setAttribute('aria-label', `Move ${chapter.title} down`);
-    down.addEventListener('click', () => moveStoryChapter(index, 1));
-    const place = document.createElement('select');
-    place.className = 'story-chapter-place';
-    place.setAttribute('aria-label', `Place for ${chapter.title}`);
-    const noPlace = document.createElement('option');
-    noPlace.value = '';
-    noPlace.textContent = 'Set scene place…';
-    place.append(noPlace);
-    places.forEach((item) => {
-      const option = document.createElement('option');
-      option.value = item.id;
-      option.textContent = item.name;
-      place.append(option);
+    down.addEventListener('click', () => moveStoryChapter(index, index + 1));
+    row.addEventListener('dragstart', (event) => {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', String(index));
+      row.classList.add('is-dragging');
     });
-    place.value = placeMap.find((item) => item.chapter.toLowerCase() === chapter.title.toLowerCase())?.placeId || '';
-    place.addEventListener('change', () => {
-      const next = placeMap.filter((item) => item.chapter.toLowerCase() !== chapter.title.toLowerCase());
-      if (place.value) next.push({ chapter: chapter.title, placeId: place.value });
-      document.querySelector('#story-chapter-places').value = JSON.stringify(next);
-      const linkedPlace = [...document.querySelectorAll('#story-places input')].find((input) => input.value === place.value);
-      if (linkedPlace && place.value) linkedPlace.checked = true;
-      handleStoryEditorInput();
+    row.addEventListener('dragend', () => row.classList.remove('is-dragging'));
+    row.addEventListener('dragover', (event) => {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
     });
-    row.append(jump, up, down, place);
+    row.addEventListener('dragenter', (event) => {
+      event.preventDefault();
+      row.classList.add('is-drop-target');
+    });
+    row.addEventListener('dragleave', (event) => {
+      if (!row.contains(event.relatedTarget)) row.classList.remove('is-drop-target');
+    });
+    row.addEventListener('drop', (event) => {
+      event.preventDefault();
+      row.classList.remove('is-drop-target');
+      const sourceIndex = Number(event.dataTransfer.getData('text/plain'));
+      moveStoryChapter(sourceIndex, index);
+    });
+    row.append(jump, up, down);
     list.append(row);
   });
   if (chapters.length) document.querySelector('#story-chapters-panel').open = true;
+  renderStoryChapterDetails(chapters, metadata, placeMap);
   renderStoryContinuity(chapters, placeMap);
 }
 
@@ -3149,45 +3551,171 @@ function parseStoryChapterPlaces(value) {
     .filter((item) => item.chapter && item.placeId && places.some((place) => place.id === item.placeId));
 }
 
-function snapshotForStoryChapter(character, chapterIndex, chapters) {
-  const snapshots = parseCharacterSnapshots(character.snapshots).map((snapshot) => ({
+function storySnapshotsForChapters(character, chapters) {
+  return parseCharacterSnapshots(character.snapshots).map((snapshot, sourceIndex) => ({
     ...snapshot,
+    sourceIndex,
     chapterIndex: chapters.findIndex((chapter) => {
       const when = snapshot.when.trim().toLowerCase();
       const title = chapter.title.trim().toLowerCase();
       return when === title || when.startsWith(`${title} ·`) || when.startsWith(`${title} -`) || when.startsWith(`${title}:`);
     }),
-  })).filter((snapshot) => Number.isInteger(snapshot.chapterIndex) && snapshot.chapterIndex >= 0 && snapshot.chapterIndex <= chapterIndex);
-  const latest = (key) => snapshots.filter((snapshot) => snapshot[key])
-    .sort((a, b) => a.chapterIndex - b.chapterIndex).at(-1)?.[key] || '';
+  })).filter((snapshot) => snapshot.chapterIndex >= 0)
+    .sort((a, b) => a.chapterIndex - b.chapterIndex || a.sourceIndex - b.sourceIndex);
+}
+
+function snapshotForStoryChapter(snapshots, chapterIndex) {
+  const latest = (key) => snapshots.filter((snapshot) => snapshot.chapterIndex <= chapterIndex && snapshot[key]).at(-1)?.[key] || '';
   return { location: latest('location'), availability: latest('availability') };
+}
+
+function parseStoryTimelinePoint(value) {
+  const point = value.trim();
+  const date = point.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (date) {
+    const parsedDate = new Date(`${point}T00:00:00Z`);
+    if (!Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === point) {
+      return Number(date[1]) + (Number(date[2]) - 1) / 12 + (Number(date[3]) - 1) / 365;
+    }
+    return null;
+  }
+  const year = point.match(/^(?:year\s+)?(\d{1,6})\s*(BCE?|CE|AD)?$/i);
+  if (!year) return null;
+  const numericYear = Number(year[1]);
+  return /^(?:bc|bce)$/i.test(year[2] || '') ? -numericYear : numericYear;
+}
+
+function parseContinuityAge(value) {
+  const age = value.match(/^\s*(\d{1,3})(?:\s*(?:years?|yo|y\/o)(?:\s*old)?)?\s*$/i);
+  return age ? Number(age[1]) : null;
+}
+
+function normalizeContinuityLocation(value) {
+  return value.normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/^(?:the|a|an)\s+/, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
+function continuityNameDistance(left, right, limit) {
+  if (Math.abs(left.length - right.length) > limit) return limit + 1;
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    const current = [row];
+    let minimum = row;
+    for (let column = 1; column <= right.length; column += 1) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
+      current[column] = Math.min(current[column - 1] + 1, previous[column] + 1, previous[column - 1] + cost);
+      minimum = Math.min(minimum, current[column]);
+    }
+    if (minimum > limit) return limit + 1;
+    previous = current;
+  }
+  return previous[right.length];
+}
+
+function similarStoryPlaceName(location) {
+  const normalized = normalizeContinuityLocation(location);
+  if (normalized.length < 6) return null;
+  const limit = normalized.length >= 10 ? 2 : 1;
+  let best = null;
+  let bestDistance = limit + 1;
+  let tied = false;
+  places.forEach((place) => {
+    const candidate = normalizeContinuityLocation(place.name);
+    if (!candidate || candidate === normalized) return;
+    const distance = continuityNameDistance(normalized, candidate, limit);
+    if (distance < bestDistance) {
+      best = place;
+      bestDistance = distance;
+      tied = false;
+    } else if (distance === bestDistance) tied = true;
+  });
+  return bestDistance <= limit && !tied ? best : null;
 }
 
 function renderStoryContinuity(chapters, placeMap) {
   const checker = document.querySelector('#story-continuity-checker');
   const summary = document.querySelector('#story-continuity-summary');
   checker.replaceChildren();
+  const metadata = storyChapterMetadata(chapters);
+  const snapshots = new Map(characters.map((character) => [character.id, storySnapshotsForChapters(character, chapters)]));
+  const timelinePoints = metadata.map((chapter) => parseStoryTimelinePoint(chapter.timelinePoint));
+  const linkedCharacterIds = new Set([...document.querySelectorAll('#story-characters input:checked')].map((input) => input.value));
   const warnings = [];
   const warningKeys = new Set();
+  const storyReferenceIds = new Set();
   const addWarning = (key, message) => {
     if (warningKeys.has(key)) return;
     warningKeys.add(key);
     warnings.push(message);
   };
+  let previousDatedChapter = null;
   chapters.forEach((chapter, index) => {
     const content = document.querySelector('#story-text').value.slice(chapter.start + chapter.headingLength, chapter.end);
-    const mentioned = findCharacterMentions(content);
+    const mentions = findCharacterMentions(content);
+    const mentionedIds = new Set(mentions.map(({ character }) => character.id));
+    const references = new Map(mentions.map(({ character }) => [character.id, character]));
+    const povCharacter = characters.find((character) => character.id === metadata[index].povCharacterId);
+    if (povCharacter) references.set(povCharacter.id, povCharacter);
     const placeId = placeMap.find((item) => item.chapter.toLowerCase() === chapter.title.toLowerCase())?.placeId;
     const scenePlace = places.find((place) => place.id === placeId);
-    mentioned.forEach(({ character }) => {
-      const state = snapshotForStoryChapter(character, index, chapters);
-      if (state.availability === 'dead') {
-        addWarning(`${index}:${character.id}:dead`, `${character.name} is mentioned in “${chapter.title}” but their latest snapshot marks them dead.`);
-      } else if (state.availability === 'absent') {
-        addWarning(`${index}:${character.id}:absent`, `${character.name} is mentioned in “${chapter.title}” but their latest snapshot marks them absent.`);
+    const timelinePoint = timelinePoints[index];
+    if (timelinePoint !== null) {
+      if (previousDatedChapter && timelinePoint < previousDatedChapter.point) {
+        addWarning(`timeline:${index}`, `“${chapter.title}” is dated ${metadata[index].timelinePoint}, before the previous dated chapter “${previousDatedChapter.title}” (${previousDatedChapter.label}).`);
       }
-      if (scenePlace && state.location && state.location.toLowerCase() !== scenePlace.name.toLowerCase()) {
+      previousDatedChapter = { point: timelinePoint, title: chapter.title, label: metadata[index].timelinePoint };
+    }
+    references.forEach((character) => {
+      storyReferenceIds.add(character.id);
+      const state = snapshotForStoryChapter(snapshots.get(character.id) || [], index);
+      if (!linkedCharacterIds.has(character.id)) {
+        const referenceKind = mentionedIds.has(character.id) ? '@mentioned' : 'set as the POV character';
+        addWarning(`${index}:${character.id}:unlinked`, `${character.name} is ${referenceKind} in “${chapter.title}” but is not linked in this story’s cast.`);
+      }
+      if (state.availability === 'dead') {
+        addWarning(`${index}:${character.id}:dead`, `${character.name} is used in “${chapter.title}” but their latest snapshot marks them dead.`);
+      } else if (state.availability === 'absent') {
+        addWarning(`${index}:${character.id}:absent`, `${character.name} is used in “${chapter.title}” but their latest snapshot marks them absent.`);
+      }
+      if (scenePlace && state.location && normalizeContinuityLocation(state.location) !== normalizeContinuityLocation(scenePlace.name)) {
         addWarning(`${index}:${character.id}:place:${state.location.toLowerCase()}`, `${character.name} is in “${chapter.title}” at ${scenePlace.name}, but their latest snapshot places them at ${state.location}.`);
+      }
+    });
+  });
+  characters.forEach((character) => {
+    if (!storyReferenceIds.has(character.id)) return;
+    const characterSnapshots = snapshots.get(character.id) || [];
+    const ageByChapter = new Map();
+    characterSnapshots.forEach((snapshot) => {
+      const age = parseContinuityAge(snapshot.age);
+      if (age !== null) ageByChapter.set(snapshot.chapterIndex, { age, title: chapters[snapshot.chapterIndex].title });
+      if (snapshot.location) {
+        const suggestedPlace = similarStoryPlaceName(snapshot.location);
+        if (suggestedPlace) {
+          addWarning(`${character.id}:${snapshot.chapterIndex}:place-name:${snapshot.location.toLowerCase()}`,
+            `${character.name}’s snapshot calls a location “${snapshot.location}”, close to the project place “${suggestedPlace.name}”. Check for a place-name variation.`);
+        }
+      }
+    });
+    const agePoints = [...ageByChapter.entries()].sort(([a], [b]) => a - b);
+    agePoints.forEach(([chapterIndex, point], index) => {
+      if (!index) return;
+      const [previousChapterIndex, previous] = agePoints[index - 1];
+      const ageChange = point.age - previous.age;
+      if (ageChange < 0) {
+        addWarning(`${character.id}:${previousChapterIndex}:${chapterIndex}:age-order`,
+          `${character.name}’s snapshot age goes from ${previous.age} in “${previous.title}” to ${point.age} in “${point.title}”.`);
+        return;
+      }
+      const previousTime = timelinePoints[previousChapterIndex];
+      const currentTime = timelinePoints[chapterIndex];
+      if (previousTime === null || currentTime === null || currentTime < previousTime) return;
+      const elapsedYears = currentTime - previousTime;
+      const minimumChange = Math.max(0, Math.floor(elapsedYears) - 1);
+      const maximumChange = Math.floor(elapsedYears) + 1;
+      if (ageChange < minimumChange || ageChange > maximumChange) {
+        addWarning(`${character.id}:${previousChapterIndex}:${chapterIndex}:age-time`,
+          `${character.name}’s age changes from ${previous.age} to ${point.age} across ${previous.title} (${metadata[previousChapterIndex].timelinePoint}) and ${point.title} (${metadata[chapterIndex].timelinePoint}). Check the timeline or snapshots.`);
       }
     });
   });
@@ -3197,7 +3725,7 @@ function renderStoryContinuity(chapters, placeMap) {
     return;
   }
   if (!warnings.length) {
-    checker.textContent = 'No continuity conflicts found in mentioned characters. Add chapter snapshots with a location or availability to check them against scene places.';
+    checker.textContent = 'No possible continuity conflicts found. Add in-world time and character snapshots with age, location, or availability for more useful checks.';
     summary.classList.add('hidden');
     return;
   }
@@ -3218,6 +3746,7 @@ function recordStoryVersion(story, label = '') {
   const list = storyVersions[story.id] || [];
   const latest = list[0];
   if (latest && latest.title === story.title && latest.text === story.text) return;
+  if (story.id === activeStoryId) storyCompareSelection = [];
   const entry = { at: story.updatedAt || new Date().toISOString(), title: story.title, text: story.text, label };
   storyVersions[story.id] = [entry, ...list].slice(0, MAX_STORY_VERSIONS);
   if (!writeStorage(STORY_VERSIONS_KEY, storyVersions)) {
@@ -3232,6 +3761,7 @@ function recordStoryVersion(story, label = '') {
 function renderStoryHistory() {
   const versions = storyVersions[activeStoryId] || [];
   const list = document.querySelector('#story-history-list');
+  const comparison = document.querySelector('#story-history-comparison');
   list.replaceChildren();
   document.querySelector('#story-history-count').textContent = versions.length
     ? `${versions.length} saved` : 'None yet';
@@ -3240,9 +3770,8 @@ function renderStoryHistory() {
     const info = document.createElement('span');
     info.className = 'story-history-info';
     const when = document.createElement('strong');
-    when.textContent = version.at
-      ? new Date(version.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
-      : 'Earlier version';
+    const date = new Date(version.at);
+    when.textContent = version.at && !Number.isNaN(date.getTime()) ? date.toLocaleString() : 'Earlier version';
     const detail = document.createElement('span');
     detail.textContent = [
       `${countWords(version.text).toLocaleString()} words`,
@@ -3254,9 +3783,56 @@ function renderStoryHistory() {
     restore.className = 'button button-quiet story-history-restore';
     restore.textContent = 'Restore';
     restore.addEventListener('click', () => restoreStoryVersion(index));
-    row.append(info, restore);
+    const compare = document.createElement('button');
+    compare.type = 'button';
+    compare.className = 'button button-quiet story-history-compare';
+    const selected = storyCompareSelection.includes(index);
+    compare.textContent = selected ? 'Selected' : 'Compare';
+    compare.setAttribute('aria-pressed', String(selected));
+    compare.addEventListener('click', () => {
+      if (storyCompareSelection.includes(index)) {
+        storyCompareSelection = storyCompareSelection.filter((item) => item !== index);
+      } else {
+        if (storyCompareSelection.length === 2) storyCompareSelection.shift();
+        storyCompareSelection.push(index);
+      }
+      renderStoryHistory();
+    });
+    row.append(info, compare, restore);
     list.append(row);
   });
+  comparison.replaceChildren();
+  comparison.classList.toggle('hidden', storyCompareSelection.length === 0);
+  comparison.classList.toggle('is-pair', storyCompareSelection.length === 2);
+  if (storyCompareSelection.length === 1) {
+    comparison.textContent = 'Select one more version to compare.';
+  } else if (storyCompareSelection.length === 2) {
+    const selectedVersions = storyCompareSelection.map((index) => versions[index]).filter(Boolean);
+    if (selectedVersions.length === 2) {
+      selectedVersions.forEach((version) => {
+        const panel = document.createElement('article');
+        panel.className = 'story-history-compare-version';
+        const heading = document.createElement('h4');
+        const date = new Date(version.at);
+        heading.textContent = `${version.title || 'Untitled story'} · ${version.at && !Number.isNaN(date.getTime()) ? date.toLocaleString() : 'Earlier version'}`;
+        const body = document.createElement('pre');
+        body.textContent = version.text;
+        panel.append(heading, body);
+        comparison.append(panel);
+      });
+    }
+  }
+}
+
+function updateStorySaveStatus(state) {
+  const status = document.querySelector('#story-save-status');
+  const labels = {
+    unsaved: 'Unsaved changes',
+    saving: 'Saving…',
+    saved: 'Saved',
+  };
+  status.dataset.saveState = state;
+  status.textContent = labels[state] || labels.unsaved;
 }
 
 function restoreStoryVersion(index) {
@@ -3278,19 +3854,46 @@ function restoreStoryVersion(index) {
 }
 
 function updateStoryCounter(text = '') {
-  const words = countWords(text);
+  const chapters = parseStoryChapters(text);
+  const chapter = chapters[activeStoryChapterIndex];
+  const chapterCount = chapter ? chapter.words : chapters.length ? 0 : countWords(text);
+  const totalCount = chapters.length ? countStoryGoalWords(text) : countWords(text);
   const counter = document.querySelector('#story-word-count');
-  const parts = [`${words.toLocaleString()} word${words === 1 ? '' : 's'}`];
+  const chapterLabel = chapter ? chapter.title : 'Current chapter';
+  document.querySelector('#story-chapter-word-count').textContent =
+    `${chapterLabel}: ${chapterCount.toLocaleString()} word${chapterCount === 1 ? '' : 's'}`;
+  document.querySelector('#story-total-word-count').textContent =
+    `Story total: ${totalCount.toLocaleString()} word${totalCount === 1 ? '' : 's'}`;
+  const extras = [];
   if (writingPreferences.wordCount === 'words-characters' || writingPreferences.wordCount === 'all') {
-    parts.push(`${text.length.toLocaleString()} / 30,000 characters`);
+    extras.push(`${text.length.toLocaleString()} / 30,000 characters`);
   }
   if (writingPreferences.wordCount === 'words-reading-time' || writingPreferences.wordCount === 'all') {
-    const minutes = words ? Math.max(1, Math.ceil(words / 220)) : 0;
-    parts.push(`${minutes} min read`);
+    const minutes = totalCount ? Math.max(1, Math.ceil(totalCount / 220)) : 0;
+    extras.push(`${minutes} min read`);
   }
-  counter.textContent = parts.join(' · ');
+  document.querySelector('#story-word-count-extras').textContent = extras.join(' · ');
   counter.classList.toggle('is-near-limit', text.length >= 27000);
   document.querySelector('#story-starters').classList.toggle('hidden', Boolean(text.trim()));
+}
+
+function renderStoryNoteChapterOptions(chapters) {
+  const select = document.querySelector('#story-note-chapter');
+  const previous = select.value;
+  select.replaceChildren(new Option('Use cursor chapter', ''));
+  select.add(new Option('No chapter', '__general__'));
+  chapters.forEach((chapter) => select.add(new Option(chapter.title, chapter.title)));
+  if (previous === '__general__' || chapters.some((chapter) => chapter.title === previous)) select.value = previous;
+}
+
+function syncStoryChapterFromCaret() {
+  const textarea = document.querySelector('#story-text');
+  const chapterIndex = parseStoryChapters(textarea.value)
+    .findIndex((chapter) => textarea.selectionStart >= chapter.start && textarea.selectionStart <= chapter.end);
+  if (chapterIndex < 0 || chapterIndex === activeStoryChapterIndex) return;
+  activeStoryChapterIndex = chapterIndex;
+  renderStoryChapters();
+  updateStoryCounter(textarea.value);
 }
 
 function normalizeWritingGoals(value) {
@@ -3405,8 +4008,23 @@ function renderStoryNotesAndTodos(story = {}) {
       content.append(quote);
     }
     if (note.chapter) {
-      const chapter = document.createElement('small');
+      const chapter = document.createElement('button');
+      chapter.type = 'button';
+      chapter.className = 'story-note-chapter';
       chapter.textContent = note.chapter;
+      chapter.addEventListener('click', () => {
+        const textarea = document.querySelector('#story-text');
+        const chapterIndex = parseStoryChapters(textarea.value).findIndex((entry) => entry.title === note.chapter);
+        if (chapterIndex < 0) {
+          showToast('That chapter heading no longer exists.');
+          return;
+        }
+        activeStoryChapterIndex = chapterIndex;
+        renderStoryChapters();
+        updateStoryCounter(textarea.value);
+        const target = parseStoryChapters(textarea.value)[chapterIndex];
+        jumpToStoryPosition(target.start, target.headingLength);
+      });
       content.append(chapter);
     }
     const remove = document.createElement('button');
@@ -3456,14 +4074,31 @@ function renderStoryNotesAndTodos(story = {}) {
   document.querySelector('#story-todo-count').textContent = `${remaining} task${remaining === 1 ? '' : 's'} left`;
 }
 
+function openCharacterStudioFromStory() {
+  storyToResumeAfterCharacterCreate = activeStoryId;
+  handleStoryEditorInput();
+  document.querySelector('#story-dialog').close();
+  window.setTimeout(() => {
+    const studio = document.querySelector('#studio');
+    setActiveNavigation('studio');
+    studio.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    document.querySelector('#studio-new-character').click();
+  }, 0);
+}
+
 function renderStoryCharacterPicker(selectedIds = []) {
   const picker = document.querySelector('#story-characters');
   picker.replaceChildren();
   if (!characters.length) {
     const hint = document.createElement('p');
     hint.className = 'story-picker-empty';
-    hint.textContent = 'No characters yet. Create one in the Character Studio and they will appear here.';
-    picker.append(hint);
+    hint.textContent = 'Create a character, then return here to connect them to this story.';
+    const create = document.createElement('button');
+    create.className = 'button button-outline story-picker-create';
+    create.type = 'button';
+    create.textContent = '＋ Create a character';
+    create.addEventListener('click', openCharacterStudioFromStory);
+    picker.append(hint, create);
     return;
   }
   characters.forEach((character) => {
@@ -3584,6 +4219,7 @@ var storyViewTimer = 0;
 let storyMentionMatches = [];
 let storyMentionActiveIndex = 0;
 let storyPeekKind = 'character';
+let storyCompareSelection = [];
 
 function renderStoryMentionSuggestions() {
   const textarea = document.querySelector('#story-text');
@@ -3711,6 +4347,7 @@ function showStoryPeek(kind, id) {
   const content = document.querySelector('#story-peek-content');
   const toggle = document.querySelector('#story-peek-toggle');
   content.classList.remove('hidden');
+  document.querySelector('#story-peek-panel').classList.add('is-expanded');
   toggle.textContent = 'Close';
   toggle.setAttribute('aria-expanded', 'true');
   storyPeekKind = kind;
@@ -3727,8 +4364,16 @@ function renderStoryEditorViews() {
   updateStoryPreview(currentStoryDraft());
 }
 
-function handleStoryEditorInput() {
+function handleStoryEditorInput(event) {
   const storyText = document.querySelector('#story-text').value;
+  if (event?.target?.id === 'story-text') {
+    const caret = event.target.selectionStart;
+    const chapterIndex = parseStoryChapters(storyText).findIndex((chapter) => caret >= chapter.start && caret <= chapter.end);
+    if (chapterIndex >= 0) {
+      activeStoryChapterIndex = chapterIndex;
+      updateStoryChapterMetadata(chapterIndex, {});
+    }
+  }
   updateStoryCounter(storyText);
   const words = countStoryGoalWords(storyText);
   if (words !== lastStoryWordCount) recordStoryWords(words - lastStoryWordCount);
@@ -4248,9 +4893,189 @@ function getProjectDashboardStories() {
   return all.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
 }
 
+function renderProjectOverview() {
+  const project = projects.find((entry) => entry.id === activeProjectId);
+  if (!project) return;
+  const stats = projectStats(project.id);
+  const stories = getProjectDashboardStories();
+  const totalWords = stories.reduce((total, story) => total + countStoryGoalWords(story.text || ''), 0);
+  const totalGoal = stories.reduce((total, story) => total + normalizeStoryMeta(story).wordGoal, 0);
+  const percent = totalGoal ? Math.min(100, Math.round((totalWords / totalGoal) * 100)) : 0;
+  const date = project.updatedAt ? new Date(project.updatedAt) : null;
+  const modified = date && Number.isFinite(date.getTime())
+    ? date.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    : 'Not modified yet';
+
+  document.querySelector('#project-overview-name').textContent = project.name;
+  document.querySelector('#project-overview-description').textContent = project.description || 'Add a description to capture what this project is about.';
+  document.querySelector('#project-overview-genre').textContent = project.genre || 'Genre not set';
+  document.querySelector('#project-overview-stories').textContent = String(stats.stories);
+  document.querySelector('#project-overview-characters').textContent = String(stats.characters);
+  document.querySelector('#project-overview-modified').textContent = modified;
+  document.querySelector('#project-overview-progress-label').textContent = totalGoal
+    ? `${totalWords.toLocaleString()} of ${totalGoal.toLocaleString()} words`
+    : 'Create a story to track overall progress';
+  document.querySelector('#project-overview-progress-percent').textContent = `${percent}%`;
+  const progress = document.querySelector('#project-overview-progress');
+  progress.setAttribute('aria-valuemax', String(Math.max(totalGoal, 1)));
+  progress.setAttribute('aria-valuenow', String(Math.min(totalWords, totalGoal)));
+  progress.setAttribute('aria-valuetext', totalGoal
+    ? `${totalWords.toLocaleString()} of ${totalGoal.toLocaleString()} words, ${percent}%`
+    : 'No story word goals set');
+  document.querySelector('#project-overview-progress-fill').style.width = `${percent}%`;
+
+  const tags = document.querySelector('#project-overview-tags');
+  tags.replaceChildren(...project.tags.map((value) => {
+    const tag = document.createElement('span');
+    tag.textContent = value;
+    return tag;
+  }));
+  const cover = document.querySelector('#project-overview-cover-image');
+  const coverEmpty = document.querySelector('#project-overview-cover-empty');
+  const hasCover = Boolean(stats.coverImage && validImageSource(stats.coverImage));
+  cover.classList.toggle('hidden', !hasCover);
+  coverEmpty.classList.toggle('hidden', hasCover);
+  if (hasCover) setImageSource(cover, stats.coverImage, () => {
+    cover.classList.add('hidden');
+    coverEmpty.classList.remove('hidden');
+  });
+}
+
+function openProjectOverviewForm() {
+  const project = projects.find((entry) => entry.id === activeProjectId);
+  if (!project) return;
+  document.querySelector('#project-overview-name-input').value = project.name;
+  document.querySelector('#project-overview-description-input').value = project.description;
+  document.querySelector('#project-overview-genre-input').value = project.genre;
+  document.querySelector('#project-overview-tags-input').value = project.tags.join(', ');
+  document.querySelector('#project-overview-cover-input').value = projectStats(project.id).coverImage;
+  document.querySelector('#project-overview-form').classList.remove('hidden');
+  document.querySelector('#project-overview-edit').classList.add('hidden');
+  document.querySelector('#project-overview-name-input').focus();
+}
+
+function previewProjectOverviewCover() {
+  const image = document.querySelector('#project-overview-cover-image');
+  const empty = document.querySelector('#project-overview-cover-empty');
+  const requestedSource = document.querySelector('#project-overview-cover-input').value.trim();
+  const requestedIsValid = requestedSource.length <= MAX_IMAGE_DATA_URL_LENGTH && validImageSource(requestedSource);
+  const source = requestedIsValid
+    ? requestedSource
+    : requestedSource ? projectStorage.read(PROJECT_COVER_STORAGE_KEY, '') : '';
+  const visible = Boolean(source && validImageSource(source));
+  image.classList.toggle('hidden', !visible);
+  empty.classList.toggle('hidden', visible);
+  if (visible) setImageSource(image, source, () => {
+    image.classList.add('hidden');
+    empty.classList.remove('hidden');
+    showToast('Could not load the project cover. Use an image URL or upload another image.');
+  });
+}
+
+function renderProjectWorkflow(story) {
+  const list = document.querySelector('#project-workflow-list');
+  const metadata = normalizeStoryMeta(story);
+  const chapters = parseStoryChapters(story.text || '');
+  const linkedCharacters = metadata.characterIds.filter((id) => characters.some((character) => character.id === id));
+  const linkedPlaces = [...new Set([
+    ...metadata.placeIds,
+    ...metadata.chapterPlaces.map((entry) => entry.placeId),
+  ])].filter((id) => places.some((place) => place.id === id));
+  const datedChapters = metadata.chapterMeta.filter((chapter) => chapter.timelinePoint).length;
+  const storyEvents = window.FictionTalesPlanning?.getData().events.filter((event) => event.storyId === story.id) || [];
+  const hasTitle = Boolean(story.title?.trim());
+  const hasText = Boolean(story.text?.trim());
+  const steps = [
+    {
+      id: 'draft',
+      title: 'Write the story',
+      detail: hasTitle && hasText ? `${countStoryGoalWords(story.text).toLocaleString()} words in this draft` : 'Give the story a title and start writing',
+      status: hasTitle && hasText ? 'In progress' : 'Start here',
+      complete: hasTitle && hasText,
+      action: hasTitle ? 'Continue writing' : 'Add a title',
+    },
+    {
+      id: 'characters',
+      title: 'Connect characters',
+      detail: linkedCharacters.length ? `${linkedCharacters.length} character${linkedCharacters.length === 1 ? '' : 's'} linked` : 'Link the cast who appear in this story',
+      status: linkedCharacters.length ? 'Connected' : 'Not connected',
+      complete: linkedCharacters.length > 0,
+      action: 'Connect characters',
+    },
+    {
+      id: 'places',
+      title: 'Connect places',
+      detail: linkedPlaces.length ? `${linkedPlaces.length} place${linkedPlaces.length === 1 ? '' : 's'} linked` : 'Link story settings or chapter locations',
+      status: linkedPlaces.length ? 'Connected' : 'Not connected',
+      complete: linkedPlaces.length > 0,
+      action: 'Connect places',
+    },
+    {
+      id: 'chapters',
+      title: 'Organize chapters',
+      detail: chapters.length ? `${chapters.length} chapter${chapters.length === 1 ? '' : 's'} organized` : 'Add chapter headings to shape the manuscript',
+      status: chapters.length ? 'Organized' : 'No chapters yet',
+      complete: chapters.length > 0,
+      action: chapters.length ? 'Review chapters' : 'Add chapters',
+    },
+    {
+      id: 'events',
+      title: 'Track timeline events',
+      detail: `${storyEvents.length} linked event${storyEvents.length === 1 ? '' : 's'} · ${datedChapters} dated chapter${datedChapters === 1 ? '' : 's'}`,
+      status: storyEvents.length || datedChapters ? 'Timeline started' : story.isDraft ? 'Save story to link events' : 'No events yet',
+      complete: storyEvents.length > 0 || datedChapters > 0,
+      action: story.isDraft ? 'Save story first' : 'Add a timeline event',
+    },
+    {
+      id: 'continuity',
+      title: 'Check continuity',
+      detail: chapters.length ? 'Review cast, locations, availability, ages, and chronology' : 'Add chapters before reviewing continuity',
+      status: chapters.length ? 'Ready to review' : 'Waiting for chapters',
+      action: 'Review continuity',
+    },
+    {
+      id: 'reading',
+      title: 'Read the manuscript',
+      detail: hasText ? 'Open the distraction-free reader at any time' : 'Write a little first to open Reading Mode',
+      status: hasText ? (story.progress === 'finished' ? 'Ready · marked finished' : 'Ready when you are') : 'Waiting for a draft',
+      action: hasText ? 'Open Reading Mode' : 'Start writing',
+    },
+  ];
+  const nextStep = steps.find((step) => !step.complete);
+  list.replaceChildren(...steps.map((step, index) => {
+    const item = document.createElement('li');
+    item.className = `project-workflow-step${step.complete ? ' is-complete' : ''}${step === nextStep ? ' is-next' : ''}`;
+    const button = document.createElement('button');
+    button.className = 'project-workflow-action';
+    button.type = 'button';
+    button.dataset.storyWorkflowStep = step.id;
+    button.setAttribute('aria-label', `${step.title}. ${step.status}. ${step.action}.`);
+    const number = document.createElement('span');
+    number.className = 'project-workflow-number';
+    number.textContent = step.complete ? '✓' : String(index + 1).padStart(2, '0');
+    const copy = document.createElement('span');
+    copy.className = 'project-workflow-copy';
+    const title = document.createElement('strong');
+    title.textContent = step.title;
+    const detail = document.createElement('small');
+    detail.textContent = step.detail;
+    copy.append(title, detail);
+    const status = document.createElement('span');
+    status.className = 'project-workflow-status';
+    status.textContent = step.status;
+    const action = document.createElement('span');
+    action.className = 'project-workflow-link';
+    action.textContent = `${step.action} →`;
+    button.append(number, copy, status, action);
+    item.append(button);
+    return item;
+  }));
+}
+
 function renderProjectDashboard() {
   const selector = document.querySelector('#project-dashboard-story');
   if (!selector) return;
+  renderProjectOverview();
   const projects = getProjectDashboardStories();
   const previousId = selector.value;
   selector.replaceChildren(new Option('Choose a story', ''));
@@ -4270,6 +5095,7 @@ function renderProjectDashboard() {
   content.classList.toggle('hidden', !selectedProject);
   openButton.disabled = !selectedProject;
   if (!selectedProject) return;
+  renderProjectWorkflow(selectedProject);
 
   const goal = normalizeStoryMeta(selectedProject).wordGoal;
   const words = countStoryGoalWords(selectedProject.text || '');
@@ -4314,6 +5140,59 @@ function renderProjectDashboard() {
   });
   document.querySelector('#project-dashboard-task-count').textContent = String(pendingTasks.length);
   document.querySelector('#project-dashboard-tasks-empty').classList.toggle('hidden', pendingTasks.length > 0);
+}
+
+function openStoryWorkflowStep(story, step, returnFocus) {
+  if (step === 'events' && !story.isDraft) {
+    document.querySelector('[data-planning-tab="timeline"]').click();
+    const planning = document.querySelector('#planning');
+    setActiveNavigation('planning');
+    planning.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const storySelect = document.querySelector('#world-event-story');
+    if ([...storySelect.options].some((option) => option.value === story.id)) storySelect.value = story.id;
+    document.querySelector('#world-event-form details').open = true;
+    document.querySelector('#world-event-form [name="date"]').focus({ preventScroll: true });
+    return;
+  }
+
+  openStoryEditor(story.id, returnFocus);
+  if (step === 'reading' && story.text?.trim()) {
+    openStoryPreview();
+    openStoryReadingMode();
+    return;
+  }
+
+  const editorForm = document.querySelector('#story-form');
+  const details = document.querySelector('#story-details');
+  const chapterTools = document.querySelector('#story-chapters-panel');
+  let target;
+  if (step === 'draft') {
+    target = story.title ? document.querySelector('#story-text') : document.querySelector('#story-title');
+  } else if (step === 'characters' || step === 'places') {
+    details.open = true;
+    target = document.querySelector(`#story-${step} input`)
+      || document.querySelector(`#story-${step} .story-picker-create`)
+      || document.querySelector(`#story-${step}`);
+  } else if (step === 'chapters') {
+    target = parseStoryChapters(story.text || '').length
+      ? document.querySelector('#story-chapter-list .story-chapter-jump')
+      : document.querySelector('#story-text');
+  } else if (step === 'events') {
+    target = story.title
+      ? document.querySelector('#story-form button[type="submit"]')
+      : document.querySelector('#story-title');
+  } else if (step === 'continuity') {
+    chapterTools.open = true;
+    target = chapterTools.querySelector('summary');
+  } else if (step === 'reading') {
+    target = editorForm.querySelector('#story-text');
+  }
+  if (target) {
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      target.focus?.({ preventScroll: true });
+    });
+  }
 }
 
 function getSeriesBooks(seriesId) {
@@ -4575,6 +5454,9 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   storyReturnFocus = returnFocus;
   const saved = savedStories.find((story) => story.id === activeStoryId);
   const draft = storyDrafts[activeStoryId];
+  storyCompareSelection = [];
+  document.querySelector('#story-note-chapter').value = '';
+  document.querySelector('#story-toolbar-tools').open = false;
   document.querySelector('#story-template-panel').classList.toggle('hidden', Boolean(saved || draft));
   document.querySelector('#story-template-select').value = '';
   renderStoryTemplatePreview('');
@@ -4601,6 +5483,8 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   document.querySelector('#story-setting').value = meta.setting;
   document.querySelector('#story-tags').value = meta.tags.join(', ');
   document.querySelector('#story-chapter-places').value = JSON.stringify(meta.chapterPlaces);
+  document.querySelector('#story-chapter-meta-data').value = JSON.stringify(meta.chapterMeta);
+  activeStoryChapterIndex = meta.chapterMeta.length ? 0 : -1;
   renderStoryNotesAndTodos(meta);
   renderStoryCharacterPicker(meta.characterIds);
   renderStoryPlacePicker([...new Set([...meta.placeIds, ...meta.chapterPlaces.map((entry) => entry.placeId)])]);
@@ -4608,6 +5492,8 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   document.querySelector('#story-peek-content').classList.add('hidden');
   document.querySelector('#story-peek-toggle').textContent = 'Open';
   document.querySelector('#story-peek-toggle').setAttribute('aria-expanded', 'false');
+  document.querySelector('#story-peek-panel').classList.remove('is-expanded');
+  document.querySelector('#story-peek-panel').style.height = '';
   document.querySelector('#story-mention-suggestions').classList.add('hidden');
   updateStoryCounter(story.text);
   lastStoryWordCount = countStoryGoalWords(story.text);
@@ -4620,9 +5506,7 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   renderStoryHistory();
   disarmStoryDiscard();
   document.querySelector('#story-editor-title').textContent = story.title || 'Write a story';
-  document.querySelector('#story-save-status').textContent = draft
-    ? 'Draft saved on this device'
-    : saved ? 'Story saved on this device' : 'Draft autosaves here';
+  updateStorySaveStatus(draft || saved ? 'saved' : 'unsaved');
   setStoryDialogMode('edit');
   const dialog = document.querySelector('#story-dialog');
   if (!dialog.open) dialog.showModal();
@@ -4671,6 +5555,7 @@ function saveProjectWordGoal() {
   }
   scheduleFolderBackup();
   renderStories();
+  renderProjectDashboard();
 }
 
 function saveCurrentStory() {
@@ -4694,7 +5579,9 @@ function saveCurrentStory() {
   const existingIndex = nextStories.findIndex((item) => item.id === story.id);
   if (existingIndex >= 0) nextStories[existingIndex] = story;
   else nextStories.unshift(story);
+  updateStorySaveStatus('saving');
   if (!writeStorage(STORIES_STORAGE_KEY, nextStories)) {
+    updateStorySaveStatus('unsaved');
     showToast('Could not save this story. Your browser storage may be full.');
     return;
   }
@@ -4708,11 +5595,12 @@ function saveCurrentStory() {
   if (!writeStorage(STORY_DRAFTS_KEY, storyDrafts)) {
     showToast('Story saved, but its temporary draft could not be cleared.');
   }
-  document.querySelector('#story-save-status').textContent = 'Story saved on this device';
+  updateStorySaveStatus('saved');
   document.querySelector('#story-editor-title').textContent = story.title;
   persistCharacterLibrary();
   renderStories();
   renderPlaces();
+  renderProjectDashboard();
   showToast('Story saved.');
   return true;
 }
@@ -4722,7 +5610,7 @@ var storyDraftPending = false;
 
 function saveStoryDraft() {
   storyDraftPending = true;
-  document.querySelector('#story-save-status').textContent = 'Saving…';
+  updateStorySaveStatus('unsaved');
   window.clearTimeout(storyDraftTimer);
   storyDraftTimer = window.setTimeout(flushStoryDraft, 450);
 }
@@ -4752,23 +5640,26 @@ function flushStoryDraft() {
     delete storyDrafts[draft.id];
     if (writeStorage(STORY_DRAFTS_KEY, storyDrafts)) scheduleFolderBackup();
     window.dispatchEvent(new CustomEvent('FictionTales:story-draft-updated', { detail: { id: draft.id } }));
-    document.querySelector('#story-save-status').textContent = 'Story saved on this device';
+    updateStorySaveStatus('saved');
     return;
   }
   storyDrafts[draft.id] = draft;
+  updateStorySaveStatus('saving');
   if (!writeStorage(STORY_DRAFTS_KEY, storyDrafts)) {
-    document.querySelector('#story-save-status').textContent = 'Draft not saved';
+    updateStorySaveStatus('unsaved');
     showToast('Could not autosave this draft. Save the story before closing.');
     return;
   }
   scheduleFolderBackup();
-  document.querySelector('#story-save-status').textContent = 'Draft saved on this device';
+  updateStorySaveStatus('saved');
   document.querySelector('#story-editor-title').textContent = draft.title || 'Write a story';
   window.dispatchEvent(new CustomEvent('FictionTales:story-draft-updated', { detail: { id: draft.id } }));
 }
 
 var storageMeterTimer = 0;
 var storageWarned = false;
+var storageProblem = false;
+let browserStorageRatio = null;
 const UI_PREFS_KEY = 'FictionTales.ui.v1';
 const UI_PREF_FIELDS = {
   '#cast-sort': 'castSort',
@@ -4800,32 +5691,81 @@ function updateStorageMeter() {
   const browserUsage = document.querySelector('#settings-browser-usage');
   const bytes = estimateStorageBytes();
   if (appUsage) appUsage.textContent = formatStorageSize(bytes);
-  if (!browserUsage) return;
   const estimateGeneration = ++storageEstimateGeneration;
-  browserUsage.textContent = 'Checking browser storage…';
+  browserStorageRatio = null;
+  if (browserUsage) browserUsage.textContent = 'Checking browser storage…';
+  updateWorkspaceStorageStatus();
+  renderStorageWarning();
   if (navigator.storage?.estimate) {
     navigator.storage.estimate().then(({ usage, quota }) => {
       if (estimateGeneration !== storageEstimateGeneration) return;
       if (typeof usage !== 'number' || typeof quota !== 'number' || quota <= 0) {
-        browserUsage.textContent = 'Usage estimate unavailable.';
+        if (browserUsage) browserUsage.textContent = 'Usage estimate unavailable.';
         return;
       }
       const ratio = usage / quota;
-      browserUsage.textContent = `${formatStorageSize(usage)} of ${formatStorageSize(quota)} used`;
-      browserUsage.classList.toggle('is-high', ratio > 0.8);
+      browserStorageRatio = ratio;
+      if (browserUsage) {
+        browserUsage.textContent = `${formatStorageSize(usage)} of ${formatStorageSize(quota)} used`;
+        browserUsage.classList.toggle('is-high', ratio >= 0.8);
+      }
+      updateWorkspaceStorageStatus();
+      renderStorageWarning();
       if (ratio > 0.9 && !storageWarned) {
         storageWarned = true;
         showToast('Browser storage is nearly full. Export a full backup from Settings before clearing unused data.');
       }
     }).catch((error) => {
       if (estimateGeneration !== storageEstimateGeneration) return;
-      browserUsage.textContent = 'Could not read browser storage usage.';
-      browserUsage.classList.remove('is-high');
+      if (browserUsage) {
+        browserUsage.textContent = 'Could not read browser storage usage.';
+        browserUsage.classList.remove('is-high');
+      }
       console.warn('Could not estimate browser storage quota.', error);
     });
   } else {
-    browserUsage.textContent = 'Usage estimate unavailable in this browser.';
-    browserUsage.classList.remove('is-high');
+    if (browserUsage) {
+      browserUsage.textContent = 'Usage estimate unavailable in this browser.';
+      browserUsage.classList.remove('is-high');
+    }
+  }
+}
+
+function backupReminderText(timestamp = readStorage(BACKUP_LAST_KEY, '')) {
+  const parsed = Date.parse(timestamp);
+  if (!Number.isFinite(parsed)) return 'Backup needed';
+  const ageDays = Math.max(0, Math.floor((Date.now() - parsed) / 86400000));
+  return ageDays >= 7 ? `Backup due · ${backupAgeLabel(timestamp)}` : `Last backup ${backupAgeLabel(timestamp)}`;
+}
+
+function updateWorkspaceStorageStatus() {
+  const status = document.querySelector('#workspace-storage-status');
+  if (!status) return;
+  const isLow = browserStorageRatio !== null && browserStorageRatio >= 0.8;
+  const backupStatus = backupReminderText();
+  const statusLabel = document.querySelector('#workspace-storage-label');
+  const statusDetail = document.querySelector('#workspace-storage-detail');
+  statusLabel.textContent = storageProblem ? 'Check your saved data' : isLow ? 'Storage space is low' : 'Saved in this browser';
+  statusDetail.textContent = `${storageProblem ? 'A save may have failed' : 'Autosave active'} · ${backupStatus}`;
+  status.classList.toggle('is-warning', isLow || backupStatus.startsWith('Backup'));
+  status.classList.toggle('has-error', storageProblem);
+  status.setAttribute('aria-label', `${statusLabel.textContent}. ${statusDetail.textContent}. Open Data and Storage settings.`);
+  status.title = browserStorageRatio === null
+    ? 'Your work is saved in this browser. Keep a full backup somewhere separate.'
+    : `Your work is saved in this browser. Browser storage is ${Math.round(browserStorageRatio * 100)}% used.`;
+}
+
+function renderStorageWarning() {
+  const warning = document.querySelector('#settings-storage-warning');
+  if (!warning) return;
+  if (storageProblem) {
+    warning.textContent = 'A save could not be completed. Export a full backup now and check available browser storage before continuing.';
+    warning.classList.remove('hidden');
+  } else if (browserStorageRatio !== null && browserStorageRatio >= 0.8) {
+    warning.textContent = `Browser storage is about ${Math.round(browserStorageRatio * 100)}% full. Export a full backup and free unused browser storage before it reaches its limit.`;
+    warning.classList.remove('hidden');
+  } else {
+    warning.classList.add('hidden');
   }
 }
 
@@ -4844,7 +5784,7 @@ function updateStorageMeterSoon() {
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   delete document.body.dataset.theme;
-  document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#16284a' : '#d4e7f5';
+  document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#16284a' : '#c8d6e2';
   updateThemeToggle(theme);
 }
 
@@ -4955,10 +5895,12 @@ function renderBackupInformation() {
   const lastBackupLabel = document.querySelector('#settings-backup-last');
   if (!lastBackupLabel) return;
   if (!Number.isFinite(lastBackupTime)) {
-    lastBackupLabel.textContent = 'No backup recorded yet.';
-    return;
+    lastBackupLabel.textContent = 'No backup recorded yet. Export a full backup to keep a copy outside this browser.';
+  } else {
+    const ageDays = Math.max(0, Math.floor((Date.now() - lastBackupTime) / 86400000));
+    lastBackupLabel.textContent = `Last backup: ${backupAgeLabel(lastBackup)} (${new Date(lastBackupTime).toLocaleString()}).${ageDays >= 7 ? ' A fresh backup is recommended.' : ''}`;
   }
-  lastBackupLabel.textContent = `Last backup: ${backupAgeLabel(lastBackup)} (${new Date(lastBackupTime).toLocaleString()}).`;
+  updateWorkspaceStorageStatus();
 }
 
 function markBackupCreated() {
@@ -5146,6 +6088,11 @@ document.addEventListener('keydown', (event) => {
 function writeStorage(key, value) {
   const saved = window.FictionTaleStorage.write(key, value);
   if (saved) updateStorageMeterSoon();
+  else {
+    storageProblem = true;
+    updateWorkspaceStorageStatus();
+    renderStorageWarning();
+  }
   return saved;
 }
 
@@ -5970,6 +6917,9 @@ function showToast(message) {
 
 window.addEventListener('fictiontale-storage-error', (event) => {
   const key = event.detail?.key || 'saved data';
+  storageProblem = true;
+  updateWorkspaceStorageStatus();
+  renderStorageWarning();
   showToast(`Could not save ${key} to browser storage. Export a backup and free browser storage space.`);
 });
 
@@ -6470,43 +7420,48 @@ compareDialog.addEventListener('close', () => {
 });
 
 function renderChangelog() {
-  const list = document.querySelector('#changelog-list');
-  list.replaceChildren();
-  CHANGELOG.forEach((entry, index) => {
-    const card = document.createElement('article');
-    card.className = 'changelog-entry';
-    const header = document.createElement('div');
-    header.className = 'changelog-entry-header';
-    const version = document.createElement('h2');
-    version.textContent = `Version ${entry.version}`;
-    header.append(version);
-    if (index === 0) {
-      const badge = document.createElement('span');
-      badge.className = 'changelog-badge';
-      badge.textContent = 'Latest';
-      header.append(badge);
-    }
-    const date = document.createElement('time');
-    date.textContent = entry.date;
-    date.dateTime = entry.date.replaceAll('/', '-');
-    header.append(date);
-    const notes = document.createElement('ul');
-    entry.notes.forEach((note) => {
-      const item = document.createElement('li');
-      const match = note.match(/^(Lore & Story|Characters|Images|Fixed|Added|Backups|Places|Connections)(:|\b)/);
-      if (match && match[2] === ':') {
-        const label = document.createElement('strong');
-        label.textContent = `${match[1]}:`;
-        item.append(label, note.slice(match[0].length));
-      } else {
-        item.textContent = note;
+  const renderList = (list, entries, compact = false) => {
+    list.replaceChildren();
+    entries.forEach((entry, index) => {
+      const card = document.createElement('article');
+      card.className = compact ? 'landing-changelog-entry' : 'changelog-entry';
+      const header = document.createElement(compact ? 'header' : 'div');
+      if (!compact) header.className = 'changelog-entry-header';
+      const version = document.createElement(compact ? 'h3' : 'h2');
+      version.textContent = `Version ${entry.version}`;
+      header.append(version);
+      if (index === 0) {
+        const badge = document.createElement('span');
+        badge.className = compact ? 'landing-latest-badge' : 'changelog-badge';
+        badge.textContent = 'Latest';
+        header.append(badge);
       }
-      notes.append(item);
+      const date = document.createElement('time');
+      date.textContent = entry.date;
+      date.dateTime = entry.date.replaceAll('/', '-');
+      header.append(date);
+      const notes = document.createElement('ul');
+      entry.notes.forEach((note) => {
+        const item = document.createElement('li');
+        const match = note.match(/^(Lore & Story|Characters|Images|Fixed|Added|Backups|Places|Connections)(:|\b)/);
+        if (match && match[2] === ':') {
+          const label = document.createElement('strong');
+          label.textContent = `${match[1]}:`;
+          item.append(label, note.slice(match[0].length));
+        } else {
+          item.textContent = note;
+        }
+        notes.append(item);
+      });
+      card.append(header, notes);
+      list.append(card);
     });
-    card.append(header, notes);
-    list.append(card);
-  });
+  };
+  renderList(document.querySelector('#changelog-list'), CHANGELOG);
+  renderList(document.querySelector('#landing-changelog-list'), CHANGELOG.slice(0, 3), true);
 }
+renderChangelog();
+document.querySelector('#landing-version').textContent = `Version ${window.FICTION_TALE_VERSION}`;
 
 function requestChangelogClose() {
   if (!changelogDialog.open || changelogDialog.classList.contains('is-closing')) return;
@@ -6553,6 +7508,12 @@ document.querySelector('#about-website').addEventListener('click', (event) => {
   aboutDialog.showModal();
   syncModalScrollLock();
   document.querySelector('#simple-tutorial-open').focus();
+});
+document.querySelectorAll('[data-tutorial-open]').forEach((button) => {
+  button.addEventListener('click', () => {
+    document.querySelector('#about-website').click();
+    document.querySelector(button.dataset.tutorialOpen === 'detailed' ? '#detailed-tutorial-open' : '#simple-tutorial-open').click();
+  });
 });
 document.querySelector('#simple-tutorial-open').addEventListener('click', () => {
   document.querySelector('#tutorial-choices').classList.add('hidden');
@@ -6672,7 +7633,20 @@ form.addEventListener('submit', (event) => {
   updateDialogueSaveButton();
   renderPlaces();
   updatePreview();
-  showToast(`${profile.name} is saved to your cast.`);
+  const storyIdToResume = storyToResumeAfterCharacterCreate;
+  storyToResumeAfterCharacterCreate = '';
+  const storyToResume = storyIdToResume
+    ? getProjectDashboardStories().find((story) => story.id === storyIdToResume) : null;
+  if (storyToResume) {
+    showToast(`${profile.name} is saved. Connect them to your story.`);
+    const dashboard = document.querySelector('#project-dashboard');
+    const returnFocus = document.querySelector('#project-workflow-list [data-story-workflow-step="characters"]');
+    setActiveNavigation('project-dashboard');
+    dashboard.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    openStoryWorkflowStep(storyToResume, 'characters', returnFocus || document.querySelector('#project-dashboard-open-story'));
+  } else {
+    showToast(`${profile.name} is saved to your cast.`);
+  }
 });
 
 const exportFields = [
@@ -7466,6 +8440,22 @@ function normalizeBackupStories(parsed) {
   };
 }
 
+function verifyStorage(key, expected) {
+  return window.FictionTaleStorage.verify(projectStorageKey(activeProjectId, key), expected);
+}
+
+async function rollbackStorageSnapshots(snapshots) {
+  let restored = true;
+  for (const [key, snapshot] of [...snapshots].reverse()) {
+    if (!restoreStorage(key, snapshot)) restored = false;
+  }
+  await window.FictionTaleStorage.flush();
+  const verified = await Promise.all(snapshots.map(([key, snapshot]) => (
+    verifyStorage(key, snapshot.exists ? snapshot.value : undefined)
+  )));
+  return restored && verified.every(Boolean);
+}
+
 async function importLibraryBackup(event) {
   const input = event.currentTarget;
   const file = input.files?.[0];
@@ -7567,10 +8557,19 @@ async function importLibraryBackup(event) {
     for (let index = 0; index < storageUpdates.length; index += 1) {
       const [key, value] = storageUpdates[index];
       if (writeStorage(key, value)) continue;
-      previous.slice(0, index).forEach(([savedKey, snapshot]) => {
-        restoreStorage(savedKey, snapshot);
-      });
-      throw new Error('Could not import the full backup. Your browser storage may be full.');
+      const restored = await rollbackStorageSnapshots(previous.slice(0, index));
+      throw new Error(restored
+        ? 'Could not import the full backup. Your previous data was restored; browser storage may be full.'
+        : 'Import failed and rollback could not be verified. Export any remaining data and check browser storage before continuing.');
+    }
+
+    await window.FictionTaleStorage.flush();
+    const verified = await Promise.all(storageUpdates.map(([key, value]) => verifyStorage(key, value)));
+    if (!verified.every(Boolean)) {
+      const restored = await rollbackStorageSnapshots(previous);
+      throw new Error(restored
+        ? 'Backup verification failed. Your previous data was restored; try importing the backup again.'
+        : 'Backup verification and rollback both failed. Export any remaining data and check browser storage before continuing.');
     }
 
     characters = nextCharacters;
@@ -7605,7 +8604,7 @@ async function importLibraryBackup(event) {
     renderRecentlyDeleted();
     window.FictionTalesPlanning?.reloadFromStorage();
     persistCharacterLibrary();
-    showToast(`Backup imported: ${importedCharacters.length} characters, ${storyResult.stories.length} stories, ${Object.keys(storyResult.drafts).length} drafts, ${importedBookSeries.length} series, ${Object.keys(importedDialogueDrafts).length} dialogue drafts, ${importedPlaces.length} places, ${importedWorldEntries.length} world entries, ${importedRecentlyDeleted.length} recently deleted items, ${hasPlanning ? 'planning data' : 'no planning data'}, and ${hasWritingGoals ? 'writing goals' : 'no writing goals'}.`);
+    showToast(`Backup imported and verified: ${importedCharacters.length} characters, ${storyResult.stories.length} stories, ${Object.keys(storyResult.drafts).length} drafts, ${importedBookSeries.length} series, ${Object.keys(importedDialogueDrafts).length} dialogue drafts, ${importedPlaces.length} places, ${importedWorldEntries.length} world entries, ${importedRecentlyDeleted.length} recently deleted items, ${hasPlanning ? 'planning data' : 'no planning data'}, and ${hasWritingGoals ? 'writing goals' : 'no writing goals'}.`);
   } catch (error) {
     showToast(error instanceof Error ? error.message : 'Import failed. Check that the backup is valid JSON or YAML.');
   } finally {
@@ -8451,6 +9450,7 @@ document.querySelector('#snapshot-add').addEventListener('click', () => {
     knowledge: document.querySelector('#snapshot-knowledge').value.trim(),
     trust: document.querySelector('#snapshot-trust').value.trim(),
     location: document.querySelector('#snapshot-location').value.trim(),
+    age: document.querySelector('#snapshot-age').value.trim(),
     availability: document.querySelector('#snapshot-availability').value,
   });
   when.value = '';
@@ -8458,6 +9458,7 @@ document.querySelector('#snapshot-add').addEventListener('click', () => {
   document.querySelector('#snapshot-knowledge').value = '';
   document.querySelector('#snapshot-trust').value = '';
   document.querySelector('#snapshot-location').value = '';
+  document.querySelector('#snapshot-age').value = '';
   document.querySelector('#snapshot-availability').value = '';
   setCharacterSnapshots(snapshots, snapshots.length - 1);
 });
@@ -8475,6 +9476,21 @@ document.querySelector('#prompt-use').addEventListener('click', useCharacterProm
 document.querySelector('#new-story').addEventListener('click', (event) => openStoryEditor('', event.currentTarget));
 document.querySelector('#story-empty-create').addEventListener('click', (event) => openStoryEditor('', event.currentTarget));
 document.querySelector('#story-preview-open').addEventListener('click', openStoryPreview);
+document.querySelector('#story-reading-mode-open').addEventListener('click', openStoryReadingMode);
+document.querySelector('#story-reader-preview').addEventListener('click', () => {
+  setStoryDialogMode('preview');
+  document.querySelector('#story-reading-mode-open').focus();
+});
+document.querySelector('#story-reader-font-down').addEventListener('click', () => {
+  storyReaderFontSize = Math.max(16, storyReaderFontSize - 2);
+  updateStoryReaderFontSize();
+});
+document.querySelector('#story-reader-font-up').addEventListener('click', () => {
+  storyReaderFontSize = Math.min(32, storyReaderFontSize + 2);
+  updateStoryReaderFontSize();
+});
+document.querySelector('#story-reading-view').addEventListener('scroll', updateStoryReaderProgress, { passive: true });
+window.addEventListener('resize', updateStoryReaderProgress);
 document.querySelector('#story-preview-edit').addEventListener('click', () => {
   const story = Object.values(storyDrafts).find((item) => item.id === activeStoryId)
     || savedStories.find((item) => item.id === activeStoryId);
@@ -8486,10 +9502,40 @@ document.querySelector('#story-back-to-draft').addEventListener('click', () => {
   if (!dialog.open || !previewFromEditor) return;
   previewFromEditor = false;
   setStoryDialogMode('edit');
+  updateStorySaveStatus(storyDraftPending ? 'unsaved' : 'saved');
   document.querySelector('#story-text').focus();
 });
 document.querySelector('#story-editor-preview').addEventListener('click', openStoryPreview);
 document.querySelector('#story-form').addEventListener('input', handleStoryEditorInput);
+document.querySelector('#story-chapter-summary').addEventListener('input', (event) => {
+  updateStoryChapterMetadata(activeStoryChapterIndex, { summary: event.currentTarget.value });
+  handleStoryEditorInput();
+});
+document.querySelector('#story-chapter-timeline-point').addEventListener('input', (event) => {
+  updateStoryChapterMetadata(activeStoryChapterIndex, { timelinePoint: event.currentTarget.value });
+  handleStoryEditorInput();
+});
+document.querySelector('#story-chapter-status').addEventListener('change', (event) => {
+  updateStoryChapterMetadata(activeStoryChapterIndex, { status: event.currentTarget.value });
+  handleStoryEditorInput();
+});
+document.querySelector('#story-chapter-pov').addEventListener('change', (event) => {
+  updateStoryChapterMetadata(activeStoryChapterIndex, { povCharacterId: event.currentTarget.value });
+  handleStoryEditorInput();
+});
+document.querySelector('#story-chapter-location').addEventListener('change', (event) => {
+  const chapters = parseStoryChapters(document.querySelector('#story-text').value);
+  const chapter = chapters[activeStoryChapterIndex];
+  if (!chapter) return;
+  const current = parseStoryChapterPlaces(document.querySelector('#story-chapter-places').value);
+  const next = current.filter((entry) => entry.chapter.toLowerCase() !== chapter.title.toLowerCase());
+  if (event.currentTarget.value) next.push({ chapter: chapter.title, placeId: event.currentTarget.value });
+  document.querySelector('#story-chapter-places').value = JSON.stringify(next);
+  updateStoryChapterMetadata(activeStoryChapterIndex, {});
+  const linkedPlace = [...document.querySelectorAll('#story-places input')].find((input) => input.value === event.currentTarget.value);
+  if (linkedPlace && event.currentTarget.value) linkedPlace.checked = true;
+  handleStoryEditorInput();
+});
 document.querySelector('#story-daily-target').addEventListener('change', (event) => setWritingGoalTarget(Number(event.currentTarget.value)));
 document.querySelector('#settings-writing-goal').addEventListener('change', (event) => setWritingGoalTarget(Number(event.currentTarget.value)));
 document.querySelector('#story-focus-toggle').addEventListener('click', (event) => {
@@ -8514,7 +9560,9 @@ document.querySelector('#story-note-add').addEventListener('click', () => {
   const textarea = document.querySelector('#story-text');
   const selection = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd).trim();
   const caret = textarea.selectionStart;
-  const chapter = parseStoryChapters(textarea.value).filter((entry) => entry.start <= caret).at(-1)?.title || '';
+  const selectedChapter = document.querySelector('#story-note-chapter').value;
+  const chapter = selectedChapter === '__general__' ? ''
+    : selectedChapter || parseStoryChapters(textarea.value).filter((entry) => entry.start <= caret).at(-1)?.title || '';
   notes.push({ id: createId(), text: noteText, quote: selection.slice(0, 240), chapter, createdAt: new Date().toISOString() });
   document.querySelector('#story-notes-data').value = JSON.stringify(notes);
   input.value = '';
@@ -8570,11 +9618,18 @@ document.querySelector('#story-text').addEventListener('keydown', (event) => {
   }
 });
 document.querySelector('#story-text').addEventListener('keyup', (event) => {
-  if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) renderStoryMentionSuggestions();
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(event.key)) {
+    syncStoryChapterFromCaret();
+    renderStoryMentionSuggestions();
+  }
 });
+document.querySelector('#story-text').addEventListener('click', syncStoryChapterFromCaret);
 document.querySelector('#story-peek-toggle').addEventListener('click', (event) => {
   const content = document.querySelector('#story-peek-content');
   const open = content.classList.toggle('hidden') === false;
+  const panel = document.querySelector('#story-peek-panel');
+  panel.classList.toggle('is-expanded', open);
+  if (!open) panel.style.height = '';
   event.currentTarget.textContent = open ? 'Close' : 'Open';
   event.currentTarget.setAttribute('aria-expanded', String(open));
 });
@@ -8691,6 +9746,263 @@ window.addEventListener('FictionTales:open-outline-scene', (event) => {
   if (chapter) jumpToStoryPosition(chapter.start, chapter.headingLength);
 });
 
+function saveProjectList(nextProjects) {
+  const normalized = normalizeProjects(nextProjects);
+  if (!writeUnscopedStorage(PROJECTS_STORAGE_KEY, normalized)) {
+    showToast('Project changes could not be saved. Check your browser storage space.');
+    return false;
+  }
+  projects = normalized;
+  renderProjectLibrary();
+  return true;
+}
+
+function projectDateLabel(value, fallback = 'Not opened yet') {
+  if (!value) return fallback;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? fallback : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(date);
+}
+
+function projectStats(projectId) {
+  const readProject = (key, fallback) => readUnscopedStorage(projectStorageKey(projectId, key), fallback);
+  const characters = readProject(STORAGE_KEY, []);
+  const stories = readProject(STORIES_STORAGE_KEY, []);
+  const drafts = readProject(STORY_DRAFTS_KEY, {});
+  const places = readProject(PLACES_STORAGE_KEY, []);
+  const worldEntries = readProject(WORLD_ENTRIES_STORAGE_KEY, []);
+  const savedIds = new Set(Array.isArray(stories) ? stories.map((story) => story.id) : []);
+  const draftCount = drafts && typeof drafts === 'object'
+    ? Object.values(drafts).filter((draft) => draft && !savedIds.has(draft.id)).length
+    : 0;
+  return {
+    stories: (Array.isArray(stories) ? stories.length : 0) + draftCount,
+    characters: Array.isArray(characters) ? characters.length : 0,
+    places: Array.isArray(places) ? places.length : 0,
+    worldEntries: Array.isArray(worldEntries) ? worldEntries.length : 0,
+    coverImage: readProject(PROJECT_COVER_STORAGE_KEY, ''),
+  };
+}
+
+function createProjectCard(project, archived = false) {
+  const card = document.createElement('article');
+  card.className = `project-card${project.id === activeProjectId ? ' is-current-project' : ''}`;
+  const top = document.createElement('div');
+  top.className = 'project-card-top';
+  const label = document.createElement('span');
+  label.className = 'project-card-type';
+  label.textContent = project.id === activeProjectId ? 'CURRENT PROJECT' : 'WRITING PROJECT';
+  const date = document.createElement('time');
+  date.textContent = archived
+    ? `Archived ${projectDateLabel(project.archivedAt)}`
+    : `Opened ${projectDateLabel(project.lastOpenedAt, 'Not yet opened')}`;
+  date.dateTime = archived ? project.archivedAt : project.lastOpenedAt;
+  top.append(label, date);
+  const title = document.createElement('h3');
+  title.textContent = project.name;
+  const description = document.createElement('p');
+  description.className = 'project-card-description';
+  description.textContent = project.description || 'A new world begins here.';
+  const stats = document.createElement('p');
+  stats.className = 'project-card-stats';
+  const projectSummary = projectStats(project.id);
+  stats.textContent = [
+    `${projectSummary.stories} stories`,
+    `${projectSummary.characters} characters`,
+    `${projectSummary.places} places`,
+    `${projectSummary.worldEntries} world entries`,
+  ].join(' · ');
+  const genre = document.createElement('p');
+  genre.className = 'project-card-genre';
+  genre.textContent = project.genre ? `Genre · ${project.genre}` : '';
+  const tags = document.createElement('div');
+  tags.className = 'project-card-tags';
+  project.tags.forEach((value) => {
+    const tag = document.createElement('span');
+    tag.textContent = value;
+    tags.append(tag);
+  });
+  const actions = document.createElement('div');
+  actions.className = 'project-card-actions';
+  const openButton = document.createElement('button');
+  openButton.className = 'button project-card-open';
+  openButton.type = 'button';
+  openButton.dataset.projectAction = 'open';
+  openButton.dataset.projectId = project.id;
+  openButton.textContent = 'Open Studio';
+  openButton.setAttribute('aria-label', `Open ${project.name} in Studio`);
+  const archiveButton = document.createElement('button');
+  archiveButton.className = 'project-card-archive';
+  archiveButton.type = 'button';
+  archiveButton.dataset.projectAction = archived ? 'restore' : 'archive';
+  archiveButton.dataset.projectId = project.id;
+  archiveButton.textContent = archived ? 'Restore' : 'Archive';
+  archiveButton.setAttribute('aria-label', `${archived ? 'Restore' : 'Archive'} ${project.name}`);
+  actions.append(openButton, archiveButton);
+  if (projectSummary.coverImage && validImageSource(projectSummary.coverImage)) {
+    const cover = document.createElement('img');
+    cover.className = 'project-card-cover';
+    cover.alt = '';
+    setImageSource(cover, projectSummary.coverImage, () => cover.classList.add('hidden'));
+    card.append(cover);
+  }
+  card.append(top, title, description);
+  if (project.genre) card.append(genre);
+  card.append(stats);
+  if (project.tags.length) card.append(tags);
+  card.append(actions);
+  return card;
+}
+
+function renderProjectCards(container, entries, archived = false) {
+  container.replaceChildren(...entries.map((project) => createProjectCard(project, archived)));
+}
+
+function renderProjectLibrary() {
+  const activeGrid = document.querySelector('#project-active-grid');
+  if (!activeGrid) return;
+  const search = document.querySelector('#project-search').value.trim().toLowerCase();
+  const sortBy = document.querySelector('#project-sort').value;
+  const matchesSearch = (project) => !search
+    || [project.name, project.description, project.genre, ...project.tags].join(' ').toLowerCase().includes(search);
+  const active = projects.filter((project) => !project.archivedAt && matchesSearch(project));
+  const archived = projects.filter((project) => project.archivedAt && matchesSearch(project));
+  const sortProjects = (entries) => [...entries].sort((a, b) => {
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    if (sortBy === 'created') return (b.createdAt || '').localeCompare(a.createdAt || '');
+    if (sortBy === 'updated') return (b.updatedAt || '').localeCompare(a.updatedAt || '');
+    return (b.lastOpenedAt || '').localeCompare(a.lastOpenedAt || '');
+  });
+  const sortedActive = sortProjects(active);
+  const recent = [...active].filter((project) => project.lastOpenedAt)
+    .sort((a, b) => b.lastOpenedAt.localeCompare(a.lastOpenedAt)).slice(0, 3);
+  const recentGrid = document.querySelector('#project-recent-grid');
+  renderProjectCards(recentGrid, recent);
+  document.querySelector('#project-recent-empty').classList.toggle('hidden', recent.length > 0);
+  renderProjectCards(activeGrid, sortedActive);
+  document.querySelector('#project-active-count').textContent = `(${active.length})`;
+  const empty = document.querySelector('#project-empty');
+  empty.classList.toggle('hidden', active.length > 0);
+  if (!active.length) {
+    const title = empty.querySelector('h3');
+    const description = empty.querySelector('p');
+    title.textContent = search ? 'No matching projects.' : 'Your next story starts here.';
+    description.textContent = search
+      ? 'Try another search or clear the search field.'
+      : 'Create a project to bring its stories, characters, places, and planning together.';
+    empty.querySelector('[data-open-project-form]').classList.toggle('hidden', Boolean(search));
+  }
+  const archivedGrid = document.querySelector('#project-archived-grid');
+  renderProjectCards(archivedGrid, sortProjects(archived), true);
+  document.querySelector('#project-archived-count').textContent = String(archived.length);
+  document.querySelector('#project-archive-empty').classList.toggle('hidden', archived.length > 0);
+  const warning = document.querySelector('#project-library-warning');
+  warning.textContent = projectInitializationError;
+  warning.classList.toggle('hidden', !projectInitializationError);
+  const currentProject = projects.find((project) => project.id === activeProjectId);
+  document.querySelector('#active-project-label').textContent = currentProject?.name || 'YOUR PROJECT';
+  document.querySelector('#project-breadcrumb-name').textContent = currentProject?.name || 'YOUR PROJECT';
+}
+
+function toggleProjectCreateForm(isOpen) {
+  const panel = document.querySelector('#project-create-panel');
+  panel.classList.toggle('hidden', !isOpen);
+  document.querySelector('#project-create-open').setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) document.querySelector('#project-name').focus();
+}
+
+function openProjectLibrary() {
+  flushPendingDrafts();
+  if (location.hash !== '#projects') window.history.pushState(null, '', '#projects');
+  document.body.classList.remove('workspace-active');
+  document.body.classList.add('project-library-active');
+  document.querySelector('.project-library-page').scrollTo({ top: 0 });
+  window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  setMobileNavigationOpen(false);
+  renderProjectLibrary();
+}
+
+function openLandingPage() {
+  flushPendingDrafts();
+  if (location.hash !== '#landing-page') window.history.pushState(null, '', '#landing-page');
+  document.body.classList.remove('workspace-active', 'project-library-active');
+  window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
+function markProjectDashboardStart() {
+  try {
+    sessionStorage.setItem(PROJECT_DASHBOARD_START_KEY, '1');
+  } catch (error) {
+    console.warn('Could not save the project start location for this session.', error);
+  }
+}
+
+function openProjectDashboardStartIfRequested() {
+  try {
+    if (sessionStorage.getItem(PROJECT_DASHBOARD_START_KEY) !== '1') return;
+    sessionStorage.removeItem(PROJECT_DASHBOARD_START_KEY);
+  } catch (error) {
+    console.warn('Could not restore the project start location for this session.', error);
+    return;
+  }
+  requestAnimationFrame(() => {
+    document.querySelector('#project-dashboard').scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    });
+    setActiveNavigation('project-dashboard');
+  });
+}
+
+function openProject(projectId) {
+  const project = projects.find((entry) => entry.id === projectId && !entry.archivedAt);
+  if (!project) {
+    showToast('This project is unavailable. Restore it from Archived projects to continue.');
+    return;
+  }
+  const now = new Date().toISOString();
+  const nextProjects = projects.map((entry) => entry.id === project.id
+    ? { ...entry, lastOpenedAt: now }
+    : entry);
+  if (!writeUnscopedStorage(PROJECTS_STORAGE_KEY, nextProjects)) {
+    showToast('This project could not be opened because its activity could not be saved.');
+    return;
+  }
+  if (!writeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, project.id)) {
+    showToast('This project could not be opened. Check your browser storage space.');
+    return;
+  }
+  projects = nextProjects;
+  activeProjectId = project.id;
+  projectNavigationPending = true;
+  markProjectDashboardStart();
+  window.history.pushState(null, '', '#studio');
+  window.location.reload();
+}
+
+function updateProjectArchive(projectId, archived) {
+  const now = new Date().toISOString();
+  const nextProjects = projects.map((project) => project.id === projectId
+    ? { ...project, archivedAt: archived ? now : '', updatedAt: now }
+    : project);
+  if (!saveProjectList(nextProjects)) return;
+  showToast(archived ? 'Project moved to Archived projects.' : 'Project restored to your library.');
+}
+
+function syncEntryRoute() {
+  const route = location.hash.slice(1);
+  if (route === 'studio' && activeProjectId
+    && projects.some((project) => project.id === activeProjectId && !project.archivedAt)) {
+    document.body.classList.add('workspace-active');
+    document.body.classList.remove('project-library-active');
+  } else if (route === 'projects' || route === 'studio') {
+    document.body.classList.remove('workspace-active');
+    document.body.classList.add('project-library-active');
+    if (route === 'studio') window.history.replaceState(null, '', '#projects');
+    renderProjectLibrary();
+  } else {
+    document.body.classList.remove('workspace-active', 'project-library-active');
+  }
+}
+
 const navLinks = [...document.querySelectorAll('.nav-link[href]')];
 const navSections = ['studio', 'cast', 'lore', 'book-series', 'project-dashboard', 'dialogue-workshop', 'places', 'world-entries', 'planning'].map((id) => document.getElementById(id));
 const sidebar = document.querySelector('.sidebar');
@@ -8699,6 +10011,80 @@ const settingsDialog = document.querySelector('#settings-dialog');
 let scrollSpyFrame = 0;
 let pendingNavigationTarget = '';
 let navigationFallbackTimer = 0;
+
+document.querySelectorAll('[data-open-workspace]').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    openProjectLibrary();
+  });
+});
+
+document.querySelectorAll('.workspace-home-link, .landing-footer-brand, [data-go-home]').forEach((link) => {
+  link.addEventListener('click', (event) => {
+    event.preventDefault();
+    openLandingPage();
+  });
+});
+
+document.querySelectorAll('[data-open-project-library]').forEach((button) => {
+  button.addEventListener('click', openProjectLibrary);
+});
+
+document.querySelector('#project-create-open').addEventListener('click', () => toggleProjectCreateForm(true));
+document.querySelector('#project-create-close').addEventListener('click', () => toggleProjectCreateForm(false));
+document.querySelector('#project-create-cancel').addEventListener('click', () => toggleProjectCreateForm(false));
+document.querySelector('[data-open-project-form]').addEventListener('click', () => toggleProjectCreateForm(true));
+document.querySelector('#project-search').addEventListener('input', renderProjectLibrary);
+document.querySelector('#project-sort').addEventListener('change', renderProjectLibrary);
+document.querySelector('#project-create-panel').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const nameInput = document.querySelector('#project-name');
+  const name = nameInput.value.trim();
+  if (!name) {
+    showToast('Add a project name first.');
+    nameInput.focus();
+    return;
+  }
+  if (projects.some((project) => project.name.toLowerCase() === name.toLowerCase())) {
+    showToast('A project with that name already exists. Choose a different name.');
+    nameInput.focus();
+    return;
+  }
+  const now = new Date().toISOString();
+  const tags = [...new Set(document.querySelector('#project-tags').value.split(',')
+    .map((tag) => tag.trim().slice(0, 24)).filter(Boolean))].slice(0, 12);
+  const project = {
+    id: globalThis.crypto?.randomUUID?.() || `project-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    name,
+    description: document.querySelector('#project-description').value.trim(),
+    genre: document.querySelector('#project-genre').value.trim().slice(0, 60),
+    tags,
+    createdAt: now,
+    updatedAt: now,
+    lastOpenedAt: now,
+    archivedAt: '',
+  };
+  if (!saveProjectList([...projects, project])) return;
+  if (!writeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, project.id)) {
+    showToast('The project was created but could not be opened. You can try opening it from the library.');
+    return;
+  }
+  activeProjectId = project.id;
+  projectNavigationPending = true;
+  markProjectDashboardStart();
+  window.history.pushState(null, '', '#studio');
+  window.location.reload();
+});
+document.querySelector('.project-library-main').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-project-action]');
+  if (!button) return;
+  if (button.dataset.projectAction === 'open') openProject(button.dataset.projectId);
+  else if (button.dataset.projectAction === 'archive') updateProjectArchive(button.dataset.projectId, true);
+  else if (button.dataset.projectAction === 'restore') updateProjectArchive(button.dataset.projectId, false);
+});
+window.addEventListener('popstate', syncEntryRoute);
+renderProjectLibrary();
+renderProjectDashboard();
 
 function setMobileNavigationOpen(isOpen) {
   sidebar.classList.toggle('is-open', isOpen);
@@ -8709,22 +10095,125 @@ mobileNavigationToggle.addEventListener('click', () => {
   setMobileNavigationOpen(mobileNavigationToggle.getAttribute('aria-expanded') !== 'true');
 });
 
-document.querySelector('#settings-open').addEventListener('click', () => {
+function openSettings(focusStorage = false) {
   setMobileNavigationOpen(false);
   document.querySelector('#settings-writing-goal').value = String(writingGoals.target);
   renderRecentlyDeleted();
   updateStorageMeter();
   renderBackupInformation();
   settingsDialog.showModal();
-});
+  if (focusStorage) {
+    requestAnimationFrame(() => document.querySelector('#settings-data-heading').scrollIntoView({ block: 'start' }));
+  }
+}
+
+document.querySelector('#settings-open').addEventListener('click', () => openSettings());
+document.querySelector('#workspace-storage-status').addEventListener('click', () => openSettings(true));
 document.querySelector('#project-dashboard-story').addEventListener('change', renderProjectDashboard);
 document.querySelector('#project-dashboard-word-goal').addEventListener('change', saveProjectWordGoal);
+document.querySelector('#project-overview-edit').addEventListener('click', openProjectOverviewForm);
+document.querySelector('#project-overview-cancel').addEventListener('click', () => {
+  document.querySelector('#project-overview-form').classList.add('hidden');
+  document.querySelector('#project-overview-edit').classList.remove('hidden');
+});
+document.querySelector('#project-overview-cover-input').addEventListener('input', previewProjectOverviewCover);
+document.querySelector('#project-overview-upload').addEventListener('click', () => {
+  document.querySelector('#project-overview-cover-file').click();
+});
+document.querySelector('#project-overview-cover-file').addEventListener('change', async (event) => {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/') || file.size > MAX_IMAGE_UPLOAD_BYTES) {
+    showToast('Choose a valid image that is 5 MB or smaller.');
+    input.value = '';
+    return;
+  }
+  try {
+    document.querySelector('#project-overview-cover-input').value = await resizeStoryImage(file, 1200, 0.78);
+    previewProjectOverviewCover();
+  } catch (error) {
+    console.error('Fiction Tale could not read the project cover image.', error);
+    showToast('Could not read that image. Try another file or paste an image link.');
+  } finally {
+    input.value = '';
+  }
+});
+document.querySelector('#project-overview-remove-cover').addEventListener('click', () => {
+  document.querySelector('#project-overview-cover-input').value = '';
+  previewProjectOverviewCover();
+});
+document.querySelector('#project-overview-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const currentProject = projects.find((project) => project.id === activeProjectId);
+  const nameInput = document.querySelector('#project-overview-name-input');
+  const name = nameInput.value.trim();
+  if (!currentProject || !name) {
+    showToast('Add a project title before saving.');
+    nameInput.focus();
+    return;
+  }
+  if (projects.some((project) => project.id !== activeProjectId && project.name.toLowerCase() === name.toLowerCase())) {
+    showToast('A project with that title already exists. Choose a different title.');
+    nameInput.focus();
+    return;
+  }
+  const coverImage = document.querySelector('#project-overview-cover-input').value.trim();
+  if (coverImage && (coverImage.length > MAX_IMAGE_DATA_URL_LENGTH || !validImageSource(coverImage))) {
+    showToast('Use a direct http(s) image link or upload a valid cover image.');
+    document.querySelector('#project-overview-cover-input').focus();
+    return;
+  }
+  const previousCover = projectStorage.read(PROJECT_COVER_STORAGE_KEY, '');
+  if (coverImage !== previousCover) {
+    const coverSaved = coverImage
+      ? writeStorage(PROJECT_COVER_STORAGE_KEY, coverImage)
+      : !previousCover || removeStorage(PROJECT_COVER_STORAGE_KEY);
+    if (!coverSaved) {
+      showToast('The project cover could not be saved. Check your browser storage space.');
+      return;
+    }
+  }
+  const now = new Date().toISOString();
+  const tags = [...new Set(document.querySelector('#project-overview-tags-input').value.split(',')
+    .map((tag) => tag.trim().slice(0, 24)).filter(Boolean))].slice(0, 12);
+  const nextProjects = projects.map((project) => project.id === activeProjectId ? {
+    ...project,
+    name,
+    description: document.querySelector('#project-overview-description-input').value.trim(),
+    genre: document.querySelector('#project-overview-genre-input').value.trim().slice(0, 60),
+    tags,
+    updatedAt: now,
+  } : project);
+  if (!saveProjectList(nextProjects)) {
+    if (coverImage !== previousCover) {
+      const restored = previousCover
+        ? writeStorage(PROJECT_COVER_STORAGE_KEY, previousCover)
+        : removeStorage(PROJECT_COVER_STORAGE_KEY);
+      if (!restored) showToast('Project details were not saved, and the previous cover could not be restored.');
+      renderProjectLibrary();
+    }
+    return;
+  }
+  document.querySelector('#project-overview-form').classList.add('hidden');
+  document.querySelector('#project-overview-edit').classList.remove('hidden');
+  renderProjectOverview();
+  renderProjectLibrary();
+  showToast('Project overview saved.');
+});
 document.querySelector('#project-dashboard-open-story').addEventListener('click', (event) => {
   const storyId = document.querySelector('#project-dashboard-story').value;
   if (storyId) openStoryEditor(storyId, event.currentTarget);
 });
 document.querySelector('#project-dashboard-create-story').addEventListener('click', (event) => {
   openStoryEditor('', event.currentTarget);
+});
+document.querySelector('#project-workflow-list').addEventListener('click', (event) => {
+  const button = event.target.closest('[data-story-workflow-step]');
+  if (!button) return;
+  const storyId = document.querySelector('#project-dashboard-story').value;
+  const story = getProjectDashboardStories().find((item) => item.id === storyId);
+  if (story) openStoryWorkflowStep(story, button.dataset.storyWorkflowStep, button);
 });
 document.querySelector('#project-dashboard-tasks').addEventListener('click', (event) => {
   const button = event.target.closest('[data-project-story-id]');
@@ -8895,6 +10384,8 @@ navLinks.forEach((link) => link.addEventListener('click', (event) => {
     renderDialogueStories(current.storyId);
     renderDialogueDraftList();
     updateDialogueSaveButton();
+  } else if (target.id === 'project-dashboard') {
+    renderProjectDashboard();
   }
   setMobileNavigationOpen(false);
   pendingNavigationTarget = window.matchMedia('(min-width: 781px)').matches ? target.id : '';
@@ -8961,6 +10452,7 @@ renderWorldEntries();
 renderRecentlyDeleted();
 renderBackupInformation();
 updateStorageMeter();
+openProjectDashboardStartIfRequested();
 window.addEventListener('fictiontale-storage-updated', updateStorageMeterSoon);
 window.addEventListener('storage', updateStorageMeterSoon);
 updatePreview();

@@ -176,6 +176,10 @@
       other: 'Other',
     };
     const statusLabels = {
+      strangers: 'Strangers',
+      acquaintances: 'Acquaintances',
+      friends: 'Friends',
+      rivals: 'Rivals',
       active: 'Ongoing',
       complicated: 'Complicated',
       strained: 'Distant',
@@ -267,6 +271,190 @@
           ? `${character.name} and ${other.name}${relationshipDetails ? `: ${relationshipDetails}` : ' are connected.'}`
           : `${character.name} and ${other.name} do not have a saved connection.`;
       });
+    });
+  }
+
+  function relationshipEntries() {
+    const cast = window.FictionTalesData.characters;
+    const entries = [];
+    const seen = new Set();
+    cast.forEach((source) => {
+      window.FictionTalesData.parseBonds(source.bonds).forEach((bond) => {
+        const target = cast.find((character) => character.id === bond.id);
+        if (!target || target.id === source.id) return;
+        const pairKey = JSON.stringify([source.id, target.id].sort());
+        if (seen.has(pairKey)) return;
+        seen.add(pairKey);
+        const reverse = window.FictionTalesData.parseBonds(target.bonds).find((item) => item.id === source.id);
+        entries.push({
+          key: pairKey,
+          source,
+          target,
+          bond,
+          directed: [
+            { source, target, bond },
+            ...(reverse?.statusHistory.length ? [{ source: target, target: source, bond: reverse }] : []),
+          ],
+        });
+      });
+    });
+    return entries.sort((a, b) => a.source.name.localeCompare(b.source.name) || a.target.name.localeCompare(b.target.name));
+  }
+
+  function relationshipPointKey(value) {
+    const point = text(value, 60).toLowerCase();
+    const chapter = point.match(/\bchapter\s*#?\s*(\d+)/i);
+    return chapter ? `chapter ${Number(chapter[1])}` : point.replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  }
+
+  function relationshipPointChapter(value) {
+    const match = text(value, 60).match(/\bchapter\s*#?\s*(\d+)/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  function compareRelationshipPoints(a, b) {
+    const chapterA = relationshipPointChapter(a.when);
+    const chapterB = relationshipPointChapter(b.when);
+    if (chapterA !== null && chapterB !== null) return chapterA - chapterB || a.index - b.index;
+    if (chapterA !== null) return -1;
+    if (chapterB !== null) return 1;
+    const dateA = Date.parse(a.when);
+    const dateB = Date.parse(b.when);
+    if (!Number.isNaN(dateA) && !Number.isNaN(dateB)) return dateA - dateB || a.index - b.index;
+    if (!Number.isNaN(dateA)) return -1;
+    if (!Number.isNaN(dateB)) return 1;
+    return a.index - b.index;
+  }
+
+  function relationshipSnapshots(character, when) {
+    const key = relationshipPointKey(when);
+    return key ? window.FictionTalesData.parseCharacterSnapshots(character.snapshots)
+      .filter((snapshot) => relationshipPointKey(snapshot.when) === key) : [];
+  }
+
+  function renderRelationshipSnapshot(character, snapshot) {
+    const card = document.createElement('article');
+    card.className = 'relationship-history-snapshot';
+    const heading = document.createElement('strong');
+    heading.textContent = `${character.name} · ${snapshot.when || 'Snapshot'}`;
+    card.append(heading);
+    [
+      ['Appearance', snapshot.appearance],
+      ['Knows', snapshot.knowledge],
+      ['Trusts', snapshot.trust],
+      ['At', snapshot.location],
+      ['Age', snapshot.age],
+      ['Availability', snapshot.availability],
+    ].filter(([, value]) => value).forEach(([label, value]) => {
+      const detail = document.createElement('p');
+      detail.textContent = `${label}: ${value}`;
+      card.append(detail);
+    });
+    return card;
+  }
+
+  function renderRelationshipHistoryEvent(event, statusLabels) {
+    const item = document.createElement('li');
+    item.className = 'relationship-history-event';
+    const header = document.createElement('div');
+    header.className = 'relationship-history-event-heading';
+    const when = document.createElement('strong');
+    when.textContent = event.when || 'Undated';
+    const status = document.createElement('span');
+    status.textContent = statusLabels[event.status] || 'Unknown status';
+    header.append(when, status);
+    item.append(header);
+    const direction = document.createElement('p');
+    direction.className = 'relationship-history-direction';
+    direction.textContent = `${event.source.name} → ${event.target.name}`;
+    item.append(direction);
+    if (event.note) {
+      const note = document.createElement('p');
+      note.className = 'relationship-history-note-text';
+      note.textContent = event.note;
+      item.append(note);
+    }
+    const snapshots = [
+      ...relationshipSnapshots(event.source, event.when).map((snapshot) => renderRelationshipSnapshot(event.source, snapshot)),
+      ...relationshipSnapshots(event.target, event.when).map((snapshot) => renderRelationshipSnapshot(event.target, snapshot)),
+    ];
+    if (snapshots.length) {
+      const details = document.createElement('details');
+      details.className = 'relationship-history-snapshots';
+      const summary = document.createElement('summary');
+      summary.textContent = `Character snapshots (${snapshots.length})`;
+      const list = document.createElement('div');
+      list.className = 'relationship-history-snapshot-list';
+      list.append(...snapshots);
+      details.append(summary, list);
+      item.append(details);
+    } else {
+      const hint = document.createElement('p');
+      hint.className = 'relationship-history-snapshot-hint';
+      hint.textContent = 'No matching snapshots yet. Use the same chapter number or timeline label in Character arc & snapshots to connect one.';
+      item.append(hint);
+    }
+    return item;
+  }
+
+  function renderRelationshipHistory() {
+    const form = document.querySelector('#relationship-history-form');
+    const pairSelect = document.querySelector('#relationship-history-pair');
+    const chapterList = document.querySelector('#relationship-history-chapters');
+    const list = document.querySelector('#relationship-history-list');
+    const empty = document.querySelector('#relationship-history-empty');
+    const previousPair = pairSelect.value;
+    const entries = relationshipEntries();
+    pairSelect.replaceChildren(new Option('Choose a connection', ''));
+    entries.forEach((entry) => pairSelect.add(new Option(`${entry.source.name} → ${entry.target.name}`, entry.key)));
+    pairSelect.value = entries.some((entry) => entry.key === previousPair) ? previousPair : entries[0]?.key || '';
+    form.querySelectorAll('input, select, button').forEach((field) => { field.disabled = !entries.length; });
+
+    const chapterOptions = new Set();
+    window.FictionTalesData.allStories.forEach((story) => {
+      (story.text || '').split('\n').forEach((line) => {
+        if (/^(?:#{1,2}[ \t]+\S.*|Chapter[ \t]+\d+\b.*)$/i.test(line)) {
+          chapterOptions.add(line.replace(/^#{1,2}[ \t]+/, '').trim());
+        }
+      });
+    });
+    chapterList.replaceChildren(...[...chapterOptions].map((chapter) => new Option(chapter, chapter)));
+
+    list.replaceChildren();
+    empty.classList.toggle('hidden', entries.length > 0);
+    empty.textContent = entries.length ? '' : 'Connect two characters in a character profile to start tracking relationship changes.';
+    const statusLabels = {
+      strangers: 'Strangers',
+      acquaintances: 'Acquaintances',
+      friends: 'Friends',
+      rivals: 'Rivals',
+      active: 'Ongoing',
+      complicated: 'Complicated',
+      strained: 'Distant',
+      broken: 'No contact',
+      reconciled: 'Reconnected',
+    };
+    entries.forEach((entry) => {
+      const section = document.createElement('section');
+      section.className = 'relationship-history-pair';
+      const heading = document.createElement('h5');
+      heading.textContent = `${entry.source.name} → ${entry.target.name}`;
+      section.append(heading);
+      const events = entry.directed.flatMap(({ source, target, bond }) => bond.statusHistory.map((event, index) => ({
+        ...event, source, target, index,
+      }))).sort(compareRelationshipPoints);
+      if (!events.length) {
+        const current = document.createElement('p');
+        current.className = 'relationship-history-current';
+        current.textContent = `Current status: ${statusLabels[entry.bond.status] || 'Unspecified'}. No changes recorded yet.`;
+        section.append(current);
+      } else {
+        const timeline = document.createElement('ol');
+        timeline.className = 'relationship-history-events';
+        events.forEach((event) => timeline.append(renderRelationshipHistoryEvent(event, statusLabels)));
+        section.append(timeline);
+      }
+      list.append(section);
     });
   }
 
@@ -533,6 +721,7 @@
 
   function renderAll() {
     renderRelationshipMap();
+    renderRelationshipHistory();
     renderTimelineSelectors();
     renderTimeline();
     renderMoodboards();
@@ -581,6 +770,27 @@
     });
   });
 
+  document.querySelector('#relationship-history-form').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const entry = relationshipEntries().find((item) => item.key === document.querySelector('#relationship-history-pair').value);
+    if (!entry) {
+      window.FictionTalesData.showToast('Choose a saved connection first.');
+      return;
+    }
+    const recorded = window.FictionTalesData.recordCharacterRelationshipEvent(entry.source.id, entry.target.id, {
+      when: document.querySelector('#relationship-history-when').value,
+      status: document.querySelector('#relationship-history-status').value,
+      note: document.querySelector('#relationship-history-note').value,
+    });
+    if (recorded) {
+      document.querySelector('#relationship-history-when').value = '';
+      document.querySelector('#relationship-history-note').value = '';
+      renderRelationshipHistory();
+      document.querySelector('#relationship-history-when').focus();
+    }
+  });
+
+  window.addEventListener('FictionTales:relationship-updated', renderAll);
   document.querySelector('#master-timeline-order').addEventListener('change', renderTimeline);
   document.querySelector('#world-event-form').addEventListener('submit', (event) => {
     event.preventDefault();

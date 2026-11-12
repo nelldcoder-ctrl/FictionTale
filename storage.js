@@ -298,8 +298,30 @@
     return bytes;
   }
 
+  async function flush() {
+    while (writes.size) {
+      await Promise.all(Array.from(writes.values()));
+    }
+  }
+
+  async function verify(key, expected) {
+    await (writes.get(key) || Promise.resolve());
+    const raw = localStorage.getItem(key);
+    let actual;
+    if (raw === MARKER) {
+      if (!database) return false;
+      actual = await getRecord(key);
+    } else if (raw === null) {
+      if (database && (await getRecord(key)) !== undefined) return false;
+      actual = undefined;
+    } else {
+      actual = parseJson(raw);
+    }
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+
   async function clearAppData() {
-    await Promise.all(Array.from(writes.values()));
+    await flush();
     if (database) {
       await new Promise((resolve, reject) => {
         const transaction = database.transaction(STORE_NAME, 'readwrite');
@@ -322,6 +344,8 @@
     write,
     remove,
     getUsageBytes,
+    flush,
+    verify,
     clearAppData,
     isAvailable: () => Boolean(database),
   };
