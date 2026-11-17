@@ -87,9 +87,10 @@ function hasUnscopedProjectData() {
 }
 
 function initializeProjectStorage() {
-  let savedProjects = normalizeProjects(readUnscopedStorage(PROJECTS_STORAGE_KEY, []));
+  const storedProjectList = readUnscopedStorage(PROJECTS_STORAGE_KEY, undefined);
+  let savedProjects = normalizeProjects(storedProjectList ?? []);
   let savedActiveProjectId = readUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, '');
-  if (!savedProjects.length && hasUnscopedProjectData()) {
+  if (storedProjectList === undefined && !savedProjects.length && hasUnscopedProjectData()) {
     const now = new Date().toISOString();
     const firstProject = {
       id: 'my-first-project',
@@ -175,6 +176,7 @@ const RECENTLY_DELETED_KEY = 'FictionTales.recently-deleted.v1';
 const WRITING_GOALS_KEY = 'FictionTales.writing-goals.v1';
 const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_PROJECT_FILE_BYTES = 100 * 1024 * 1024;
 const MAX_IMAGE_DATA_URL_LENGTH = Math.ceil(MAX_IMAGE_UPLOAD_BYTES * 4 / 3) + 1000;
 const MAX_GALLERY_VALUE_LENGTH = 20_000_000;
 const FOLDER_DB_NAME = 'fable.character-data';
@@ -9778,6 +9780,145 @@ function saveProjectList(nextProjects) {
   return true;
 }
 
+async function exportProjectFile(projectId) {
+  const project = projects.find((entry) => entry.id === projectId);
+  if (!project) {
+    showToast('This project is no longer available to export.');
+    return;
+  }
+  try {
+    if (projectId === activeProjectId) flushPendingDrafts();
+    await projectStorage.flush();
+    const data = {};
+    for (const key of PROJECT_DATA_STORAGE_KEYS) {
+      const value = readUnscopedStorage(projectStorageKey(projectId, key), undefined);
+      if (value !== undefined) data[key.slice(STORAGE_PREFIX.length)] = value;
+    }
+    const bundle = {
+      format: 'FictionTales-project',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      project,
+      data,
+    };
+    downloadFile(`FictionTales-${safeFilename(project.name)}.project.json`,
+      JSON.stringify(bundle, null, 2), 'application/json;charset=utf-8');
+    showToast(`“${project.name}” saved as a project file with its progress and drafts.`);
+  } catch (error) {
+    console.error('Fiction Tale could not export this project.', error);
+    showToast('Project export failed. Check browser download permissions and try again.');
+  }
+}
+
+function uniqueImportedProjectName(name) {
+  const existingNames = new Set(projects.map((project) => project.name.toLowerCase()));
+  if (!existingNames.has(name.toLowerCase())) return name;
+  let suffix = ' (imported)';
+  let candidate = `${name.slice(0, 80 - suffix.length)}${suffix}`;
+  let index = 2;
+  while (existingNames.has(candidate.toLowerCase())) {
+    suffix = ` (imported ${index})`;
+    candidate = `${name.slice(0, 80 - suffix.length)}${suffix}`;
+    index += 1;
+  }
+  return candidate;
+}
+
+async function removeImportedProjectData(projectId, keys) {
+  try {
+    let removed = true;
+    for (const key of keys) {
+      if (!removeUnscopedStorage(key)) removed = false;
+    }
+    await projectStorage.flush();
+    for (const key of keys) {
+      if (!await projectStorage.verify(key, undefined)) removed = false;
+    }
+    if (!removed) console.error(`Fiction Tale could not fully roll back imported project "${projectId}".`);
+    return removed;
+  } catch (error) {
+    console.error(`Fiction Tale could not verify rollback for imported project "${projectId}".`, error);
+    return false;
+  }
+}
+
+async function importProjectFile(event) {
+  const input = event.currentTarget;
+  const file = input.files?.[0];
+  if (!file) return;
+  let importedProjectId = '';
+  const writtenKeys = [];
+  try {
+    if (file.size > MAX_PROJECT_FILE_BYTES) {
+      throw new Error('Choose a project file that is 100 MB or smaller.');
+    }
+    const parsed = JSON.parse((await file.text()).replace(/^\uFEFF/, ''));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)
+      || parsed.format !== 'FictionTales-project' || parsed.version !== 1
+      || !parsed.project || typeof parsed.project !== 'object' || Array.isArray(parsed.project)
+      || !parsed.data || typeof parsed.data !== 'object' || Array.isArray(parsed.data)) {
+      throw new Error('This is not a supported Fiction Tale project file.');
+    }
+    const [sourceProject] = normalizeProjects([parsed.project]);
+    if (!sourceProject) throw new Error('The project file does not contain valid project details.');
+    if (projects.length >= 500) throw new Error('Your project library is full. Archive or delete a project before importing another.');
+
+    const updates = [];
+    for (const [suffix, value] of Object.entries(parsed.data)) {
+      const key = `${STORAGE_PREFIX}${suffix}`;
+      if (!PROJECT_DATA_STORAGE_KEYS.has(key)) {
+        throw new Error('The project file contains unsupported project data and was not imported.');
+      }
+      updates.push([key, value]);
+    }
+
+    importedProjectId = `project-${createId()}`;
+    while (projects.some((project) => project.id === importedProjectId)) {
+      importedProjectId = `project-${createId()}`;
+    }
+    const now = new Date().toISOString();
+    const importedProject = {
+      ...sourceProject,
+      id: importedProjectId,
+      name: uniqueImportedProjectName(sourceProject.name),
+      createdAt: sourceProject.createdAt || now,
+      updatedAt: now,
+      lastOpenedAt: '',
+      archivedAt: '',
+    };
+
+    for (const [key, value] of updates) {
+      const scopedKey = projectStorageKey(importedProjectId, key);
+      if (!writeUnscopedStorage(scopedKey, value)) {
+        throw new Error('Could not import the full project. Check browser storage space and try again.');
+      }
+      writtenKeys.push(scopedKey);
+    }
+    await projectStorage.flush();
+    const verified = await Promise.all(updates.map(([key, value]) => (
+      projectStorage.verify(projectStorageKey(importedProjectId, key), value)
+    )));
+    if (!verified.every(Boolean)) {
+      throw new Error('Project data could not be verified after import. The project was not added to your library.');
+    }
+    if (!saveProjectList([...projects, importedProject])) {
+      throw new Error('The project data was imported, but its library entry could not be saved.');
+    }
+    showToast(`“${importedProject.name}” imported with its saved progress and drafts.`);
+  } catch (error) {
+    if (importedProjectId && writtenKeys.length) {
+      const removed = await removeImportedProjectData(importedProjectId, writtenKeys);
+      if (!removed) {
+        showToast('Import failed, and some temporary project data could not be removed. Check browser storage.');
+        return;
+      }
+    }
+    showToast(error instanceof Error ? error.message : 'Project import failed. Check that the file is valid.');
+  } finally {
+    input.value = '';
+  }
+}
+
 function projectDateLabel(value, fallback = 'Not opened yet') {
   if (!value) return fallback;
   const date = new Date(value);
@@ -9858,6 +9999,13 @@ function createProjectCard(project, archived = false) {
   archiveButton.dataset.projectId = project.id;
   archiveButton.textContent = archived ? 'Restore' : 'Archive';
   archiveButton.setAttribute('aria-label', `${archived ? 'Restore' : 'Archive'} ${project.name}`);
+  const exportButton = document.createElement('button');
+  exportButton.className = 'project-card-export';
+  exportButton.type = 'button';
+  exportButton.dataset.projectAction = 'export';
+  exportButton.dataset.projectId = project.id;
+  exportButton.textContent = 'Save project file';
+  exportButton.setAttribute('aria-label', `Save or export ${project.name} with its progress`);
   if (archived) {
     const deleteButton = document.createElement('button');
     deleteButton.className = 'project-card-delete';
@@ -9866,9 +10014,9 @@ function createProjectCard(project, archived = false) {
     deleteButton.dataset.projectId = project.id;
     deleteButton.textContent = 'Delete permanently';
     deleteButton.setAttribute('aria-label', `Permanently delete ${project.name}`);
-    actions.append(archiveButton, deleteButton);
+    actions.append(archiveButton, exportButton, deleteButton);
   } else {
-    actions.append(openButton, archiveButton);
+    actions.append(openButton, exportButton, archiveButton);
   }
   if (projectSummary.coverImage && validImageSource(projectSummary.coverImage)) {
     const cover = document.createElement('img');
@@ -10176,6 +10324,10 @@ document.querySelectorAll('[data-open-project-library]').forEach((button) => {
 });
 
 document.querySelector('#project-create-open').addEventListener('click', () => toggleProjectCreateForm(true));
+document.querySelector('#project-import-open').addEventListener('click', () => {
+  document.querySelector('#project-import-file').click();
+});
+document.querySelector('#project-import-file').addEventListener('change', importProjectFile);
 document.querySelector('#project-create-close').addEventListener('click', () => toggleProjectCreateForm(false));
 document.querySelector('#project-create-cancel').addEventListener('click', () => toggleProjectCreateForm(false));
 document.querySelector('[data-open-project-form]').addEventListener('click', () => toggleProjectCreateForm(true));
@@ -10223,6 +10375,7 @@ document.querySelector('.project-library-main').addEventListener('click', (event
   const button = event.target.closest('[data-project-action]');
   if (!button) return;
   if (button.dataset.projectAction === 'open') openProject(button.dataset.projectId);
+  else if (button.dataset.projectAction === 'export') exportProjectFile(button.dataset.projectId);
   else if (button.dataset.projectAction === 'archive') updateProjectArchive(button.dataset.projectId, true);
   else if (button.dataset.projectAction === 'restore') updateProjectArchive(button.dataset.projectId, false);
   else if (button.dataset.projectAction === 'delete') requestProjectDelete(button.dataset.projectId, button);

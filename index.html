@@ -174,13 +174,15 @@
         <span class="brand-wordmark">Fiction Tale</span>
       </a>
       <span class="project-library-breadcrumb">YOUR WORKSPACE <span>/</span> <strong>PROJECT LIBRARY</strong></span>
+      <button class="button project-create-open project-import-open" id="project-import-open" type="button">Import project file</button>
       <button class="button project-create-open" id="project-create-open" type="button" aria-expanded="false" aria-controls="project-create-panel">＋ New project</button>
+      <input class="visually-hidden" id="project-import-file" type="file" accept=".json,application/json" aria-label="Choose a Fiction Tale project file">
     </header>
     <main class="project-library-main">
       <section class="project-library-welcome" aria-labelledby="project-library-title">
         <p class="project-library-eyebrow">YOUR STORIES, YOUR WAY</p>
         <h1 id="project-library-title">A home for every <em>project.</em></h1>
-        <p>Choose a project to enter its workspace, or start a new one. Each project keeps its stories, characters, world, and plans together.</p>
+        <p>Choose a project to enter its workspace, or start a new one. Each project keeps its stories, characters, world, and plans together. Export any project as a portable file with its progress and drafts.</p>
         <p class="project-library-warning hidden" id="project-library-warning" role="alert"></p>
       </section>
       <form class="project-create-panel hidden" id="project-create-panel">

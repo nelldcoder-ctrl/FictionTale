@@ -8908,6 +8908,8 @@ body.project-library-active .project-library-page { display: block; }
   text-transform: uppercase;
 }
 .project-create-open:hover, .project-create-submit:hover { color: #172a48; background: #f8d998; }
+.project-import-open { color: #e9e3d6; background: transparent; border-color: #ffffff40; }
+.project-import-open:hover { color: var(--library-gold); background: #ffffff0a; }
 .project-library-main { width: min(1080px, calc(100% - 64px)); margin: 0 auto; padding: 49px 0 0; }
 .project-library-welcome { max-width: 700px; margin-bottom: 40px; }
 .project-library-eyebrow {
@@ -9013,9 +9015,11 @@ body.project-library-active .project-library-page { display: block; }
 .project-card-stats { margin: 14px 0 0; color: #9eb2c7; font-size: 7px; line-height: 1.7; }
 .project-card-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 5px; }
 .project-card-tags span { padding: 4px 7px; border: 1px solid #ffffff20; border-radius: 20px; color: #d6c6a6; font-size: 7px; }
-.project-card-actions { margin-top: auto; padding-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.project-card-actions { margin-top: auto; padding-top: 16px; display: flex; align-items: center; justify-content: flex-start; flex-wrap: wrap; gap: 8px 12px; }
 .project-card-open { min-height: 33px; padding: 0 11px; border: 1px solid var(--library-gold); border-radius: 3px; color: #152847; background: var(--library-gold); box-shadow: none; font-size: 8px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; }
 .project-card-open:hover { color: #152847; background: #f8d998; }
+.project-card-export { min-height: 33px; padding: 0 8px; border: 1px solid #ffffff40; border-radius: 3px; color: #d6c6a6; background: transparent; font-size: 8px; cursor: pointer; }
+.project-card-export:hover { border-color: var(--library-gold); color: var(--library-gold); }
 .project-card-archive { padding: 6px 3px; border: 0; color: #aab9ca; background: transparent; font-size: 8px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .project-card-archive:hover { color: #f0c77b; }
 .project-card-delete { padding: 6px 3px; border: 0; color: #f0a3a0; background: transparent; font-size: 8px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
