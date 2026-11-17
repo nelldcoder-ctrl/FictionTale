@@ -219,6 +219,14 @@ let changelogReturnFocus = null;
 // Add new releases at the top, using the same fields: version, date, notes.
 const CHANGELOG = [
   {
+    version: '1.4.0',
+    date: '2026/11/17',
+    notes: [
+      'Added: Save project files from the Project Library and import them later. Files include project details, stories, drafts, saved progress, worldbuilding, and planning data; imports create a separate project without overwriting existing work.',
+      'Fixed: An empty Project Library no longer recreates a starter project after reload when the last project has been deleted. Legacy data migration still runs when no project list has been saved.',
+    ],
+  },
+  {
     version: '1.3.1',
     date: '2026/11/11',
     notes: [
