@@ -10309,6 +10309,7 @@ navSections.forEach((section) => {
 const sidebar = document.querySelector('.sidebar');
 const mobileNavigationToggle = document.querySelector('#mobile-nav-toggle');
 const settingsDialog = document.querySelector('#settings-dialog');
+let settingsReturnFocus = null;
 let scrollSpyFrame = 0;
 let pendingNavigationTarget = '';
 let navigationFallbackTimer = 0;
@@ -10402,6 +10403,7 @@ mobileNavigationToggle.addEventListener('click', () => {
 });
 
 function openSettings(focusStorage = false) {
+  settingsReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   setMobileNavigationOpen(false);
   document.querySelector('#settings-writing-goal').value = String(writingGoals.target);
   renderRecentlyDeleted();
@@ -10617,18 +10619,31 @@ document.querySelector('.settings-about-options').addEventListener('click', (eve
     content.classList.toggle('hidden', isExpanded || content.id !== selected.getAttribute('aria-controls'));
   });
 });
-document.querySelector('#settings-close').addEventListener('click', () => settingsDialog.close());
+function closeSettings() {
+  const returnFocus = settingsReturnFocus;
+  settingsReturnFocus = null;
+  settingsDialog.close();
+  const menuTriggerIsHidden = sidebar.contains(returnFocus)
+    && getComputedStyle(mobileNavigationToggle).display !== 'none'
+    && !sidebar.classList.contains('is-open');
+  const focusTarget = !menuTriggerIsHidden && returnFocus?.isConnected && returnFocus.getClientRects().length
+    ? returnFocus
+    : mobileNavigationToggle;
+  focusTarget.focus();
+}
+
+document.querySelector('#settings-close').addEventListener('click', closeSettings);
 settingsDialog.addEventListener('click', (event) => {
-  if (event.target === settingsDialog) settingsDialog.close();
+  if (event.target === settingsDialog) closeSettings();
 });
 settingsDialog.addEventListener('cancel', (event) => {
   event.preventDefault();
-  settingsDialog.close();
+  closeSettings();
 });
 
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && settingsDialog.open) {
-    settingsDialog.close();
+    closeSettings();
     return;
   }
   if (event.key === 'Escape' && mobileNavigationToggle.getAttribute('aria-expanded') === 'true') {
