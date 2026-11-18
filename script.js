@@ -33,6 +33,11 @@ let projectTouchTimer = 0;
 let projectNavigationPending = false;
 let pendingProjectDeleteId = '';
 let pendingProjectDeleteFocus = null;
+const pendingStorageKeys = new Set();
+const storageProblemKeys = new Set();
+let storageSaveState = 'saved';
+let browserStorageRatio = null;
+const BACKUP_LAST_KEY = 'FictionTales.backup.last.v1';
 
 function shouldReduceMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -218,6 +223,16 @@ let changelogReturnFocus = null;
 
 // Add new releases at the top, using the same fields: version, date, notes.
 const CHANGELOG = [
+  {
+    version: '1.4.2',
+    date: '2026/11/18',
+    notes: [
+      'Fixed PDF exports clipping content. Character profiles, stories, places, and world entry previews now print their full content across pages.',
+      'Simplified workspace navigation by removing duplicate project links, clarified that projects contain related stories and worldbuilding, and added an editable sample project with connected stories, characters, places, lore, series, and planning.',
+      'Improved save and backup indicators to show when changes are saving, saved, or unsaved, and to surface the last full backup date or a backup reminder. Successful retries clear the related save error.',
+      'Updated the quick-start guide to explain the project-first workspace and how to explore the sample project.',
+    ],
+  },
   {
     version: '1.4.0',
     date: '2026/11/17',
@@ -5683,8 +5698,6 @@ function flushStoryDraft() {
 
 var storageMeterTimer = 0;
 var storageWarned = false;
-var storageProblem = false;
-let browserStorageRatio = null;
 const UI_PREFS_KEY = 'FictionTales.ui.v1';
 const UI_PREF_FIELDS = {
   '#cast-sort': 'castSort',
@@ -5699,7 +5712,6 @@ const UI_PREF_FIELDS = {
   '#settings-word-count': 'storyWordCount',
   '#settings-reading-appearance': 'storyReadingAppearance',
 };
-const BACKUP_LAST_KEY = 'FictionTales.backup.last.v1';
 let deferredInstallPrompt = null;
 let appInstalledThisSession = false;
 let globalSearchTimer = 0;
@@ -5760,7 +5772,8 @@ function backupReminderText(timestamp = readStorage(BACKUP_LAST_KEY, '')) {
   const parsed = Date.parse(timestamp);
   if (!Number.isFinite(parsed)) return 'Backup needed';
   const ageDays = Math.max(0, Math.floor((Date.now() - parsed) / 86400000));
-  return ageDays >= 7 ? `Backup due · ${backupAgeLabel(timestamp)}` : `Last backup ${backupAgeLabel(timestamp)}`;
+  const date = new Date(parsed).toLocaleDateString();
+  return ageDays >= 7 ? `Backup needed · ${date}` : `Backup ${date}`;
 }
 
 function updateWorkspaceStorageStatus() {
@@ -5768,22 +5781,25 @@ function updateWorkspaceStorageStatus() {
   if (!status) return;
   const isLow = browserStorageRatio !== null && browserStorageRatio >= 0.8;
   const backupStatus = backupReminderText();
+  const lastBackup = readStorage(BACKUP_LAST_KEY, '');
+  const hasSaveError = storageProblemKeys.size > 0;
   const statusLabel = document.querySelector('#workspace-storage-label');
   const statusDetail = document.querySelector('#workspace-storage-detail');
-  statusLabel.textContent = storageProblem ? 'Check your saved data' : isLow ? 'Storage space is low' : 'Saved in this browser';
-  statusDetail.textContent = `${storageProblem ? 'A save may have failed' : 'Autosave active'} · ${backupStatus}`;
-  status.classList.toggle('is-warning', isLow || backupStatus.startsWith('Backup'));
-  status.classList.toggle('has-error', storageProblem);
+  statusLabel.textContent = hasSaveError ? 'Unsaved changes'
+    : storageSaveState === 'saving' ? 'Saving changes…'
+      : isLow ? 'Storage space is low' : 'Saved in this browser';
+  statusDetail.textContent = `${hasSaveError ? 'A save failed' : storageSaveState === 'saving' ? 'Saving to this device' : 'Autosave active'} · ${backupStatus}`;
+  status.classList.toggle('is-warning', isLow || backupStatus.startsWith('Backup needed'));
+  status.classList.toggle('has-error', hasSaveError);
   status.setAttribute('aria-label', `${statusLabel.textContent}. ${statusDetail.textContent}. Open Data and Storage settings.`);
-  status.title = browserStorageRatio === null
-    ? 'Your work is saved in this browser. Keep a full backup somewhere separate.'
-    : `Your work is saved in this browser. Browser storage is ${Math.round(browserStorageRatio * 100)}% used.`;
+  const backupDate = Date.parse(lastBackup);
+  status.title = `Last full backup: ${Number.isFinite(backupDate) ? new Date(backupDate).toLocaleString() : 'none recorded'}. Open Data & Storage to export or restore a backup.`;
 }
 
 function renderStorageWarning() {
   const warning = document.querySelector('#settings-storage-warning');
   if (!warning) return;
-  if (storageProblem) {
+  if (storageProblemKeys.size) {
     warning.textContent = 'A save could not be completed. Export a full backup now and check available browser storage before continuing.';
     warning.classList.remove('hidden');
   } else if (browserStorageRatio !== null && browserStorageRatio >= 0.8) {
@@ -6111,10 +6127,16 @@ document.addEventListener('keydown', (event) => {
 });
 
 function writeStorage(key, value) {
+  const scopedKey = projectStorageKey(activeProjectId, key);
+  pendingStorageKeys.add(scopedKey);
+  storageSaveState = 'saving';
+  updateWorkspaceStorageStatus();
   const saved = window.FictionTaleStorage.write(key, value);
   if (saved) updateStorageMeterSoon();
   else {
-    storageProblem = true;
+    pendingStorageKeys.delete(scopedKey);
+    storageProblemKeys.add(scopedKey);
+    storageSaveState = pendingStorageKeys.size ? 'saving' : 'unsaved';
     updateWorkspaceStorageStatus();
     renderStorageWarning();
   }
@@ -6122,8 +6144,19 @@ function writeStorage(key, value) {
 }
 
 function removeStorage(key) {
+  const scopedKey = projectStorageKey(activeProjectId, key);
+  pendingStorageKeys.add(scopedKey);
+  storageSaveState = 'saving';
+  updateWorkspaceStorageStatus();
   const removed = window.FictionTaleStorage.remove(key);
   if (removed) updateStorageMeterSoon();
+  else {
+    pendingStorageKeys.delete(scopedKey);
+    storageProblemKeys.add(scopedKey);
+    storageSaveState = pendingStorageKeys.size ? 'saving' : 'unsaved';
+    updateWorkspaceStorageStatus();
+    renderStorageWarning();
+  }
   return removed;
 }
 
@@ -6946,9 +6979,30 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
+window.addEventListener('fictiontale-storage-pending', (event) => {
+  const key = event.detail?.key;
+  if (key) pendingStorageKeys.add(key);
+  storageSaveState = 'saving';
+  updateWorkspaceStorageStatus();
+});
+
+window.addEventListener('fictiontale-storage-updated', (event) => {
+  const key = event.detail?.key;
+  if (key) {
+    pendingStorageKeys.delete(key);
+    storageProblemKeys.delete(key);
+  }
+  storageSaveState = pendingStorageKeys.size ? 'saving' : 'saved';
+  updateWorkspaceStorageStatus();
+  renderStorageWarning();
+  updateStorageMeterSoon();
+});
+
 window.addEventListener('fictiontale-storage-error', (event) => {
   const key = event.detail?.key || 'saved data';
-  storageProblem = true;
+  pendingStorageKeys.delete(key);
+  storageProblemKeys.add(key);
+  storageSaveState = pendingStorageKeys.size ? 'saving' : 'unsaved';
   updateWorkspaceStorageStatus();
   renderStorageWarning();
   showToast(`Could not save ${key} to browser storage. Export a backup and free browser storage space.`);
@@ -9927,6 +9981,172 @@ async function importProjectFile(event) {
   }
 }
 
+async function createSampleProject() {
+  if (projects.length >= 500) {
+    showToast('Your project library is full. Archive or delete a project before adding the sample.');
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const characterId = createId();
+  const storyId = createId();
+  const placeId = createId();
+  const seriesId = createId();
+  const projectId = `project-${createId()}`;
+  const character = normalizeCharacter({
+    id: characterId,
+    name: 'Mara Venn',
+    role: 'Harbor cartographer',
+    pronouns: 'she / her',
+    age: '29',
+    species: 'Human',
+    description: 'A meticulous mapmaker who trusts coastlines more than promises.',
+    traits: ['observant', 'patient', 'stubborn'],
+    story: 'Mara returned to Brinewake after receiving a chart in her late mother’s handwriting. The map shows a harbor that does not exist at low tide.',
+    goal: 'Find the vanished harbor before the spring storms.',
+    fear: 'That the map is accurate—and that her mother knew why.',
+    accent: '#4385e8',
+    updatedAt: now,
+  });
+  const place = normalizePlace({
+    id: placeId,
+    name: 'Brinewake Harbor',
+    kind: 'city',
+    summary: 'A tide-bound port built around a lighthouse that never goes dark.',
+    description: 'Salt-stained warehouses ring the old harbor. At the lowest tides, a line of black stones appears beyond the eastern breakwater.',
+    atmosphere: 'Fog bells, wet rope, and the smell of rain on warm stone.',
+    characterIds: [characterId],
+    tags: ['coastal', 'mystery'],
+    updatedAt: now,
+  });
+  const worldEntry = normalizeWorldEntry({
+    id: createId(),
+    name: 'The Low-Tide Chart',
+    category: 'artifact',
+    summary: 'An old chart that changes with the tide.',
+    description: 'The ink shifts when seawater touches the paper. A second harbor appears only during the lowest spring tides.',
+    details: 'Mara inherited the chart from her mother. Its marks match the black stones beyond Brinewake’s eastern breakwater.',
+    tags: ['map', 'mystery'],
+    updatedAt: now,
+  });
+  const series = normalizeBookSeries([{
+    id: seriesId,
+    name: 'The Brinewake Maps',
+    summary: 'A coastal mystery told through maps, memory, and the people who make a home by the sea.',
+    characterIds: [characterId],
+    placeIds: [placeId],
+    events: [],
+    updatedAt: now,
+  }])[0];
+  const { isDraft, ...story } = normalizeImportedStory({
+    id: storyId,
+    title: 'The Harbor That Wasn’t There',
+    text: '## Chapter 1 · The Wrong Shore\n\nMara found the harbor on a map that had been blank the night before.\n\nAt dawn, the tide pulled away from Brinewake and left a road of black stones pointing east. The lighthouse bell rang once, though no one had touched it.\n\nShe folded the chart into her coat and went to find out where the road ended.',
+    summary: 'A mapmaker discovers a vanished harbor appearing on her inherited chart.',
+    setting: 'Brinewake Harbor',
+    kind: 'story',
+    progress: 'drafting',
+    wordGoal: 12000,
+    seriesId,
+    seriesOrder: 1,
+    characterIds: [characterId],
+    placeIds: [placeId],
+    chapterPlaces: [{ chapter: 'Chapter 1 · The Wrong Shore', placeId }],
+    chapterMeta: [{ title: 'Chapter 1 · The Wrong Shore', status: 'draft', povCharacterId: characterId }],
+    tags: ['coastal fantasy', 'mystery'],
+    updatedAt: now,
+  });
+  if (!character || !place || !worldEntry || !series || !story || isDraft) {
+    showToast('The sample project could not be prepared. Your existing projects were not changed.');
+    return;
+  }
+
+  const project = {
+    id: projectId,
+    name: uniqueImportedProjectName('Sample: The Lanterns of Brinewake'),
+    description: 'Explore how a story, its cast, places, and worldbuilding fit together.',
+    genre: 'Coastal fantasy · Mystery',
+    tags: ['Sample project', 'Explore and edit'],
+    createdAt: now,
+    updatedAt: now,
+    lastOpenedAt: now,
+    archivedAt: '',
+  };
+  const data = {
+    characters: [character],
+    stories: [story],
+    'book-series': [series],
+    places: [place],
+    'world-entries': [worldEntry],
+    planning: {
+      events: [],
+      moodboards: [],
+      outline: [{
+        id: createId(),
+        storyId,
+        act: 1,
+        title: 'Follow the black stones',
+        summary: 'Mara reaches the road before the rising tide covers it.',
+        chapter: 'Chapter 1 · The Wrong Shore',
+        createdAt: now,
+      }],
+    },
+  };
+  const writtenKeys = [];
+  const previousActiveProjectId = readUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, '');
+  const previousProjects = projects;
+  let activeProjectChanged = false;
+  try {
+    for (const [suffix, value] of Object.entries(data)) {
+      const key = `${STORAGE_PREFIX}${suffix}.v1`;
+      if (!PROJECT_DATA_STORAGE_KEYS.has(key)) throw new Error('Sample project data is not supported.');
+      const scopedKey = projectStorageKey(projectId, key);
+      if (!writeUnscopedStorage(scopedKey, value)) {
+        throw new Error('Could not save the sample project. Check your browser storage space.');
+      }
+      writtenKeys.push(scopedKey);
+    }
+    await projectStorage.flush();
+    const verified = await Promise.all(Object.entries(data).map(([suffix, value]) => (
+      projectStorage.verify(projectStorageKey(projectId, `${STORAGE_PREFIX}${suffix}.v1`), value)
+    )));
+    if (!verified.every(Boolean)) throw new Error('The sample project could not be verified and was not added.');
+    if (!writeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, projectId)) {
+      throw new Error('The sample project was saved but could not be opened.');
+    }
+    activeProjectChanged = true;
+    if (!saveProjectList([...projects, project])) {
+      throw new Error('The sample project could not be added to your library.');
+    }
+    activeProjectId = projectId;
+    projectNavigationPending = true;
+    window.history.pushState(null, '', '#studio');
+    window.location.reload();
+  } catch (error) {
+    let rollbackMessage = '';
+    if (projects.some((entry) => entry.id === projectId)) {
+      if (!writeUnscopedStorage(PROJECTS_STORAGE_KEY, previousProjects)) {
+        showToast('The sample project was created but could not be rolled back. It remains in your project library.');
+        return;
+      }
+      projects = previousProjects;
+      renderProjectLibrary();
+    }
+    if (activeProjectChanged) {
+      const restored = previousActiveProjectId
+        ? writeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY, previousActiveProjectId)
+        : removeUnscopedStorage(ACTIVE_PROJECT_STORAGE_KEY);
+      if (!restored) rollbackMessage = 'The sample project could not be opened, and the previous active project could not be restored.';
+    }
+    const removed = await removeImportedProjectData(projectId, writtenKeys);
+    if (!removed) {
+      showToast('The sample project could not be added, and some temporary data could not be removed. Check browser storage.');
+      return;
+    }
+    showToast(rollbackMessage || (error instanceof Error ? error.message : 'The sample project could not be created.'));
+  }
+}
+
 function projectDateLabel(value, fallback = 'Not opened yet') {
   if (!value) return fallback;
   const date = new Date(value);
@@ -10078,6 +10298,7 @@ function renderProjectLibrary() {
       ? 'Try another search or clear the search field.'
       : 'Create a project to bring its stories, characters, places, and planning together.';
     empty.querySelector('[data-open-project-form]').classList.toggle('hidden', Boolean(search));
+    document.querySelector('#project-sample-empty').classList.toggle('hidden', Boolean(search));
   }
   const archivedGrid = document.querySelector('#project-archived-grid');
   renderProjectCards(archivedGrid, sortProjects(archived), true);
@@ -10337,6 +10558,8 @@ document.querySelector('#project-import-open').addEventListener('click', () => {
   document.querySelector('#project-import-file').click();
 });
 document.querySelector('#project-import-file').addEventListener('change', importProjectFile);
+document.querySelector('#project-sample-open').addEventListener('click', createSampleProject);
+document.querySelector('#project-sample-empty').addEventListener('click', createSampleProject);
 document.querySelector('#project-create-close').addEventListener('click', () => toggleProjectCreateForm(false));
 document.querySelector('#project-create-cancel').addEventListener('click', () => toggleProjectCreateForm(false));
 document.querySelector('[data-open-project-form]').addEventListener('click', () => toggleProjectCreateForm(true));
@@ -10782,7 +11005,6 @@ renderRecentlyDeleted();
 renderBackupInformation();
 updateStorageMeter();
 openProjectOverviewOnEntry();
-window.addEventListener('fictiontale-storage-updated', updateStorageMeterSoon);
 window.addEventListener('storage', updateStorageMeterSoon);
 updatePreview();
 initializeDataFolder();

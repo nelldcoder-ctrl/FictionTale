@@ -174,6 +174,7 @@
         <span class="brand-wordmark">Fiction Tale</span>
       </a>
       <span class="project-library-breadcrumb">YOUR WORKSPACE <span>/</span> <strong>PROJECT LIBRARY</strong></span>
+      <button class="button project-create-open project-sample-open" id="project-sample-open" type="button">Explore sample project</button>
       <button class="button project-create-open project-import-open" id="project-import-open" type="button">Import project file</button>
       <button class="button project-create-open" id="project-create-open" type="button" aria-expanded="false" aria-controls="project-create-panel">＋ New project</button>
       <input class="visually-hidden" id="project-import-file" type="file" accept=".json,application/json" aria-label="Choose a Fiction Tale project file">
@@ -182,7 +183,7 @@
       <section class="project-library-welcome" aria-labelledby="project-library-title">
         <p class="project-library-eyebrow">YOUR STORIES, YOUR WAY</p>
         <h1 id="project-library-title">A home for every <em>project.</em></h1>
-        <p>Choose a project to enter its workspace, or start a new one. Each project keeps its stories, characters, world, and plans together. Export any project as a portable file with its progress and drafts.</p>
+        <p>Choose a project to enter its workspace, or start a new one. Each project is the home for its stories, characters, places, lore, and plans. Explore a sample project to see how those pieces connect, or export any project as a portable file with its progress and drafts.</p>
         <p class="project-library-warning hidden" id="project-library-warning" role="alert"></p>
       </section>
       <form class="project-create-panel hidden" id="project-create-panel">
@@ -214,7 +215,10 @@
           <span class="project-empty-icon" aria-hidden="true">✦</span>
           <h3>Your next story starts here.</h3>
           <p>Create a project to bring its stories, characters, places, and planning together.</p>
-          <button class="button project-create-submit" type="button" data-open-project-form>Create your first project <span aria-hidden="true">→</span></button>
+          <div class="project-empty-actions">
+            <button class="button project-create-submit" type="button" data-open-project-form>Create your first project <span aria-hidden="true">→</span></button>
+            <button class="button project-sample-empty" type="button" id="project-sample-empty">Explore a sample project</button>
+          </div>
         </div>
       </section>
       <details class="project-archive-section" id="project-archive-section">
@@ -298,16 +302,6 @@
           </div>
           <span class="project-workspace-status"><span aria-hidden="true"></span> Active project</span>
         </div>
-        <details class="project-workspace-navigation" open>
-          <summary><span>Project navigation</span><span class="project-workspace-chevron" aria-hidden="true">⌄</span></summary>
-          <nav aria-label="Project navigation links">
-            <a class="project-navigation-link" href="#project-dashboard">Overview</a>
-            <a class="project-navigation-link" href="#lore">Writing</a>
-            <a class="project-navigation-link" href="#characters">Characters</a>
-            <a class="project-navigation-link" href="#world-entries">World</a>
-            <a class="project-navigation-link" href="#planning">Planning</a>
-          </nav>
-        </details>
       </section>
 
       <section class="characters-workspace" id="characters" aria-label="Characters">
@@ -1764,9 +1758,9 @@
             <button class="tutorial-back button button-quiet" type="button">← All guides</button>
             <h2 id="simple-tutorial-title">Quick start</h2>
             <ol class="tutorial-steps">
-              <li><strong>Create a character.</strong> In Characters, choose <strong>New character</strong>, add a name, and save. Add more details whenever you’re ready.</li>
-              <li><strong>Start writing.</strong> Open <strong>Stories</strong>, choose <strong>New story</strong>, and start typing. Your draft saves automatically on this device.</li>
-              <li><strong>Build your world.</strong> Add locations in <strong>Places</strong>. Use <strong>World</strong> for groups, artifacts, magic systems, species, languages, religions, and glossary terms.</li>
+              <li><strong>Choose a project.</strong> A project is the home for its stories, characters, places, worldbuilding, and plans. Choose <strong>Explore sample project</strong> in the Project Library to see how they connect, or create your own.</li>
+              <li><strong>Start writing.</strong> Open <strong>Writing → Stories</strong>, choose <strong>New story</strong>, and start typing. Your draft saves automatically on this device.</li>
+              <li><strong>Build your world.</strong> Add locations in <strong>Worldbuilding → Places</strong>. Use <strong>World entries</strong> for groups, artifacts, magic systems, species, languages, religions, and glossary terms.</li>
               <li><strong>Find things quickly.</strong> Use the search at the top to find characters, stories, places, and world entries. Change the app’s appearance in <strong>Settings → Appearance</strong>.</li>
               <li><strong>Back up your work.</strong> Watch the workspace header for your save and backup status. Open it to reach <strong>Settings → Data &amp; Storage</strong>, export a full backup, or import one. You can also export stories as Markdown, plain text, Word, or EPUB, and print profiles or story previews to PDF.</li>
             </ol>

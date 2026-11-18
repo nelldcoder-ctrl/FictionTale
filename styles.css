@@ -174,21 +174,6 @@ button { cursor: pointer; }
   white-space: nowrap;
 }
 .project-workspace-status > span { width: 6px; height: 6px; border-radius: 50%; background: #38a66b; }
-.project-workspace-navigation { border-top: 1px solid var(--line); }
-.project-workspace-navigation summary {
-  min-height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--muted);
-  font-size: 10px;
-  list-style: none;
-  cursor: pointer;
-}
-.project-workspace-navigation summary::-webkit-details-marker { display: none; }
-.project-workspace-chevron { transition: transform .18s; }
-.project-workspace-navigation:not([open]) .project-workspace-chevron { transform: rotate(-90deg); }
-.project-workspace-navigation nav { display: flex; flex-wrap: wrap; gap: 7px; padding: 0 0 12px; }
 .project-navigation-link {
   padding: 5px 9px;
   border-radius: 999px;
@@ -1436,9 +1421,11 @@ body { background: radial-gradient(ellipse at 80% 0, #e4efff 0, transparent 36%)
   body * { visibility: hidden !important; }
   .character-dialog[open], .character-dialog[open] * { visibility: visible !important; }
   .character-dialog[open] {
+    display: block !important;
     position: static !important;
     inset: auto !important;
     width: 100% !important;
+    height: auto !important;
     max-width: none !important;
     max-height: none !important;
     overflow: visible !important;
@@ -1448,10 +1435,17 @@ body { background: radial-gradient(ellipse at 80% 0, #e4efff 0, transparent 36%)
     background: white !important;
   }
   .character-dialog::backdrop { display: none !important; }
-  .profile-window, .profile-scroll { display: block !important; overflow: visible !important; }
+  .profile-window, .profile-scroll, .profile-sections, .story-window,
+  .story-reading-view, .story-reading-copy, .story-reading-body {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
   .profile-window-toolbar, .profile-edit-button { display: none !important; }
   .full-profile-hero { print-color-adjust: exact; -webkit-print-color-adjust: exact; break-inside: avoid; }
-  .profile-section { break-inside: avoid; box-shadow: none !important; }
+  .profile-section { break-inside: auto; box-shadow: none !important; }
   .profile-section:not([open]) > .profile-section-content { display: block !important; }
   .profile-section summary { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .story-dialog[open] {
@@ -1470,12 +1464,7 @@ body { background: radial-gradient(ellipse at 80% 0, #e4efff 0, transparent 36%)
   }
   .story-dialog[open] *, .story-dialog[open] { visibility: hidden !important; }
   .story-dialog[open] .story-reading-view, .story-dialog[open] .story-reading-view * { visibility: visible !important; }
-  .story-dialog[open] .story-window, .story-dialog[open] .story-reading-view {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
-    background: #fff !important;
-  }
+  .story-dialog[open] .story-window, .story-dialog[open] .story-reading-view { background: #fff !important; }
   .story-dialog[open] .story-toolbar, .story-dialog[open] .story-editor, .story-dialog[open] .story-reading-toolbar, .story-dialog[open] .story-print-button, .story-dialog[open] #story-preview-edit { display: none !important; }
   .story-dialog[open] .story-reading-copy { max-width: none; padding: 0 !important; }
   .story-dialog[open] .story-reading-copy h1, .story-dialog[open] .story-reading-copy > p:not(.eyebrow), .story-dialog[open] .story-reading-body, .story-dialog[open] .story-reading-body * { color: #172b3b !important; }
@@ -6708,7 +6697,7 @@ img, svg, video, canvas { max-width: 100%; }
   :root, html[data-theme="dark"] { --sheet: #fff; --sheet-field: #fff; --sheet-text: #172b3b; --muted: #444; --accent: #6b531d; --line: #bbb; --bg: #fff; }
   body:has(#entity-preview-dialog[open]) .character-dialog:not(#entity-preview-dialog) { display: none !important; }
   .entity-preview { max-width: none; padding: 0; }
-  .entity-preview-section { break-inside: avoid; }
+  .entity-preview-section { break-inside: auto; }
   .entity-preview-cover { max-height: 260px; }
   .entity-preview-actions { display: none !important; }
 }
@@ -8910,6 +8899,8 @@ body.project-library-active .project-library-page { display: block; }
 .project-create-open:hover, .project-create-submit:hover { color: #172a48; background: #f8d998; }
 .project-import-open { color: #e9e3d6; background: transparent; border-color: #ffffff40; }
 .project-import-open:hover { color: var(--library-gold); background: #ffffff0a; }
+.project-sample-open { color: var(--library-gold); background: transparent; border-color: #f0c77b70; }
+.project-sample-open:hover { color: #172a48; background: var(--library-gold); }
 .project-library-main { width: min(1080px, calc(100% - 64px)); margin: 0 auto; padding: 49px 0 0; }
 .project-library-welcome { max-width: 700px; margin-bottom: 40px; }
 .project-library-eyebrow {
@@ -9028,6 +9019,9 @@ body.project-library-active .project-library-page { display: block; }
 .project-empty-icon { color: var(--library-gold); font-size: 22px; }
 .project-library-empty h3 { margin: 7px 0; color: #f3efe6; font: 500 22px 'EB Garamond', Georgia, serif; }
 .project-library-empty p { max-width: 420px; margin: 0 auto 15px; font-size: 9px; line-height: 1.7; }
+.project-empty-actions { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 9px; }
+.project-sample-empty { min-height: 41px; padding: 0 15px; border: 1px solid #ffffff40; color: #e9e3d6; background: transparent; font-size: 9px; }
+.project-sample-empty:hover { border-color: var(--library-gold); color: var(--library-gold); }
 .project-archive-section { margin: 0 0 35px; border-top: 1px solid var(--library-line); border-bottom: 1px solid var(--library-line); }
 .project-archive-section > summary { padding: 17px 0; color: #e9e2d4; font-size: 10px; font-weight: 700; cursor: pointer; list-style: none; }
 .project-archive-section > summary::-webkit-details-marker { display: none; }
