@@ -176,6 +176,7 @@
   }
 
   function queueWrite(key, generation, serialized, previousValue, hadPreviousValue) {
+    window.dispatchEvent(new CustomEvent('fictiontale-storage-pending', { detail: { key } }));
     const previous = writes.get(key) || Promise.resolve();
     const pending = previous.catch(() => {}).then(async () => {
       if (generations.get(key) !== generation) return;
@@ -185,7 +186,7 @@
       if (key.startsWith('FictionTales.')) {
         localStorage.removeItem(`fable.${key.slice('FictionTales.'.length)}`);
       }
-      window.dispatchEvent(new Event('fictiontale-storage-updated'));
+      window.dispatchEvent(new CustomEvent('fictiontale-storage-updated', { detail: { key } }));
     }).catch((error) => {
       if (generations.get(key) === generation) {
         if (hadPreviousValue) values.set(key, previousValue);
@@ -241,7 +242,7 @@
         });
         writes.set(key, pending);
       }
-      window.dispatchEvent(new Event('fictiontale-storage-updated'));
+      window.dispatchEvent(new CustomEvent('fictiontale-storage-updated', { detail: { key } }));
       return true;
     } catch (error) {
       if (database) {
@@ -274,7 +275,7 @@
         });
         writes.set(key, pending);
       }
-      window.dispatchEvent(new Event('fictiontale-storage-updated'));
+      window.dispatchEvent(new CustomEvent('fictiontale-storage-updated', { detail: { key } }));
       return true;
     } catch (error) {
       console.error(`Could not remove "${key}" from browser storage.`, error);
