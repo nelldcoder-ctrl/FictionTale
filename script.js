@@ -230,7 +230,10 @@ const CHANGELOG = [
     version: '1.4.12',
     date: '2026/11/19',
     changes: ['Redesigned the Story editor around writing, with Writing and Planning modes, chapter navigation, references, and a dedicated planning panel.'],
-    fixes: ['Prevented the mobile Story editor footer from overflowing horizontally.'],
+    fixes: [
+      'Made the Story editor fill the desktop viewport and improved mobile toolbar and preview spacing.',
+      'Kept the mobile save status fully readable and prevented the editor footer from overflowing horizontally.',
+    ],
     knownIssues: [],
   },
   {

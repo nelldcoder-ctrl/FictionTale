@@ -9218,7 +9218,20 @@ body.project-library-active .project-library-page { display: block; }
 }
 
 /* Story editor: keep writing primary and move planning tools into a deliberate mode. */
-.story-dialog .story-window { min-width: 0; overflow: hidden; }
+.story-dialog.character-dialog {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: 100dvh;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.story-dialog .story-window { width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
 .story-dialog .story-toolbar {
   position: relative;
   inset: auto;
@@ -9340,10 +9353,12 @@ body.project-library-active .project-library-page { display: block; }
   max-height: min(70dvh, 690px);
   overflow-y: auto;
   align-content: start;
+  grid-auto-rows: max-content;
   gap: 10px;
 }
 .story-dialog .story-editor-sidebars > * { min-width: 0; }
-.story-dialog .story-details-settings { overflow: hidden; }
+.story-dialog .story-details-settings .story-style-grid > * { min-width: 0; }
+.story-dialog .story-details-settings .story-meta-input { min-width: 0; }
 .story-dialog .story-details-settings .story-style-grid { padding: 10px; }
 .story-dialog .story-word-count {
   position: sticky;
@@ -9376,6 +9391,7 @@ body.project-library-active .project-library-page { display: block; }
 .story-dialog .story-editor-actions { flex-wrap: wrap; }
 .story-dialog .story-editor-actions > span { font-size: 10px; }
 .story-dialog .story-editor-buttons { flex-wrap: wrap; }
+.story-dialog .story-reading-toolbar { top: 0; margin-top: 0; }
 @media (max-width: 1000px) {
   .story-dialog.is-planning-mode .story-compose-layout { grid-template-columns: minmax(160px, 200px) minmax(0, 1fr); }
   .story-dialog.is-planning-mode .story-editor-sidebars {
@@ -9386,10 +9402,27 @@ body.project-library-active .project-library-page { display: block; }
   }
 }
 @media (max-width: 700px) {
-  .story-dialog.character-dialog { width: 100vw; height: 100dvh; max-height: 100dvh; border: 0; border-radius: 0; }
-  .story-dialog .story-toolbar { gap: 7px; padding: 8px 10px; }
-  .story-topbar-title { flex-basis: 100%; order: 0; }
-  .story-dialog .story-save-status { margin-left: auto; }
+  .story-dialog .story-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    gap: 7px 10px;
+    padding: 8px 10px;
+  }
+  .story-topbar-title { grid-column: 1 / -1; grid-row: 1; min-width: 0; }
+  .story-dialog #story-mode-toggle { grid-column: 1; grid-row: 2; }
+  .story-dialog .story-save-status {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    min-width: 0;
+    width: max-content;
+    max-width: 100%;
+    margin: 0;
+  }
+  .story-dialog #story-editor-preview { grid-column: 1; grid-row: 3; justify-self: start; }
+  .story-dialog #story-close { grid-column: 2; grid-row: 3; justify-self: end; }
   .story-dialog #story-form { padding: 10px; }
   .story-dialog .story-editor-actions { flex-direction: column; flex-wrap: nowrap; }
   .story-dialog .story-editor-buttons { flex-direction: column; flex-wrap: nowrap; }
@@ -9404,4 +9437,135 @@ body.project-library-active .project-library-page { display: block; }
   .story-planning-grid .story-writing-lists { grid-template-columns: minmax(0, 1fr); }
   .story-planning-grid .story-writing-goal { grid-column: auto; }
   .story-dialog .story-editor-actions { align-items: flex-start; }
+}
+@media (max-width: 600px) {
+  #lore .lore-heading-actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  #lore .lore-heading-actions > .button {
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 0 0 auto;
+    line-height: 1.35;
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 360px) {
+  .story-dialog .story-mode-toggle { gap: 0; padding: 2px; }
+  .story-dialog .story-mode-toggle button { padding-right: 8px; padding-left: 8px; font-size: 9px; }
+  .story-dialog .story-save-status { padding: 6px 8px; font-size: 9px; }
+}
+
+/* Readable project-library and Story-planning text in both themes. */
+body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.project-card-type,
+.project-card-top time,
+.project-card-genre,
+.project-card-stats,
+.project-card-tags span,
+.project-card-open,
+.project-card-export,
+.project-card-archive,
+.project-sample-empty,
+.project-library-footer,
+.project-archive-section > summary span { font-size: 11px; }
+.project-card-description { font-size: 13px; line-height: 1.55; }
+.project-library-empty p { font-size: 13px; line-height: 1.55; }
+.project-archive-section > summary { font-size: 13px; }
+.project-search input,
+.project-library-tools select { font-size: 14px; }
+.project-field-optional { color: var(--side-muted); font-size: 12px; }
+.project-create-cancel { font-size: 11px; }
+
+.story-dialog .story-chapter-sidebar-hint,
+.story-dialog .story-chapter-jump span:not(.story-chapter-number),
+.story-dialog .story-chapter-details label,
+.story-dialog .story-chapter-sidebar-heading span,
+.story-dialog .story-chapter-last-edited,
+.story-dialog .story-mention-hint,
+.story-dialog .story-writing-goal-heading > span,
+.story-dialog .story-goal-controls,
+.story-dialog .story-pacing-summary,
+.story-dialog .story-editor-actions > span,
+.story-dialog .story-history-info,
+.story-dialog .story-history-info span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.story-dialog .story-chapter-sidebar-heading { letter-spacing: .06em; }
+.story-dialog .story-template-panel > summary span { font-size: 12px; }
+.story-dialog .story-writing-list h3,
+.story-dialog .story-chapter-details h3 { color: var(--sheet-text); font-size: 14px; }
+.story-dialog .story-history-info strong,
+.story-dialog .story-history-compare-version h4,
+.story-dialog .story-previous-summary h4 { color: var(--sheet-text); font-size: 12px; }
+.story-dialog .story-history-comparison,
+.story-dialog .story-note-list > li { color: var(--sheet-text); font-size: 13px; line-height: 1.55; }
+.story-dialog .story-previous-summary p { color: var(--sheet-text); font-size: 13px; line-height: 1.55; }
+.story-dialog .story-note-content blockquote { color: var(--sheet-text); }
+.story-dialog .story-note-chapter { color: var(--accent); font-size: 12px; }
+.story-dialog .story-chapter-details textarea,
+.story-dialog .story-chapter-details select,
+.story-dialog .story-chapter-details input,
+.story-dialog .story-goal-controls input,
+.story-dialog .story-writing-add input,
+.story-dialog .story-note-add-row select {
+  color: var(--sheet-text);
+  border-color: var(--line);
+  background: var(--sheet-field);
+  font-size: 14px;
+}
+.story-dialog .story-writing-add .button { font-size: 11px; letter-spacing: .04em; text-transform: none; }
+.story-dialog .story-mention-hint code {
+  color: var(--sheet-text);
+  background: color-mix(in srgb, var(--accent) 12%, var(--sheet-field));
+}
+
+@media (max-width: 780px) {
+  .main-content .topbar .breadcrumb { font-size: 11px; letter-spacing: .04em; }
+  .button:not(:disabled) { font-size: 12px; letter-spacing: .05em; }
+  .main-content .intro-copy,
+  .main-content .privacy-note,
+  .main-content .section-help,
+  .main-content .autosave-label,
+  .main-content .project-workspace-meta,
+  .main-content .card-meta {
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: normal;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .button:not(:disabled),
+  .project-card-open,
+  .project-card-export,
+  .project-card-archive {
+    transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease,
+      box-shadow 180ms ease, transform 180ms ease;
+  }
+  details > summary { transition: color 160ms ease, background-color 160ms ease; }
+  .button:not(:disabled):active,
+  .project-card-open:active,
+  .project-card-export:active,
+  .project-card-archive:active { transform: translateY(1px); }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .button:not(:disabled):hover,
+  .project-card-open:hover,
+  .project-card-export:hover,
+  .project-card-archive:hover { transform: translateY(-1px); }
+  .project-card:hover { transform: translateY(-2px); }
 }
