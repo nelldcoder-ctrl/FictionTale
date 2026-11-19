@@ -227,6 +227,13 @@ let changelogReturnFocus = null;
 // Add new releases at the top, using the same fields: version, date, notes.
 const CHANGELOG = [
   {
+    version: '1.4.8',
+    date: '2026/11/19',
+    notes: [
+      'Refreshed the offline app cache so existing installations replace outdated workspace scripts after an update.',
+    ],
+  },
+  {
     version: '1.4.7',
     date: '2026/11/19',
     notes: [
