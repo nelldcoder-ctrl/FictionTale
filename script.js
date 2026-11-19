@@ -224,114 +224,126 @@ let aboutReturnFocus = null;
 let changelogCloseTimer = null;
 let changelogReturnFocus = null;
 
-// Add new releases at the top, using the same fields: version, date, notes.
+// Add new releases at the top, using the same fields: version, date, changes, fixes, knownIssues.
 const CHANGELOG = [
+  {
+    version: '1.4.12',
+    date: '2026/11/19',
+    changes: ['Redesigned the Story editor around writing, with Writing and Planning modes, chapter navigation, references, and a dedicated planning panel.'],
+    fixes: ['Prevented the mobile Story editor footer from overflowing horizontally.'],
+    knownIssues: [],
+  },
+  {
+    version: '1.4.11',
+    date: '2026/11/19',
+    changes: ['Moved Help & guides and Settings below the main navigation on desktop, with a modestly smaller utility style.'],
+    fixes: [],
+    knownIssues: [],
+  },
+  {
+    version: '1.4.10',
+    date: '2026/11/19',
+    changes: ['Standardized release records with version, release date, changes, fixes, and known issues.'],
+    fixes: [],
+    knownIssues: [],
+  },
+  {
+    version: '1.4.9',
+    date: '2026/11/19',
+    changes: [],
+    fixes: ['Improved readability of character descriptions over the colored profile header on mobile.'],
+    knownIssues: [],
+  },
   {
     version: '1.4.8',
     date: '2026/11/19',
-    notes: [
-      'Refreshed the offline app cache so existing installations replace outdated workspace scripts after an update.',
-    ],
+    changes: ['Refreshed the offline app cache so existing installations receive updated scripts.'],
+    fixes: [],
+    knownIssues: [],
   },
   {
     version: '1.4.7',
     date: '2026/11/19',
-    notes: [
-      'Added Undo for deleted content, expanded Recently Deleted to dialogue drafts and book series, and clarified that deleted items can be restored before choosing Delete forever.',
-      'Made replacement warnings for backup imports explain which existing data will be replaced and what Cancel preserves.',
-    ],
+    changes: ['Added Undo and expanded Recently Deleted to dialogue drafts and book series.', 'Clarified restore and permanent-delete actions, and explained what backup imports replace.'],
+    fixes: [],
+    knownIssues: [],
   },
   {
     version: '1.4.6',
     date: '2026/11/19',
-    notes: [
-      'Made workspace navigation easier to follow with live breadcrumbs, clearer editor return paths, and Help & guides available from the sidebar.',
-      'Kept the active navigation indicator aligned with nested sections such as Cast.',
-    ],
+    changes: ['Added workspace breadcrumbs, clearer return paths, and sidebar access to Help & guides.'],
+    fixes: ['Kept the active navigation indicator aligned with nested sections such as Cast.'],
+    knownIssues: [],
   },
   {
     version: '1.4.5',
     date: '2026/11/19',
-    notes: [
-      'Grouped character editing into essentials, character depth, and advanced details. Name is the only required field, and optional lore no longer affects a completion score.',
-      'Collapsed optional details by default in place, world-entry, and story editors, while reopening sections that already contain saved details.',
-      'Kept planning tools approachable with focused tabs and optional relationship-history details.',
-    ],
+    changes: ['Grouped character editing into essentials, depth, and advanced details; only the name is required.', 'Collapsed optional details in place, world-entry, and story editors, and simplified planning with focused tabs.'],
+    fixes: ['Optional character lore no longer affects the completion score.'],
+    knownIssues: [],
   },
   {
     version: '1.4.4',
     date: '2026/11/19',
-    notes: [
-      'Put direct project actions first on the landing page so writers can continue a project or start a new one without scrolling through the introduction.',
-      'Expanded full backups to include every project and restore alongside existing work. Older backup imports validate supported versions, verify saved data, and ask before replacing matching records.',
-      'Clarified saved, saving, and unsaved storage states, and added a visible warning when existing browser data cannot be loaded.',
-    ],
+    changes: ['Put project actions first on the landing page.', 'Expanded backups to include every project, validate imports, and warn before replacing matching records.', 'Added clearer saved, saving, and unsaved states plus a warning when browser data cannot load.'],
+    fixes: [],
+    knownIssues: [],
   },
   {
     version: '1.4.3',
     date: '2026/11/19',
-    notes: [
-      'Fixed blank PDF output by isolating the active preview for printing. Character profiles, stories, places, and world entries now print their content reliably.',
-    ],
+    changes: [],
+    fixes: ['Fixed blank PDF output for character profiles, stories, places, and world entries.'],
+    knownIssues: [],
   },
   {
     version: '1.4.2',
     date: '2026/11/18',
-    notes: [
-      'Fixed PDF exports clipping content. Character profiles, stories, places, and world entry previews now print their full content across pages.',
-      'Simplified workspace navigation by removing duplicate project links, clarified that projects contain related stories and worldbuilding, and added an editable sample project with connected stories, characters, places, lore, series, and planning.',
-      'Improved save and backup indicators to show when changes are saving, saved, or unsaved, and to surface the last full backup date or a backup reminder. Successful retries clear the related save error.',
-      'Updated the quick-start guide to explain the project-first workspace and how to explore the sample project.',
-    ],
+    changes: ['Simplified project navigation, added an editable connected sample project, and updated the quick-start guide.', 'Improved save and backup status indicators, including backup reminders.'],
+    fixes: ['Fixed PDF exports clipping character profiles, stories, places, and world entries.', 'Successful save retries now clear the related error.'],
+    knownIssues: [],
   },
   {
     version: '1.4.0',
     date: '2026/11/17',
-    notes: [
-      'Added: Save project files from the Project Library and import them later. Files include project details, stories, drafts, saved progress, worldbuilding, and planning data; imports create a separate project without overwriting existing work.',
-      'Fixed: An empty Project Library no longer recreates a starter project after reload when the last project has been deleted. Legacy data migration still runs when no project list has been saved.',
-    ],
+    changes: ['Added project file export and import for project details, stories, drafts, worldbuilding, and planning data. Imports create a separate project.'],
+    fixes: ['Deleting the last project no longer recreates a starter project after reload.'],
+    knownIssues: [],
   },
   {
     version: '1.3.1',
     date: '2026/11/11',
-    notes: [
-      'Fixed restoring deleted shared characters and places so their links to book series are preserved, even if the series is edited while an item is deleted.',
-    ],
+    changes: [],
+    fixes: ['Restoring deleted shared characters and places now preserves their book-series links.'],
+    knownIssues: [],
   },
   {
     version: '1.3',
     date: '2026/11/11',
-    notes: [
-      'Added Book Series. Group stories into a series, choose each book’s number, link shared characters and places, and keep a timeline of events across books. Series are included in full backups.',
-    ],
+    changes: ['Added Book Series with book order, shared characters and places, cross-book timelines, and backup support.'],
+    fixes: [],
+    knownIssues: [],
   },
   {
     version: '1.2',
     date: '2026/11/11',
-    notes: [
-      'Added Project Dashboard to show each story’s word count, number of chapters, linked characters, when it was last edited, writing progress, and unfinished tasks. Set a separate word goal for each story or draft.',
-      'Added Recently Deleted, where you can restore or permanently delete characters, stories, places, and world entries. Settings now include editor, writing, and accessibility preferences.',
-    ],
+    changes: ['Added the Project Dashboard, per-story and draft word goals, Recently Deleted, and editor, writing, and accessibility settings.'],
+    fixes: [],
+    knownIssues: [],
   },
   {
     version: '1.1',
     date: '2026/11/11',
-    notes: [
-      'Added Dialogue Workshop, where you can draft conversations separately, choose the characters involved, and add emotional context. Add a conversation to a saved story or draft when it is ready. Conversation drafts are included in backups.',
-    ],
+    changes: ['Added Dialogue Workshop for character-based conversations, emotional context, story insertion, and backup support.'],
+    fixes: [],
+    knownIssues: [],
   },
   {
     version: '1.0',
     date: '2026/11/10',
-    notes: [
-      'Initial release of Fiction Tale, with a refreshed design and layouts for desktop, tablet, and mobile.',
-      'Create detailed character profiles with backgrounds, personality prompts, relationships, timelines, images, and version history. Search, sort, compare, and organize characters with tags and groups.',
-      'Write stories, scenes, and world notes. Use templates, organize chapters, link characters and places, track daily writing goals, and export stories in several formats. Drafts save automatically on this device.',
-      'Add places and world entries to build your setting, then plan stories with outlines, timelines, relationship maps, mood boards, and writing prompts.',
-      'Back up and restore your work from Settings. Full backups include your library and planning data. You can also print profiles and stories or save a character sheet as an image.',
-      'Choose a light or dark theme, adjust accessibility settings, and install Fiction Tale from a supported website to use it offline.',
-    ],
+    changes: ['Released Fiction Tale with responsive layouts, character profiles, stories, scenes, worldbuilding, and planning tools.', 'Added search, organization, writing goals, exports, backups, print options, light and dark themes, accessibility settings, and offline installation.'],
+    fixes: [],
+    knownIssues: [],
   },
 ];
 let pendingDeleteId = '';
@@ -1080,6 +1092,7 @@ let placeCloseTimer = null;
 let activeWorldEntryId = '';
 let worldEntryReturnFocus = null;
 let activeStoryId = '';
+let storyEditorMode = 'writing';
 let storyToResumeAfterCharacterCreate = '';
 let activeStoryChapterIndex = -1;
 let editingSeriesEvents = [];
@@ -3295,13 +3308,29 @@ function setStoryDialogMode(mode) {
   const dialog = document.querySelector('#story-dialog');
   document.querySelector('#story-form').classList.toggle('hidden', !isEditor);
   document.querySelector('#story-reading-view').classList.toggle('hidden', isEditor);
+  document.querySelector('.story-topbar-title').classList.toggle('hidden', !isEditor);
+  document.querySelector('#story-editor-preview').classList.toggle('hidden', !isEditor);
   document.querySelector('#story-preview-toolbar').classList.toggle('hidden', isReading);
   document.querySelector('#story-reader-toolbar').classList.toggle('hidden', !isReading);
   document.querySelector('#story-back-to-draft').classList.toggle('hidden', mode !== 'preview' || !previewFromEditor);
-  document.querySelector('#story-focus-toggle').classList.toggle('hidden', !isEditor);
+  document.querySelector('#story-mode-toggle').classList.toggle('hidden', !isEditor);
   document.querySelector('#story-save-status').classList.toggle('hidden', !isEditor);
+  if (isEditor) setStoryEditorMode(storyEditorMode);
+  else dialog.classList.remove('is-writing-mode', 'is-planning-mode');
   dialog.classList.toggle('is-reading-mode', isReading);
   dialog.setAttribute('aria-labelledby', isEditor ? 'story-editor-title' : 'story-reading-title');
+}
+
+function setStoryEditorMode(mode) {
+  storyEditorMode = mode === 'planning' ? 'planning' : 'writing';
+  const writing = storyEditorMode === 'writing';
+  const dialog = document.querySelector('#story-dialog');
+  dialog.classList.toggle('is-writing-mode', writing);
+  dialog.classList.toggle('is-planning-mode', !writing);
+  document.querySelector('#story-writing-mode').setAttribute('aria-pressed', String(writing));
+  document.querySelector('#story-planning-mode').setAttribute('aria-pressed', String(!writing));
+  document.querySelector('#story-writing-mode').classList.toggle('is-active', writing);
+  document.querySelector('#story-planning-mode').classList.toggle('is-active', !writing);
 }
 
 function updateStoryReaderFontSize() {
@@ -5556,9 +5585,7 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   updateStoryCounter(story.text);
   lastStoryWordCount = countStoryGoalWords(story.text);
   renderWritingGoal();
-  document.querySelector('#story-dialog').classList.remove('is-focus-mode');
-  document.querySelector('#story-focus-toggle').textContent = 'Focus mode';
-  document.querySelector('#story-focus-toggle').setAttribute('aria-pressed', 'false');
+  storyEditorMode = 'writing';
   document.querySelector('#story-chapters-panel').open = false;
   renderStoryChapters();
   renderStoryHistory();
@@ -7574,7 +7601,7 @@ function renderChangelog() {
       const header = document.createElement(compact ? 'header' : 'div');
       if (!compact) header.className = 'changelog-entry-header';
       const version = document.createElement(compact ? 'h3' : 'h2');
-      version.textContent = `Version ${entry.version}`;
+      version.textContent = `Version number: ${entry.version}`;
       header.append(version);
       if (index === 0) {
         const badge = document.createElement('span');
@@ -7583,23 +7610,30 @@ function renderChangelog() {
         header.append(badge);
       }
       const date = document.createElement('time');
-      date.textContent = entry.date;
+      date.textContent = `Release date: ${entry.date}`;
       date.dateTime = entry.date.replaceAll('/', '-');
       header.append(date);
-      const notes = document.createElement('ul');
-      entry.notes.forEach((note) => {
-        const item = document.createElement('li');
-        const match = note.match(/^(Lore & Story|Characters|Images|Fixed|Added|Backups|Places|Connections)(:|\b)/);
-        if (match && match[2] === ':') {
-          const label = document.createElement('strong');
-          label.textContent = `${match[1]}:`;
-          item.append(label, note.slice(match[0].length));
-        } else {
-          item.textContent = note;
-        }
-        notes.append(item);
+      const details = document.createElement('div');
+      details.className = 'changelog-entry-details';
+      [
+        ['Changes made', entry.changes, 'None listed.'],
+        ['Fixed bugs', entry.fixes, 'None listed.'],
+        ['Known issues', entry.knownIssues, 'No known issues documented.'],
+      ].forEach(([label, items, emptyMessage]) => {
+        const section = document.createElement('section');
+        section.className = 'changelog-category';
+        const heading = document.createElement(compact ? 'h4' : 'h3');
+        heading.textContent = label;
+        const list = document.createElement('ul');
+        (items.length ? items : [emptyMessage]).forEach((itemText) => {
+          const item = document.createElement('li');
+          item.textContent = itemText;
+          list.append(item);
+        });
+        section.append(heading, list);
+        details.append(section);
       });
-      card.append(header, notes);
+      card.append(header, details);
       list.append(card);
     });
   };
@@ -10181,6 +10215,7 @@ document.querySelector('#story-back-to-draft').addEventListener('click', () => {
 });
 document.querySelector('#story-editor-preview').addEventListener('click', openStoryPreview);
 document.querySelector('#story-form').addEventListener('input', handleStoryEditorInput);
+document.querySelector('#story-title').addEventListener('input', handleStoryEditorInput);
 document.querySelector('#story-chapter-summary').addEventListener('input', (event) => {
   updateStoryChapterMetadata(activeStoryChapterIndex, { summary: event.currentTarget.value });
   handleStoryEditorInput();
@@ -10212,12 +10247,8 @@ document.querySelector('#story-chapter-location').addEventListener('change', (ev
 });
 document.querySelector('#story-daily-target').addEventListener('change', (event) => setWritingGoalTarget(Number(event.currentTarget.value)));
 document.querySelector('#settings-writing-goal').addEventListener('change', (event) => setWritingGoalTarget(Number(event.currentTarget.value)));
-document.querySelector('#story-focus-toggle').addEventListener('click', (event) => {
-  const dialog = document.querySelector('#story-dialog');
-  const active = dialog.classList.toggle('is-focus-mode');
-  event.currentTarget.textContent = active ? 'Exit focus' : 'Focus mode';
-  event.currentTarget.setAttribute('aria-pressed', String(active));
-});
+document.querySelector('#story-writing-mode').addEventListener('click', () => setStoryEditorMode('writing'));
+document.querySelector('#story-planning-mode').addEventListener('click', () => setStoryEditorMode('planning'));
 document.querySelector('#story-note-add').addEventListener('click', () => {
   const input = document.querySelector('#story-note-input');
   const noteText = input.value.trim();
@@ -10387,9 +10418,7 @@ document.querySelector('#story-dialog').addEventListener('click', (event) => {
   if (event.target === event.currentTarget) event.currentTarget.close();
 });
 document.querySelector('#story-dialog').addEventListener('close', () => {
-  document.querySelector('#story-dialog').classList.remove('is-focus-mode');
-  document.querySelector('#story-focus-toggle').textContent = 'Focus mode';
-  document.querySelector('#story-focus-toggle').setAttribute('aria-pressed', 'false');
+  setStoryEditorMode('writing');
   flushStoryDraft();
   renderStories();
   renderDialogueStories(document.querySelector('#dialogue-story').value);
