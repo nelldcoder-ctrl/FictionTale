@@ -224,6 +224,13 @@ let changelogReturnFocus = null;
 // Add new releases at the top, using the same fields: version, date, notes.
 const CHANGELOG = [
   {
+    version: '1.4.3',
+    date: '2026/11/19',
+    notes: [
+      'Fixed blank PDF output by isolating the active preview for printing. Character profiles, stories, places, and world entries now print their content reliably.',
+    ],
+  },
+  {
     version: '1.4.2',
     date: '2026/11/18',
     notes: [

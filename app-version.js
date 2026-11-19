@@ -1,1 +1,1 @@
-self.FICTION_TALE_VERSION = '1.4.2';
+self.FICTION_TALE_VERSION = '1.4.3';
