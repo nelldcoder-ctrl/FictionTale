@@ -1418,8 +1418,7 @@ body { background: radial-gradient(ellipse at 80% 0, #e4efff 0, transparent 36%)
 @media print {
   @page { margin: 14mm; }
   body { min-width: 0; background: #fff !important; }
-  body * { visibility: hidden !important; }
-  .character-dialog[open], .character-dialog[open] * { visibility: visible !important; }
+  body > :not(dialog[open]) { display: none !important; }
   .character-dialog[open] {
     display: block !important;
     position: static !important;
@@ -1462,8 +1461,6 @@ body { background: radial-gradient(ellipse at 80% 0, #e4efff 0, transparent 36%)
     box-shadow: none !important;
     background: #fff !important;
   }
-  .story-dialog[open] *, .story-dialog[open] { visibility: hidden !important; }
-  .story-dialog[open] .story-reading-view, .story-dialog[open] .story-reading-view * { visibility: visible !important; }
   .story-dialog[open] .story-window, .story-dialog[open] .story-reading-view { background: #fff !important; }
   .story-dialog[open] .story-toolbar, .story-dialog[open] .story-editor, .story-dialog[open] .story-reading-toolbar, .story-dialog[open] .story-print-button, .story-dialog[open] #story-preview-edit { display: none !important; }
   .story-dialog[open] .story-reading-copy { max-width: none; padding: 0 !important; }
