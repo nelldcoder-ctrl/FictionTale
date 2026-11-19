@@ -37,6 +37,8 @@ const pendingStorageKeys = new Set();
 const storageProblemKeys = new Set();
 let storageSaveState = 'saved';
 let browserStorageRatio = null;
+let storageAvailabilityError = '';
+let localStorageUnavailable = false;
 const BACKUP_LAST_KEY = 'FictionTales.backup.last.v1';
 
 function shouldReduceMotion() {
@@ -181,6 +183,7 @@ const RECENTLY_DELETED_KEY = 'FictionTales.recently-deleted.v1';
 const WRITING_GOALS_KEY = 'FictionTales.writing-goals.v1';
 const MAX_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_BACKUP_FILE_BYTES = 100 * 1024 * 1024;
 const MAX_PROJECT_FILE_BYTES = 100 * 1024 * 1024;
 const MAX_IMAGE_DATA_URL_LENGTH = Math.ceil(MAX_IMAGE_UPLOAD_BYTES * 4 / 3) + 1000;
 const MAX_GALLERY_VALUE_LENGTH = 20_000_000;
@@ -223,6 +226,40 @@ let changelogReturnFocus = null;
 
 // Add new releases at the top, using the same fields: version, date, notes.
 const CHANGELOG = [
+  {
+    version: '1.4.7',
+    date: '2026/11/19',
+    notes: [
+      'Added Undo for deleted content, expanded Recently Deleted to dialogue drafts and book series, and clarified that deleted items can be restored before choosing Delete forever.',
+      'Made replacement warnings for backup imports explain which existing data will be replaced and what Cancel preserves.',
+    ],
+  },
+  {
+    version: '1.4.6',
+    date: '2026/11/19',
+    notes: [
+      'Made workspace navigation easier to follow with live breadcrumbs, clearer editor return paths, and Help & guides available from the sidebar.',
+      'Kept the active navigation indicator aligned with nested sections such as Cast.',
+    ],
+  },
+  {
+    version: '1.4.5',
+    date: '2026/11/19',
+    notes: [
+      'Grouped character editing into essentials, character depth, and advanced details. Name is the only required field, and optional lore no longer affects a completion score.',
+      'Collapsed optional details by default in place, world-entry, and story editors, while reopening sections that already contain saved details.',
+      'Kept planning tools approachable with focused tabs and optional relationship-history details.',
+    ],
+  },
+  {
+    version: '1.4.4',
+    date: '2026/11/19',
+    notes: [
+      'Put direct project actions first on the landing page so writers can continue a project or start a new one without scrolling through the introduction.',
+      'Expanded full backups to include every project and restore alongside existing work. Older backup imports validate supported versions, verify saved data, and ask before replacing matching records.',
+      'Clarified saved, saving, and unsaved storage states, and added a visible warning when existing browser data cannot be loaded.',
+    ],
+  },
   {
     version: '1.4.3',
     date: '2026/11/19',
@@ -976,7 +1013,9 @@ function normalizeWorldEntry(record) {
 }
 const worldEntries = (Array.isArray(readStorage(WORLD_ENTRIES_STORAGE_KEY, [])) ? readStorage(WORLD_ENTRIES_STORAGE_KEY, []) : [])
   .map(normalizeWorldEntry).filter(Boolean);
-const RECENTLY_DELETED_KINDS = new Set(['character', 'story', 'place', 'world-entry']);
+const RECENTLY_DELETED_KINDS = new Set([
+  'character', 'story', 'place', 'world-entry', 'book-series', 'dialogue-draft',
+]);
 function normalizeRecentlyDeleted(value) {
   if (!Array.isArray(value)) return [];
   return value.slice(0, 1000).filter((entry) => entry && typeof entry === 'object'
@@ -985,7 +1024,9 @@ function normalizeRecentlyDeleted(value) {
       const record = entry.kind === 'character' ? normalizeCharacter(entry.record)
         : entry.kind === 'story' ? normalizeImportedStory(entry.record, entry.record.isDraft === true)
           : entry.kind === 'place' ? normalizePlace(entry.record)
-            : normalizeWorldEntry(entry.record);
+            : entry.kind === 'world-entry' ? normalizeWorldEntry(entry.record)
+              : entry.kind === 'book-series' ? normalizeBookSeries([entry.record])[0]
+                : Object.values(normalizeDialogueDrafts([entry.record]))[0];
       if (!record) return null;
       return {
         id: typeof entry.id === 'string' && entry.id ? entry.id.slice(0, 100) : createId(),
@@ -1484,11 +1525,7 @@ function restoreCharacterVersion(index) {
     const field = document.getElementById(fieldIds[key] || key);
     if (field) field.value = Array.isArray(value) ? traitsValue(value) : value;
   });
-  document.querySelector('#depth-details').open = Boolean(version.data.goal || version.data.fear || version.data.secret
-    || version.data.flaw || version.data.voice || version.data.voiceSamples || version.data.appearance);
-  document.querySelector('#questionnaire-details').open = parseCharacterQuestionnaire(version.data.questionnaire).length > 0;
-  document.querySelector('#character-arc-details').open = Boolean(version.data.arcStart || version.data.arcTurningPoint || version.data.arcEnd
-    || parseCharacterSnapshots(version.data.snapshots).length);
+  setCharacterDisclosure(currentProfile());
   characterFormHasChanges = true;
   renderTimelineEditor();
   renderCharacterSnapshotsEditor();
@@ -2205,6 +2242,8 @@ function openWorldEntryEditor(id = '', returnFocus = document.activeElement) {
   document.querySelector('#world-entry-description').value = entry?.description || '';
   document.querySelector('#world-entry-details').value = entry?.details || '';
   document.querySelector('#world-entry-tags').value = (entry?.tags || []).join(', ');
+  document.querySelector('#world-entry-depth-details').open = Boolean(entry?.details);
+  document.querySelector('#world-entry-advanced-details').open = Boolean(entry?.tags?.length);
   document.querySelector('#world-entry-delete').classList.toggle('hidden', !entry);
   const dialog = document.querySelector('#world-entry-dialog');
   if (!dialog.open) dialog.showModal();
@@ -2339,6 +2378,9 @@ function openPlaceEditor(id = '', returnFocus = document.activeElement) {
   set('#place-notes', current?.notes || '');
   set('#place-tags', (current?.tags || []).join(', '));
   set('#place-image-url', current?.image || '');
+  document.querySelector('#place-depth-details').open = Boolean(current?.lore || current?.atmosphere || current?.notes);
+  document.querySelector('#place-advanced-details').open = Boolean(current?.partOf || current?.tags?.length
+    || current?.image || current?.characterIds?.length);
   renderPlaceCharacterPicker(current?.characterIds || []);
   syncPlaceImageChip();
   document.querySelector('#place-description-count').textContent = String((current?.description || '').length);
@@ -2970,6 +3012,35 @@ function syncCharacterActions(editing) {
   document.querySelector('#duplicate-character').classList.toggle('hidden', !editing);
 }
 
+function setCharacterDisclosure(profile = {}) {
+  const hasContext = Boolean(profile.pronouns || profile.age || profile.species
+    || profile.groups?.length || profile.tags?.length);
+  const hasDepth = Boolean(profile.story || profile.goal || profile.fear || profile.secret || profile.flaw
+    || profile.voice || profile.voiceSamples || profile.appearance
+    || parseCharacterQuestionnaire(profile.questionnaire).length
+    || profile.arcStart || profile.arcTurningPoint || profile.arcEnd);
+  const hasSnapshots = parseCharacterSnapshots(profile.snapshots).length > 0;
+  const hasAppearance = Boolean(profile.avatar || profile.cover || profile.gallery
+    || (profile.accent && profile.accent !== '#4385e8'));
+  const hasExtras = Boolean(profile.relations || profile.links || profile.worlds || profile.stats
+    || characterBonds(profile).length || parseTimeline(profile.timeline).length);
+  const hasCustomSections = parseCustomSections(profile.customSections).length > 0;
+  const hasHistory = Boolean(profile.id && characterVersions[profile.id]?.length);
+  document.querySelector('#character-essentials').open = true;
+  document.querySelector('#character-depth').open = hasContext || hasDepth;
+  document.querySelector('#character-advanced').open = hasSnapshots || hasAppearance || hasExtras || hasCustomSections || hasHistory;
+  document.querySelector('#character-context-details').open = hasContext;
+  document.querySelector('#depth-details').open = Boolean(profile.goal || profile.fear || profile.secret
+    || profile.flaw || profile.voice || profile.voiceSamples || profile.appearance);
+  document.querySelector('#questionnaire-details').open = parseCharacterQuestionnaire(profile.questionnaire).length > 0;
+  document.querySelector('#character-arc-details').open = Boolean(profile.arcStart || profile.arcTurningPoint || profile.arcEnd);
+  document.querySelector('#appearance-details').open = hasAppearance;
+  document.querySelector('#character-snapshots-details').open = hasSnapshots;
+  document.querySelector('#profile-extras').open = hasExtras;
+  document.querySelector('#custom-details').open = hasCustomSections;
+  document.querySelector('#character-history-panel').open = hasHistory;
+}
+
 function duplicateCharacter() {
   const profile = currentProfile();
   if (!profile.name) return;
@@ -3003,48 +3074,6 @@ function requestNewCharacter(returnFocus = document.activeElement) {
   deleteDialog.showModal();
   syncModalScrollLock();
   document.querySelector('#cancel-delete').focus();
-}
-
-function updateProfileMeter(profile) {
-  const checks = [
-    ['a role', profile.role, '#role', null, 'A role helps place them in the story.'],
-    ['a quick description', profile.description, '#description', null, 'A first impression makes the profile feel like them.'],
-    ['a few traits', profile.traits.length, '#traits', null, 'A few traits give you a quick personality anchor.'],
-    ['a backstory', profile.story, '#story', null, 'A formative moment can explain how they became this person.'],
-    ['a portrait', profile.avatar, '#avatar', 'appearance-details', 'A portrait makes their card easy to recognize.'],
-    ['a goal, fear, or secret', profile.goal || profile.fear || profile.secret, '#goal', 'depth-details', 'A want or fear gives them something to push against.'],
-    ['a connection to another character', parseBonds(profile.bonds).length, '#bond-character', 'profile-extras', 'A relationship can reveal a different side of them.'],
-    ['a dialogue sample', profile.voiceSamples, '#voice-samples', 'depth-details', 'A sample line helps keep their voice consistent.'],
-    ['a questionnaire answer', parseCharacterQuestionnaire(profile.questionnaire).length, '#questionnaire-question', 'questionnaire-details', 'Answer a prompt to discover a detail you can use in a scene.'],
-  ];
-  const done = checks.filter(([, value]) => value).length + (profile.name ? 1 : 0);
-  const total = checks.length + 1;
-  const percent = Math.round((done / total) * 100);
-  const next = checks.find(([, value]) => !value);
-  document.querySelector('#profile-meter-fill').style.width = `${percent}%`;
-  document.querySelector('#profile-meter-text').textContent = !profile.name
-    ? 'Start with a name'
-    : `Profile ${percent}% complete${next ? ` · next, add ${next[0]}` : ' · fully fleshed out ✦'}`;
-  const hints = document.querySelector('#profile-meter-hints');
-  hints.replaceChildren();
-  checks.filter(([, value]) => !value).slice(0, 3).forEach(([label, , selector, sectionId, suggestion]) => {
-    const item = document.createElement('li');
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = `Add ${label}`;
-    button.title = suggestion;
-    button.addEventListener('click', () => {
-      if (sectionId) document.getElementById(sectionId).open = true;
-      const field = document.querySelector(selector);
-      field?.scrollIntoView({ behavior: getMotionScrollBehavior(), block: 'center' });
-      field?.focus({ preventScroll: true });
-    });
-    const detail = document.createElement('span');
-    detail.textContent = suggestion;
-    item.append(button, detail);
-    hints.append(item);
-  });
-  hints.classList.toggle('hidden', !hints.childElementCount || !profile.name);
 }
 
 function currentProfile() {
@@ -4678,18 +4707,8 @@ function loadDialogueDraft(id) {
 
 function deleteDialogueDraft(id) {
   const draft = dialogueDrafts[id];
-  if (!draft || !window.confirm(`Delete "${draft.title || 'Untitled conversation'}" permanently?`)) return;
-  const nextDrafts = { ...dialogueDrafts };
-  delete nextDrafts[id];
-  if (!writeStorage(DIALOGUE_DRAFTS_KEY, nextDrafts)) {
-    showToast('Could not delete this conversation draft. Your browser storage may be unavailable.');
-    return;
-  }
-  delete dialogueDrafts[id];
-  if (document.querySelector('#dialogue-draft-id').value === id) startNewDialogue(false);
-  renderDialogueDraftList();
-  scheduleFolderBackup();
-  showToast('Conversation draft deleted.');
+  if (!draft) return;
+  requestDeleteItem(id, 'dialogue-draft', draft, document.querySelector('#dialogue-title'));
 }
 
 function saveDialogueToStory() {
@@ -5472,27 +5491,7 @@ function saveBookSeries(event) {
 function deleteBookSeries() {
   const seriesId = document.querySelector('#series-id').value;
   const series = bookSeries.find((item) => item.id === seriesId);
-  if (!series || !window.confirm(`Delete “${series.name}”? Its books will stay in Stories, but they will no longer be grouped in this series.`)) return;
-  const nextSeries = bookSeries.filter((item) => item.id !== seriesId);
-  const nextStories = savedStories.map((story) => story.seriesId === seriesId ? { ...story, seriesId: '' } : story);
-  const nextDrafts = Object.fromEntries(Object.entries(storyDrafts).map(([id, draft]) => [
-    id, draft.seriesId === seriesId ? { ...draft, seriesId: '' } : draft,
-  ]));
-  const updates = [[SERIES_STORAGE_KEY, nextSeries]];
-  if (nextStories.some((story, index) => story !== savedStories[index])) updates.push([STORIES_STORAGE_KEY, nextStories]);
-  if (Object.entries(nextDrafts).some(([id, draft]) => draft !== storyDrafts[id])) updates.push([STORY_DRAFTS_KEY, nextDrafts]);
-  if (!commitStorageUpdates(updates)) {
-    showToast('Could not delete this series. Your browser storage may be full.');
-    return;
-  }
-  bookSeries = nextSeries;
-  savedStories.splice(0, savedStories.length, ...nextStories);
-  Object.keys(storyDrafts).forEach((id) => delete storyDrafts[id]);
-  Object.assign(storyDrafts, nextDrafts);
-  document.querySelector('#series-editor').classList.add('hidden');
-  renderStories();
-  scheduleFolderBackup();
-  showToast('Series deleted. Its books are still in Stories.');
+  if (series) requestDeleteItem(seriesId, 'book-series', series, document.querySelector('#series-delete'));
 }
 
 function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
@@ -5504,7 +5503,9 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   storyCompareSelection = [];
   document.querySelector('#story-note-chapter').value = '';
   document.querySelector('#story-toolbar-tools').open = false;
-  document.querySelector('#story-template-panel').classList.toggle('hidden', Boolean(saved || draft));
+  const templatePanel = document.querySelector('#story-template-panel');
+  templatePanel.classList.toggle('hidden', Boolean(saved || draft));
+  templatePanel.open = false;
   document.querySelector('#story-template-select').value = '';
   renderStoryTemplatePreview('');
   const story = draft || saved || {
@@ -5529,6 +5530,9 @@ function openStoryEditor(storyId = '', returnFocus = document.activeElement) {
   document.querySelector('#story-summary').value = meta.summary;
   document.querySelector('#story-setting').value = meta.setting;
   document.querySelector('#story-tags').value = meta.tags.join(', ');
+  document.querySelector('#story-details').open = Boolean(meta.kind !== writingPreferences.defaultKind
+    || meta.progress !== 'drafting' || meta.seriesId || meta.seriesOrder !== 1 || meta.wordGoal !== 50_000
+    || meta.summary || meta.setting || meta.tags.length || meta.characterIds.length || meta.placeIds.length);
   document.querySelector('#story-chapter-places').value = JSON.stringify(meta.chapterPlaces);
   document.querySelector('#story-chapter-meta-data').value = JSON.stringify(meta.chapterMeta);
   activeStoryChapterIndex = meta.chapterMeta.length ? 0 : -1;
@@ -5789,24 +5793,29 @@ function updateWorkspaceStorageStatus() {
   const isLow = browserStorageRatio !== null && browserStorageRatio >= 0.8;
   const backupStatus = backupReminderText();
   const lastBackup = readStorage(BACKUP_LAST_KEY, '');
-  const hasSaveError = storageProblemKeys.size > 0;
+  const hasSaveError = storageProblemKeys.size > 0 || Boolean(storageAvailabilityError);
   const statusLabel = document.querySelector('#workspace-storage-label');
   const statusDetail = document.querySelector('#workspace-storage-detail');
   statusLabel.textContent = hasSaveError ? 'Unsaved changes'
-    : storageSaveState === 'saving' ? 'Saving changes…'
-      : isLow ? 'Storage space is low' : 'Saved in this browser';
-  statusDetail.textContent = `${hasSaveError ? 'A save failed' : storageSaveState === 'saving' ? 'Saving to this device' : 'Autosave active'} · ${backupStatus}`;
+    : storageSaveState === 'saving' ? 'Saving…' : 'Saved';
+  statusDetail.textContent = storageAvailabilityError
+    ? 'Browser storage is unavailable'
+    : hasSaveError ? 'A save failed; changes are not safely stored'
+      : `${storageSaveState === 'saving' ? 'Waiting for storage confirmation' : 'Saved to this device'}${isLow ? ' · Storage nearly full' : ''} · ${backupStatus}`;
   status.classList.toggle('is-warning', isLow || backupStatus.startsWith('Backup needed'));
   status.classList.toggle('has-error', hasSaveError);
   status.setAttribute('aria-label', `${statusLabel.textContent}. ${statusDetail.textContent}. Open Data and Storage settings.`);
   const backupDate = Date.parse(lastBackup);
-  status.title = `Last full backup: ${Number.isFinite(backupDate) ? new Date(backupDate).toLocaleString() : 'none recorded'}. Open Data & Storage to export or restore a backup.`;
+  status.title = `Last backup: ${Number.isFinite(backupDate) ? new Date(backupDate).toLocaleString() : 'none recorded'}. Open Data & Storage to export or restore a backup.`;
 }
 
 function renderStorageWarning() {
   const warning = document.querySelector('#settings-storage-warning');
   if (!warning) return;
-  if (storageProblemKeys.size) {
+  if (storageAvailabilityError) {
+    warning.textContent = storageAvailabilityError;
+    warning.classList.remove('hidden');
+  } else if (storageProblemKeys.size) {
     warning.textContent = 'A save could not be completed. Export a full backup now and check available browser storage before continuing.';
     warning.classList.remove('hidden');
   } else if (browserStorageRatio !== null && browserStorageRatio >= 0.8) {
@@ -5815,6 +5824,41 @@ function renderStorageWarning() {
   } else {
     warning.classList.add('hidden');
   }
+}
+
+function ensureBackupStorageReadable() {
+  if (projectInitializationError) {
+    storageAvailabilityError = `The project library could not be loaded. Restore browser storage or use another backup before continuing. ${projectInitializationError}`;
+  } else if (window.FictionTaleStorage.hasUnavailableIndexedData()) {
+    storageAvailabilityError = 'Some existing saved data is unavailable. Restore browser storage or use another backup before importing or exporting.';
+    storageProblemKeys.add('backup storage unavailable');
+    updateWorkspaceStorageStatus();
+    renderStorageWarning();
+    return false;
+  }
+  return true;
+}
+
+function ensureBackupStorageWritable() {
+  if (!ensureBackupStorageReadable()) return false;
+  if (!window.FictionTaleStorage.canUseLocalStorage()) {
+    localStorageUnavailable = true;
+    storageAvailabilityError = 'Browser storage is not writable. Restore storage access before importing a backup.';
+  } else if (localStorageUnavailable) {
+    localStorageUnavailable = false;
+    storageAvailabilityError = '';
+    storageProblemKeys.delete('browser storage');
+  }
+  if (!storageAvailabilityError) {
+    storageProblemKeys.delete('backup storage unavailable');
+    updateWorkspaceStorageStatus();
+    renderStorageWarning();
+    return true;
+  }
+  storageProblemKeys.add('backup storage unavailable');
+  updateWorkspaceStorageStatus();
+  renderStorageWarning();
+  return false;
 }
 
 function formatStorageSize(bytes) {
@@ -6282,25 +6326,17 @@ function persistCharacterLibrary() {
         setFolderStatus('Folder permission needed — choose it again');
         return;
       }
-      const file = await dataDirectory.getFileHandle('FictionTales-studio-backup.json', { create: true });
+      if (!ensureBackupStorageReadable()) {
+        setFolderStatus('Backup paused — browser storage is unavailable');
+        return;
+      }
+      flushPendingDrafts();
+      window.clearTimeout(folderBackupTimer);
+      folderBackupTimer = 0;
+      await projectStorage.flush();
+      const file = await dataDirectory.getFileHandle('FictionTales-library-backup.json', { create: true });
       const writable = await file.createWritable();
-      await writable.write(JSON.stringify({
-        format: 'FictionTales-studio-backup',
-        version: 1,
-        updatedAt: new Date().toISOString(),
-        characters,
-        characterDraft: [readStorage(DRAFT_KEY, null)].filter(Boolean),
-        stories: savedStories,
-        drafts: Object.values(storyDrafts),
-        bookSeries,
-        dialogueDrafts: Object.values(dialogueDrafts),
-        writingGoals,
-        places,
-        worldEntries,
-        recentlyDeleted,
-        planning: window.FictionTalesPlanning?.getData() || readStorage('FictionTales.planning.v1', {}),
-        placeDrafts: Object.values(placeDrafts),
-      }, null, 2));
+      await writable.write(JSON.stringify(createLibraryBackupBundle(), null, 2));
       await writable.close();
       markBackupCreated();
       setFolderStatus(`Backup updated in ${dataDirectory.name}`);
@@ -6445,7 +6481,7 @@ document.querySelector('#confirm-reset').addEventListener('click', async () => {
       if (permission !== 'granted') {
         throw new Error('Reset was cancelled because permission to remove the saved folder backup was not granted.');
       }
-      for (const filename of ['FictionTales-studio-backup.json', 'FictionTales-character-library.json', 'fable-studio-backup.json', 'fable-character-library.json']) {
+      for (const filename of ['FictionTales-library-backup.json', 'FictionTales-studio-backup.json', 'FictionTales-character-library.json', 'fable-studio-backup.json', 'fable-character-library.json']) {
         try {
           await handle.removeEntry(filename);
         } catch (error) {
@@ -6536,7 +6572,6 @@ function updatePreview() {
   const profile = currentProfile();
   document.querySelector('#description-count').textContent = String(profile.description.length);
   document.querySelector('#backstory-count').textContent = String(profile.story.length);
-  updateProfileMeter(profile);
   syncImageChips();
   syncGalleryThumbs();
 }
@@ -6926,13 +6961,7 @@ function loadCharacter(id) {
   cancelDraftSave(); removeStorage(DRAFT_KEY);
   document.querySelector('#autosave-status').textContent = 'Editing saved character';
   characterFormHasChanges = false;
-  document.querySelector('#depth-details').open = Boolean(character.goal || character.fear || character.secret
-    || character.flaw || character.voice || character.voiceSamples || character.appearance);
-  document.querySelector('#questionnaire-details').open = parseCharacterQuestionnaire(character.questionnaire).length > 0;
-  document.querySelector('#profile-extras').open = Boolean(characterBonds(character).length || parseTimeline(character.timeline).length);
-  document.querySelector('#character-arc-details').open = Boolean(character.arcStart || character.arcTurningPoint || character.arcEnd
-    || parseCharacterSnapshots(character.snapshots).length);
-  document.querySelector('#custom-details').open = parseCustomSections(character.customSections).length > 0;
+  setCharacterDisclosure(character);
   renderTimelineEditor();
   renderCharacterSnapshotsEditor();
   renderCharacterQuestionnaireEditor();
@@ -6955,12 +6984,7 @@ function resetForm() {
   activeId = '';
   document.querySelector('#save-label').textContent = 'Save character';
   syncCharacterActions(false);
-  document.querySelector('#appearance-details').open = false;
-  document.querySelector('#profile-extras').open = false;
-  document.querySelector('#character-arc-details').open = false;
-  document.querySelector('#depth-details').open = false;
-  document.querySelector('#questionnaire-details').open = false;
-  document.querySelector('#custom-details').open = false;
+  setCharacterDisclosure();
   renderTimelineEditor();
   renderCharacterSnapshotsEditor();
   renderCharacterQuestionnaireEditor();
@@ -6978,12 +7002,29 @@ function resetForm() {
   document.documentElement.style.scrollBehavior = previousScrollBehavior;
 }
 
-function showToast(message) {
-  toast.textContent = message;
+function showToast(message, action = null) {
+  const toastAction = action && typeof action.onAction === 'function' ? action : null;
+  toast.replaceChildren();
+  const copy = document.createElement('span');
+  copy.textContent = message;
+  toast.append(copy);
+  if (toastAction) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'toast-action';
+    button.textContent = toastAction.label;
+    button.addEventListener('click', () => {
+      window.clearTimeout(toastTimer);
+      toast.classList.remove('show', 'has-action');
+      toastAction.onAction();
+    });
+    toast.append(button);
+  }
+  toast.classList.toggle('has-action', Boolean(toastAction));
   syncToastLayer();
   toast.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => toast.classList.remove('show', 'has-action'), 2600);
 }
 
 window.addEventListener('fictiontale-storage-pending', (event) => {
@@ -6998,6 +7039,12 @@ window.addEventListener('fictiontale-storage-updated', (event) => {
   if (key) {
     pendingStorageKeys.delete(key);
     storageProblemKeys.delete(key);
+  }
+  if (localStorageUnavailable && window.FictionTaleStorage.canUseLocalStorage()) {
+    localStorageUnavailable = false;
+    storageAvailabilityError = '';
+    storageProblemKeys.delete('browser storage');
+    storageProblemKeys.delete('backup storage unavailable');
   }
   storageSaveState = pendingStorageKeys.size ? 'saving' : 'saved';
   updateWorkspaceStorageStatus();
@@ -7591,8 +7638,14 @@ changelogDialog.addEventListener('close', () => {
   if (changelogReturnFocus instanceof HTMLElement && changelogReturnFocus.isConnected) changelogReturnFocus.focus();
 });
 
-document.querySelector('#about-website').addEventListener('click', (event) => {
-  aboutReturnFocus = event.currentTarget;
+function openTutorial(returnFocus) {
+  const returnToMobileMenu = sidebar.contains(returnFocus)
+    && getComputedStyle(mobileNavigationToggle).display !== 'none';
+  if (returnToMobileMenu) {
+    setMobileNavigationOpen(false);
+    returnFocus = mobileNavigationToggle;
+  }
+  aboutReturnFocus = returnFocus instanceof HTMLElement ? returnFocus : null;
   document.querySelector('#tutorial-choices').classList.remove('hidden');
   document.querySelector('#simple-tutorial-panel').classList.add('hidden');
   document.querySelector('#detailed-tutorial-panel').classList.add('hidden');
@@ -7600,10 +7653,12 @@ document.querySelector('#about-website').addEventListener('click', (event) => {
   aboutDialog.showModal();
   syncModalScrollLock();
   document.querySelector('#simple-tutorial-open').focus();
-});
+}
+document.querySelector('#about-website').addEventListener('click', (event) => openTutorial(event.currentTarget));
+document.querySelector('#workspace-help-open').addEventListener('click', (event) => openTutorial(event.currentTarget));
 document.querySelectorAll('[data-tutorial-open]').forEach((button) => {
   button.addEventListener('click', () => {
-    document.querySelector('#about-website').click();
+    openTutorial(button);
     document.querySelector(button.dataset.tutorialOpen === 'detailed' ? '#detailed-tutorial-open' : '#simple-tutorial-open').click();
   });
 });
@@ -8469,11 +8524,14 @@ function exportProfiles(profiles, format, library = false) {
   }
 }
 
-function exportLibraryBackup() {
-  flushPendingDrafts();
-  flushPlaceDraft();
-  const selectedFormat = document.querySelector('#settings-export-format').value;
-  const format = selectedFormat === 'yaml' ? 'yaml' : 'json';
+function getProjectBackupData(projectId) {
+  const data = {};
+  PROJECT_DATA_STORAGE_KEYS.forEach((key) => {
+    const value = readUnscopedStorage(projectStorageKey(projectId, key), undefined);
+    if (value !== undefined) data[key.slice(STORAGE_PREFIX.length)] = value;
+  });
+  if (projectId !== activeProjectId) return data;
+
   const drafts = { ...storyDrafts };
   const storyDialog = document.querySelector('#story-dialog');
   if (storyDialog.open && !document.querySelector('#story-form').classList.contains('hidden')) {
@@ -8486,28 +8544,51 @@ function exportLibraryBackup() {
     if (unchanged) delete drafts[currentDraft.id];
     else if (currentDraft.title || currentDraft.text.trim() || currentDraft.image) drafts[currentDraft.id] = currentDraft;
   }
-  const bundle = {
-    format: 'FictionTales-studio-backup',
+  Object.assign(data, {
+    'characters.v1': characters,
+    'stories.v1': savedStories,
+    'story-drafts.v1': drafts,
+    'book-series.v1': bookSeries,
+    'dialogue-drafts.v1': dialogueDrafts,
+    'writing-goals.v1': writingGoals,
+    'places.v1': places,
+    'world-entries.v1': worldEntries,
+    'recently-deleted.v1': recentlyDeleted,
+    'planning.v1': window.FictionTalesPlanning?.getData() || readStorage('FictionTales.planning.v1', {}),
+    'place-draft.v1': placeDrafts,
+  });
+  const characterDraft = readStorage(DRAFT_KEY, null);
+  if (characterDraft) data['draft.v1'] = characterDraft;
+  return data;
+}
+
+function createLibraryBackupBundle() {
+  return {
+    format: 'FictionTales-library-backup',
     version: 1,
-    characters,
-    characterDraft: [readStorage(DRAFT_KEY, null)].filter(Boolean),
-    stories: savedStories,
-    drafts: Object.values(drafts),
-    bookSeries,
-    dialogueDrafts: Object.values(dialogueDrafts),
-    writingGoals,
-    places,
-    worldEntries,
-    recentlyDeleted,
-    planning: window.FictionTalesPlanning?.getData() || readStorage('FictionTales.planning.v1', {}),
-    placeDrafts: Object.values(placeDrafts),
+    exportedAt: new Date().toISOString(),
+    projects: projects.map((project) => ({
+      project,
+      data: getProjectBackupData(project.id),
+    })),
   };
-  const content = format === 'yaml' ? toYaml(bundle) : JSON.stringify(bundle, null, 2);
-  const extension = format;
-  downloadFile(`FictionTales-studio-backup.${extension}`, content,
-    format === 'yaml' ? 'text/yaml;charset=utf-8' : 'application/json;charset=utf-8');
-  markBackupCreated();
-  showToast(`Characters, stories, drafts, series, dialogue drafts, places, world entries, recently deleted items, planning data, and writing goals exported as ${extension.toUpperCase()}.`);
+}
+
+async function exportLibraryBackup() {
+  try {
+    if (!ensureBackupStorageReadable()) throw new Error(storageAvailabilityError);
+    flushPendingDrafts();
+    flushPlaceDraft();
+    await projectStorage.flush();
+    const bundle = createLibraryBackupBundle();
+    downloadFile('FictionTales-library-backup.json',
+      JSON.stringify(bundle, null, 2), 'application/json;charset=utf-8');
+    markBackupCreated();
+    showToast(`Full backup exported with ${projects.length} project${projects.length === 1 ? '' : 's'}.`);
+  } catch (error) {
+    console.error('Fiction Tale could not export a full library backup.', error);
+    showToast(error instanceof Error ? error.message : 'Full backup export failed. Check available storage and try again.');
+  }
 }
 
 function mergeById(existing, imported) {
@@ -8536,6 +8617,122 @@ function verifyStorage(key, expected) {
   return window.FictionTaleStorage.verify(projectStorageKey(activeProjectId, key), expected);
 }
 
+function validateProjectLibraryBackup(parsed) {
+  if (parsed.version !== 1 || !Array.isArray(parsed.projects) || parsed.projects.length > 500) {
+    throw new Error('This library backup has an unsupported version or project list.');
+  }
+  const arraySuffixes = new Set([
+    'characters.v1', 'stories.v1', 'book-series.v1', 'recently-deleted.v1', 'places.v1', 'world-entries.v1',
+  ]);
+  const objectSuffixes = new Set([
+    'draft.v1', 'story-drafts.v1', 'dialogue-drafts.v1', 'writing-goals.v1',
+    'story-versions.v1', 'character-versions.v1', 'place-draft.v1', 'planning.v1',
+  ]);
+  const sourceIds = new Set();
+  return parsed.projects.map((entry) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)
+      || !entry.project || typeof entry.project !== 'object' || Array.isArray(entry.project)
+      || typeof entry.project.id !== 'string' || !/^[\w-]{1,100}$/.test(entry.project.id)
+      || typeof entry.project.name !== 'string' || !entry.project.name.trim() || entry.project.name.trim().length > 80
+      || sourceIds.has(entry.project.id)
+      || !entry.data || typeof entry.data !== 'object' || Array.isArray(entry.data)) {
+      throw new Error('The library backup contains invalid or duplicate project details.');
+    }
+    sourceIds.add(entry.project.id);
+    Object.entries(entry.data).forEach(([suffix, value]) => {
+      const key = `${STORAGE_PREFIX}${suffix}`;
+      if (!PROJECT_DATA_STORAGE_KEYS.has(key) || value === null || value === undefined) {
+        throw new Error(`The library backup contains unsupported or empty data: "${suffix}".`);
+      }
+      if (arraySuffixes.has(suffix)) {
+        if (!Array.isArray(value) || value.some((record) => {
+          return !record || typeof record !== 'object' || Array.isArray(record)
+            || typeof record.id !== 'string' || !record.id;
+        })) throw new Error(`The library backup contains invalid records in "${suffix}".`);
+      }
+      if (objectSuffixes.has(suffix) && (!value || typeof value !== 'object' || Array.isArray(value))) {
+        throw new Error(`The library backup contains invalid data in "${suffix}".`);
+      }
+      if (suffix === 'project-cover.v1' && typeof value !== 'string') {
+        throw new Error('The library backup contains an invalid project cover.');
+      }
+    });
+    const [project] = normalizeProjects([entry.project]);
+    if (!project) throw new Error('The library backup contains invalid project details.');
+    return { project, data: entry.data };
+  });
+}
+
+async function importProjectLibraryBackup(parsed) {
+  const entries = validateProjectLibraryBackup(parsed);
+  if (projects.length + entries.length > 500) {
+    throw new Error('Your project library does not have room for every project in this backup.');
+  }
+
+  const existingNames = [...projects];
+  const restoredProjects = [];
+  const dataWrites = [];
+  entries.forEach(({ project: sourceProject, data }) => {
+    let id = `project-${createId()}`;
+    while (projects.some((project) => project.id === id) || restoredProjects.some((project) => project.id === id)) {
+      id = `project-${createId()}`;
+    }
+    const now = new Date().toISOString();
+    const project = {
+      ...sourceProject,
+      id,
+      name: uniqueImportedProjectName(sourceProject.name, existingNames),
+      createdAt: sourceProject.createdAt || now,
+      updatedAt: sourceProject.updatedAt || now,
+      lastOpenedAt: '',
+    };
+    existingNames.push(project);
+    restoredProjects.push(project);
+    Object.entries(data).forEach(([suffix, value]) => {
+      dataWrites.push([projectStorageKey(id, `${STORAGE_PREFIX}${suffix}`), value]);
+    });
+  });
+
+  const previousProjects = [...projects];
+  const nextProjects = normalizeProjects([...previousProjects, ...restoredProjects]);
+  const writtenKeys = [];
+  let projectListUpdated = false;
+  try {
+    for (const [key, value] of dataWrites) {
+      if (!writeUnscopedStorage(key, value)) {
+        throw new Error('Could not restore every project in the backup. Check browser storage and try again.');
+      }
+      writtenKeys.push(key);
+    }
+    await projectStorage.flush();
+    const verified = await Promise.all(dataWrites.map(([key, value]) => projectStorage.verify(key, value)));
+    if (!verified.every(Boolean)) throw new Error('Restored project data could not be verified.');
+    if (!saveProjectList(nextProjects)) throw new Error('The restored projects could not be added to your library.');
+    projectListUpdated = true;
+    await projectStorage.flush();
+    if (!await projectStorage.verify(PROJECTS_STORAGE_KEY, nextProjects)) {
+      throw new Error('The restored project library could not be verified.');
+    }
+    showToast(`Restored ${restoredProjects.length} project${restoredProjects.length === 1 ? '' : 's'} alongside your existing work.`);
+  } catch (error) {
+    let projectListRestored = true;
+    if (projectListUpdated) {
+      projectListRestored = writeUnscopedStorage(PROJECTS_STORAGE_KEY, previousProjects);
+      if (projectListRestored) {
+        projects = previousProjects;
+        renderProjectLibrary();
+        await projectStorage.flush();
+        projectListRestored = await projectStorage.verify(PROJECTS_STORAGE_KEY, previousProjects);
+      }
+    }
+    const dataRemoved = await removeImportedProjectData('', writtenKeys);
+    if (!projectListRestored || !dataRemoved) {
+      throw new Error('Import failed and rollback could not be verified. Export any remaining work and check browser storage.');
+    }
+    throw error;
+  }
+}
+
 async function rollbackStorageSnapshots(snapshots) {
   let restored = true;
   for (const [key, snapshot] of [...snapshots].reverse()) {
@@ -8553,15 +8750,63 @@ async function importLibraryBackup(event) {
   const file = input.files?.[0];
   if (!file) return;
   try {
-    if (file.size > MAX_IMPORT_FILE_BYTES) throw new Error('Choose a backup file that is 5 MB or smaller.');
+    if (!ensureBackupStorageWritable()) throw new Error(storageAvailabilityError);
     const extension = file.name.split('.').pop().toLowerCase();
     if (!['json', 'yaml', 'yml', 'csv'].includes(extension)) throw new Error('Choose a JSON, YAML, or legacy CSV backup.');
+    if (file.size > MAX_BACKUP_FILE_BYTES) throw new Error('Choose a backup file that is 100 MB or smaller.');
     const contents = await file.text();
     const parsed = extension === 'csv' ? { characters: parseImportFile(contents, file.name) }
       : extension === 'json' ? JSON.parse(contents.replace(/^\uFEFF/, '')) : parseYaml(contents);
     if (!parsed || typeof parsed !== 'object') throw new Error('The backup must contain a Fiction Tale library or exported records.');
 
+    if (parsed.format === 'FictionTales-library-backup') {
+      await importProjectLibraryBackup(parsed);
+      return;
+    }
+    const supportedFormats = new Set([
+      'FictionTales-studio-backup',
+      'fable-studio-backup',
+      'FictionTales-character-library',
+      'FictionTales-story-library',
+    ]);
+    if (parsed.format && !supportedFormats.has(parsed.format)) {
+      throw new Error('This backup format is not supported here. Project files can be imported from the Project Library.');
+    }
+    if (parsed.format === 'fable-studio-backup') {
+      if (parsed.version !== undefined && parsed.version !== 1) throw new Error('This backup version is not supported.');
+    } else if (parsed.format && parsed.version !== 1) {
+      throw new Error('This backup version is not supported.');
+    }
+
     const hasBundle = ['FictionTales-studio-backup', 'fable-studio-backup'].includes(parsed.format);
+    if (hasBundle) {
+      const arrayFields = ['characters', 'stories', 'drafts', 'bookSeries', 'places', 'worldEntries', 'recentlyDeleted'];
+      arrayFields.forEach((field) => {
+        if (parsed[field] !== undefined && !Array.isArray(parsed[field])) {
+          throw new Error(`The backup contains invalid "${field}" data.`);
+        }
+      });
+      ['planning', 'writingGoals'].forEach((field) => {
+        if (parsed[field] !== undefined && (!parsed[field] || typeof parsed[field] !== 'object' || Array.isArray(parsed[field]))) {
+          throw new Error(`The backup contains invalid "${field}" data.`);
+        }
+      });
+      if (parsed.dialogueDrafts !== undefined
+        && !Array.isArray(parsed.dialogueDrafts)
+        && (!parsed.dialogueDrafts || typeof parsed.dialogueDrafts !== 'object')) {
+        throw new Error('The backup contains invalid dialogue drafts.');
+      }
+      if (parsed.characterDraft !== undefined
+        && !Array.isArray(parsed.characterDraft)
+        && (!parsed.characterDraft || typeof parsed.characterDraft !== 'object' || Array.isArray(parsed.characterDraft))) {
+        throw new Error('The backup contains an invalid character draft.');
+      }
+      if (parsed.placeDrafts !== undefined
+        && !Array.isArray(parsed.placeDrafts)
+        && (!parsed.placeDrafts || typeof parsed.placeDrafts !== 'object' || Array.isArray(parsed.placeDrafts))) {
+        throw new Error('The backup contains invalid place drafts.');
+      }
+    }
     const characterRecords = Array.isArray(parsed.characters) ? parsed.characters
       : hasBundle ? [] : parsed.character ? [parsed.character]
         : parsed.profile ? [parsed.profile] : typeof parsed.name === 'string' ? [parsed] : [];
@@ -8645,6 +8890,41 @@ async function importLibraryBackup(event) {
     if (rawPlaceDrafts.length) {
       storageUpdates.push([PLACE_DRAFT_KEY, nextPlaceDrafts]);
     }
+    if (hasBundle) {
+      const collections = [
+        ['characters', characterRecords, importedCharacters],
+        ['stories', Array.isArray(parsed.stories) ? parsed.stories : [], storyResult.stories.concat(Object.values(storyResult.drafts))],
+        ['places', placeRecords, importedPlaces],
+        ['world entries', worldEntryRecords, importedWorldEntries],
+        ['book series', Array.isArray(parsed.bookSeries) ? parsed.bookSeries : [], importedBookSeries],
+        ['recently deleted items', Array.isArray(parsed.recentlyDeleted) ? parsed.recentlyDeleted : [], importedRecentlyDeleted],
+      ];
+      collections.forEach(([label, source, normalized]) => {
+        if (source.length !== normalized.length) {
+          throw new Error(`The backup contains invalid ${label}; no data was imported.`);
+        }
+      });
+    }
+    const countConflicts = (existing, incoming) => incoming.filter((record) => record?.id
+      && existing.some((item) => item.id === record.id)).length;
+    let conflictCount = countConflicts(characters, importedCharacters)
+      + countConflicts(savedStories, storyResult.stories)
+      + countConflicts(places, importedPlaces)
+      + countConflicts(worldEntries, importedWorldEntries)
+      + countConflicts(bookSeries, importedBookSeries)
+      + countConflicts(recentlyDeleted, importedRecentlyDeleted)
+      + Object.keys(storyResult.drafts).filter((id) => storyDrafts[id]).length
+      + Object.keys(importedDialogueDrafts).filter((id) => dialogueDrafts[id]).length
+      + rawPlaceDrafts.filter((draft) => draft?.id && placeDrafts[draft.id]).length;
+    if (rawCharacterDraft && readStorage(DRAFT_KEY, null)) conflictCount += 1;
+    if (hasPlanning && JSON.stringify(importedPlanning) !== JSON.stringify(readStorage('FictionTales.planning.v1', {}))) {
+      conflictCount += 1;
+    }
+    if (hasWritingGoals && importedWritingGoals.target !== writingGoals.target) conflictCount += 1;
+    if (conflictCount && !window.confirm(
+      `Replace matching data with this backup?\n\nThis import found ${conflictCount} existing data conflict${conflictCount === 1 ? '' : 's'}. Matching records and included sections will be replaced; other current data will remain. Cancel leaves all current data unchanged.`,
+    )) return;
+
     const previous = storageUpdates.map(([key]) => [key, snapshotStorage(key)]);
     for (let index = 0; index < storageUpdates.length; index += 1) {
       const [key, value] = storageUpdates[index];
@@ -8749,6 +9029,8 @@ window.addEventListener('afterprint', () => {
 function recentlyDeletedItemLabel(entry) {
   const kind = entry.kind === 'world-entry' ? 'World entry'
     : entry.kind === 'story' && entry.related.draft && !entry.related.saved ? 'Story draft'
+      : entry.kind === 'book-series' ? 'Book series'
+        : entry.kind === 'dialogue-draft' ? 'Dialogue draft'
       : entry.kind[0].toUpperCase() + entry.kind.slice(1);
   const label = entry.record.name || entry.record.title || 'Untitled';
   return `${kind} · ${label}`;
@@ -8796,6 +9078,106 @@ function mergeRestoredLinks(items, snapshots, property) {
     const current = item[property] || [];
     const restored = [...current, ...saved.filter((id) => !current.includes(id))];
     return { ...item, [property]: restored };
+  });
+}
+
+function addLinksToDeletedSeries(trash, snapshots, property) {
+  const savedById = new Map((snapshots || []).map((snapshot) => [snapshot.id, snapshot[property] || []]));
+  return trash.map((entry) => {
+    if (entry.kind !== 'book-series' || !savedById.has(entry.record.id)) return entry;
+    const current = entry.record[property] || [];
+    const links = [...current, ...savedById.get(entry.record.id).filter((id) => !current.includes(id))];
+    return links.length === current.length ? entry : {
+      ...entry,
+      record: { ...entry.record, [property]: links },
+    };
+  });
+}
+
+function removeLinkFromDeletedSeries(trash, id, property) {
+  return trash.map((entry) => {
+    if (entry.kind !== 'book-series' || !(entry.record[property] || []).includes(id)) return entry;
+    return {
+      ...entry,
+      record: { ...entry.record, [property]: entry.record[property].filter((linkId) => linkId !== id) },
+    };
+  });
+}
+
+function mergeSeriesLinks(items, seriesId, snapshots) {
+  const savedById = new Map((snapshots || []).map((snapshot) => [snapshot.id, snapshot]));
+  return items.map((item) => {
+    const saved = savedById.get(item.id);
+    if (!saved || item.seriesId) return item;
+    return {
+      ...item,
+      seriesId,
+      ...(saved.seriesOrder === undefined ? {} : { seriesOrder: saved.seriesOrder }),
+    };
+  });
+}
+
+function addSeriesLinksToDeletedStories(trash, seriesId, snapshots) {
+  const savedById = new Map((snapshots || []).map((snapshot) => [snapshot.id, snapshot]));
+  return trash.map((entry) => {
+    let changed = false;
+    const restoreStoryLink = (story) => {
+      const saved = story && savedById.get(story.id);
+      if (!saved || story.seriesId) return story;
+      changed = true;
+      return {
+        ...story,
+        seriesId,
+        ...(saved.seriesOrder === undefined ? {} : { seriesOrder: saved.seriesOrder }),
+      };
+    };
+    if (entry.kind === 'story') {
+      const record = restoreStoryLink(entry.record);
+      const related = {
+        ...entry.related,
+        saved: restoreStoryLink(entry.related.saved),
+        draft: restoreStoryLink(entry.related.draft),
+      };
+      return changed ? { ...entry, record, related } : entry;
+    }
+    if (entry.kind === 'character' || entry.kind === 'place') {
+      const related = {
+        ...entry.related,
+        stories: (entry.related.stories || []).map(restoreStoryLink),
+        storyDrafts: (entry.related.storyDrafts || []).map(restoreStoryLink),
+      };
+      return changed ? { ...entry, related } : entry;
+    }
+    return entry;
+  });
+}
+
+function removeSeriesLinksFromDeletedStories(trash, seriesId) {
+  return trash.map((entry) => {
+    let changed = false;
+    const removeStoryLink = (story) => {
+      if (!story || story.seriesId !== seriesId) return story;
+      changed = true;
+      return { ...story, seriesId: '' };
+    };
+    if (entry.kind === 'story') {
+      const record = removeStoryLink(entry.record);
+      const related = {
+        ...entry.related,
+        saved: removeStoryLink(entry.related.saved),
+        draft: removeStoryLink(entry.related.draft),
+      };
+      return changed ? { ...entry, record, related } : entry;
+    }
+    if (entry.kind === 'character' || entry.kind === 'place') {
+      const related = {
+        ...entry.related,
+        stories: (entry.related.stories || []).map(removeStoryLink),
+        storyDrafts: (entry.related.storyDrafts || []).map(removeStoryLink),
+      };
+      return changed ? { ...entry, related } : entry;
+    }
+    return entry;
   });
 }
 
@@ -8897,6 +9279,7 @@ function restoreRecentlyDeleted(id) {
       ...(related.storyDrafts || []),
     ], 'characterIds');
     nextTrash = addLinksToDeletedPlaces(nextTrash, related.places, 'characterIds');
+    nextTrash = addLinksToDeletedSeries(nextTrash, related.bookSeries, 'characterIds');
     updates = [
       [STORAGE_KEY, nextCharacters],
       [STORIES_STORAGE_KEY, nextStories],
@@ -8991,6 +9374,7 @@ function restoreRecentlyDeleted(id) {
       ...(related.storyDrafts || []),
     ], 'placeIds');
     nextTrash = addChapterPlacesToDeletedStories(nextTrash, related.chapterPlaces);
+    nextTrash = addLinksToDeletedSeries(nextTrash, related.bookSeries, 'placeIds');
     updates = [
       [PLACES_STORAGE_KEY, nextPlaces],
       [STORIES_STORAGE_KEY, nextStories],
@@ -9012,6 +9396,52 @@ function restoreRecentlyDeleted(id) {
     bookSeries = nextSeries;
     renderStories();
     renderPlaces();
+  } else if (entry.kind === 'book-series') {
+    if (bookSeries.some((item) => item.id === record.id)) {
+      showToast('A series with this ID already exists. Delete or rename that series before restoring.');
+      return;
+    }
+    if (bookSeries.some((item) => item.name.toLowerCase() === record.name.toLowerCase())) {
+      showToast('A series with this name already exists. Rename it before restoring this series.');
+      return;
+    }
+    const nextSeries = [record, ...bookSeries];
+    const storyLinks = related.storyLinks || [];
+    const nextStories = mergeSeriesLinks(savedStories, record.id, storyLinks);
+    const nextDrafts = Object.fromEntries(Object.entries(storyDrafts)
+      .map(([draftId, draft]) => [draftId, mergeSeriesLinks([draft], record.id, storyLinks)[0]]));
+    nextTrash = addSeriesLinksToDeletedStories(nextTrash, record.id, storyLinks);
+    updates = [
+      [SERIES_STORAGE_KEY, nextSeries],
+      [STORIES_STORAGE_KEY, nextStories],
+      [STORY_DRAFTS_KEY, nextDrafts],
+      [RECENTLY_DELETED_KEY, nextTrash],
+    ];
+    if (!commitStorageUpdates(updates)) {
+      showToast('Could not restore this book series. Your browser storage may be unavailable.');
+      return;
+    }
+    bookSeries = nextSeries;
+    savedStories.splice(0, savedStories.length, ...nextStories);
+    Object.keys(storyDrafts).forEach((draftId) => delete storyDrafts[draftId]);
+    Object.assign(storyDrafts, nextDrafts);
+    renderStories();
+  } else if (entry.kind === 'dialogue-draft') {
+    if (dialogueDrafts[record.id]) {
+      showToast('A dialogue draft with this ID already exists. Rename or delete that draft before restoring.');
+      return;
+    }
+    const nextDialogueDrafts = { ...dialogueDrafts, [record.id]: record };
+    updates = [
+      [DIALOGUE_DRAFTS_KEY, nextDialogueDrafts],
+      [RECENTLY_DELETED_KEY, nextTrash],
+    ];
+    if (!commitStorageUpdates(updates)) {
+      showToast('Could not restore this dialogue draft. Your browser storage may be unavailable.');
+      return;
+    }
+    Object.keys(dialogueDrafts).forEach((draftId) => delete dialogueDrafts[draftId]);
+    Object.assign(dialogueDrafts, nextDialogueDrafts);
   } else {
     if (worldEntries.some((item) => item.id === record.id)) {
       showToast('A world entry with this ID already exists. Delete or rename that entry before restoring.');
@@ -9047,6 +9477,8 @@ function syncRestoreRelatedEntities() {
   renderPlaces();
   renderWorldEntries();
   renderCharacters();
+  renderSeriesLibrary();
+  renderDialogueDraftList();
 }
 
 function permanentlyDeleteRecentlyDeleted(id) {
@@ -9059,10 +9491,10 @@ function permanentlyDeleteRecentlyDeleted(id) {
   pendingDeleteId = id;
   pendingDeleteKind = 'permanent-delete';
   pendingDeleteFocus = document.activeElement;
-  document.querySelector('#delete-dialog-title').textContent = 'Delete forever?';
+  document.querySelector('#delete-dialog-title').textContent = 'Permanently delete this item?';
   document.querySelector('#delete-dialog-message').textContent =
-    `Permanently delete ${recentlyDeletedItemLabel(entry)}? This cannot be undone.`;
-  document.querySelector('#cancel-delete').textContent = 'Keep deleted item';
+    `Permanently delete ${recentlyDeletedItemLabel(entry)}? This removes it from Recently Deleted and cannot be undone.`;
+  document.querySelector('#cancel-delete').textContent = 'Keep in Recently Deleted';
   document.querySelector('#confirm-delete').textContent = 'Delete forever';
   deleteDialog.showModal();
   syncModalScrollLock();
@@ -9070,21 +9502,33 @@ function permanentlyDeleteRecentlyDeleted(id) {
 }
 
 function requestDeleteItem(id, kind, item, returnFocus = document.activeElement) {
+  if (kind === 'dialogue-draft' && document.querySelector('#dialogue-draft-id').value === id) {
+    window.clearTimeout(dialogueDraftTimer);
+    dialogueDraftTimer = 0;
+    if (!flushDialogueDraft()) return;
+    item = dialogueDrafts[id] || item;
+  }
   pendingDeleteId = id;
   pendingDeleteKind = kind;
   pendingDeleteFocus = returnFocus;
   const isDraft = kind === 'story' && item.isDraft;
   const hasSavedVersion = kind === 'story' && savedStories.some((story) => story.id === id);
-  const itemType = kind === 'character' ? 'character' : kind === 'place' ? 'place'
-    : kind === 'world-entry' ? 'world entry' : isDraft && !hasSavedVersion ? 'draft' : 'story';
-  document.querySelector('#delete-dialog-title').textContent =
-    `Delete ${itemType}?`;
-  document.querySelector('#delete-dialog-message').textContent =
-    isDraft && hasSavedVersion
-      ? `Delete ${item.title || 'Untitled story'}? This removes the saved story, its unsaved changes, and its version history. This cannot be undone.`
-      : `Delete ${item.name || item.title || 'Untitled story'}? This cannot be undone.`;
+  const itemType = kind === 'character' ? 'character'
+    : kind === 'place' ? 'place'
+      : kind === 'world-entry' ? 'world entry'
+        : kind === 'book-series' ? 'book series'
+          : kind === 'dialogue-draft' ? 'dialogue draft'
+            : isDraft && !hasSavedVersion ? 'story draft' : 'story';
+  const itemName = item.name || item.title || 'Untitled';
+  const detail = kind === 'book-series'
+    ? 'Its books will stay in Stories. You can restore the series later from Settings → Recently Deleted.'
+    : isDraft && hasSavedVersion
+      ? 'The saved story, its unsaved draft, and its version history will be kept for restoration.'
+      : `You can restore this ${itemType} later from Settings → Recently Deleted.`;
+  document.querySelector('#delete-dialog-title').textContent = 'Move to Recently Deleted?';
+  document.querySelector('#delete-dialog-message').textContent = `${itemName} will be moved to Recently Deleted. ${detail}`;
   document.querySelector('#cancel-delete').textContent = 'Cancel';
-  document.querySelector('#confirm-delete').textContent = `Delete ${itemType}`;
+  document.querySelector('#confirm-delete').textContent = 'Move to Recently Deleted';
   deleteDialog.showModal();
   syncModalScrollLock();
   document.querySelector('#cancel-delete').focus();
@@ -9147,9 +9591,11 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
   if (kind === 'permanent-delete') {
     const deletedEntry = recentlyDeleted.find((item) => item.id === characterId);
     if (!deletedEntry) return;
-    const nextTrash = recentlyDeleted.filter((entry) => entry.id !== characterId);
+    let nextTrash = recentlyDeleted.filter((entry) => entry.id !== characterId);
     const updates = [[RECENTLY_DELETED_KEY, nextTrash]];
     let nextVersions = null;
+    let nextStories = null;
+    let nextDrafts = null;
     if (deletedEntry.kind === 'character') {
       nextVersions = { ...characterVersions };
       delete nextVersions[deletedEntry.record.id];
@@ -9158,6 +9604,16 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
       nextVersions = { ...storyVersions };
       delete nextVersions[deletedEntry.record.id];
       updates.push([STORY_VERSIONS_KEY, nextVersions]);
+    } else if (deletedEntry.kind === 'book-series') {
+      const seriesId = deletedEntry.record.id;
+      nextStories = savedStories.map((story) => story.seriesId === seriesId ? { ...story, seriesId: '' } : story);
+      nextDrafts = Object.fromEntries(Object.entries(storyDrafts).map(([id, draft]) => [
+        id, draft.seriesId === seriesId ? { ...draft, seriesId: '' } : draft,
+      ]));
+      nextTrash = removeSeriesLinksFromDeletedStories(nextTrash, seriesId);
+      updates[0] = [RECENTLY_DELETED_KEY, nextTrash];
+      if (nextStories.some((story, index) => story !== savedStories[index])) updates.push([STORIES_STORAGE_KEY, nextStories]);
+      if (Object.entries(nextDrafts).some(([id, draft]) => draft !== storyDrafts[id])) updates.push([STORY_DRAFTS_KEY, nextDrafts]);
     }
     if (!commitStorageUpdates(updates)) {
       showToast('Could not permanently delete this item. Your browser storage may be unavailable.');
@@ -9170,19 +9626,113 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
     } else if (deletedEntry.kind === 'story') {
       Object.keys(storyVersions).forEach((versionId) => delete storyVersions[versionId]);
       Object.assign(storyVersions, nextVersions);
+    } else if (deletedEntry.kind === 'book-series') {
+      savedStories.splice(0, savedStories.length, ...nextStories);
+      Object.keys(storyDrafts).forEach((draftId) => delete storyDrafts[draftId]);
+      Object.assign(storyDrafts, nextDrafts);
     }
     renderRecentlyDeleted();
+    if (deletedEntry.kind === 'book-series') {
+      renderStories();
+      renderSeriesLibrary();
+    }
     persistCharacterLibrary();
     scheduleFolderBackup();
     deleteDialog.close();
     showToast('Item permanently deleted.');
     return;
   }
+  if (kind === 'book-series') {
+    const series = bookSeries.find((item) => item.id === characterId);
+    if (!series) return;
+    const nextSeries = bookSeries.filter((item) => item.id !== characterId);
+    const nextStories = savedStories.map((story) => story.seriesId === characterId ? { ...story, seriesId: '' } : story);
+    const nextDrafts = Object.fromEntries(Object.entries(storyDrafts).map(([id, draft]) => [
+      id, draft.seriesId === characterId ? { ...draft, seriesId: '' } : draft,
+    ]));
+    const storyLinks = new Map();
+    const rememberStoryLink = (story) => {
+      if (story?.seriesId === characterId) {
+        storyLinks.set(story.id, { id: story.id, seriesOrder: story.seriesOrder });
+      }
+    };
+    savedStories.forEach(rememberStoryLink);
+    Object.values(storyDrafts).forEach(rememberStoryLink);
+    recentlyDeleted.forEach((entry) => {
+      if (entry.kind === 'story') {
+        [entry.record, entry.related.saved, entry.related.draft].forEach(rememberStoryLink);
+      } else if (entry.kind === 'character' || entry.kind === 'place') {
+        [...(entry.related.stories || []), ...(entry.related.storyDrafts || [])].forEach(rememberStoryLink);
+      }
+    });
+    const trashEntry = createRecentlyDeletedEntry('book-series', series, { storyLinks: [...storyLinks.values()] });
+    const nextTrash = removeSeriesLinksFromDeletedStories(withRecentlyDeleted(trashEntry), characterId);
+    const updates = [
+      [SERIES_STORAGE_KEY, nextSeries],
+      [STORIES_STORAGE_KEY, nextStories],
+      [STORY_DRAFTS_KEY, nextDrafts],
+      [RECENTLY_DELETED_KEY, nextTrash],
+    ];
+    if (!commitStorageUpdates(updates)) {
+      showToast('Could not move this book series to Recently Deleted. Your browser storage may be unavailable.');
+      return;
+    }
+    bookSeries = nextSeries;
+    savedStories.splice(0, savedStories.length, ...nextStories);
+    Object.keys(storyDrafts).forEach((id) => delete storyDrafts[id]);
+    Object.assign(storyDrafts, nextDrafts);
+    recentlyDeleted = nextTrash;
+    document.querySelector('#series-editor').classList.add('hidden');
+    renderSeriesLibrary();
+    renderStories();
+    renderRecentlyDeleted();
+    scheduleFolderBackup();
+    pendingDeleteFocus = document.querySelector('#series-create');
+    deleteDialog.close();
+    showToast('Book series moved to Recently Deleted.', {
+      label: 'Undo',
+      onAction: () => restoreRecentlyDeleted(trashEntry.id),
+    });
+    return;
+  }
+  if (kind === 'dialogue-draft') {
+    const draft = dialogueDrafts[characterId];
+    if (!draft) return;
+    const nextDrafts = { ...dialogueDrafts };
+    delete nextDrafts[characterId];
+    const trashEntry = createRecentlyDeletedEntry('dialogue-draft', draft);
+    const nextTrash = withRecentlyDeleted(trashEntry);
+    if (!commitStorageUpdates([
+      [DIALOGUE_DRAFTS_KEY, nextDrafts],
+      [RECENTLY_DELETED_KEY, nextTrash],
+    ])) {
+      showToast('Could not move this dialogue draft to Recently Deleted. Your browser storage may be unavailable.');
+      return;
+    }
+    Object.keys(dialogueDrafts).forEach((id) => delete dialogueDrafts[id]);
+    Object.assign(dialogueDrafts, nextDrafts);
+    if (document.querySelector('#dialogue-draft-id').value === characterId) {
+      window.clearTimeout(dialogueDraftTimer);
+      dialogueDraftTimer = 0;
+      startNewDialogue(false);
+    }
+    recentlyDeleted = nextTrash;
+    renderDialogueDraftList();
+    renderRecentlyDeleted();
+    scheduleFolderBackup();
+    deleteDialog.close();
+    showToast('Dialogue draft moved to Recently Deleted.', {
+      label: 'Undo',
+      onAction: () => restoreRecentlyDeleted(trashEntry.id),
+    });
+    return;
+  }
   if (kind === 'world-entry') {
     const deletedEntry = worldEntries.find((entry) => entry.id === characterId);
     if (!deletedEntry) return;
     const nextEntries = worldEntries.filter((entry) => entry.id !== characterId);
-    const nextTrash = withRecentlyDeleted(createRecentlyDeletedEntry('world-entry', deletedEntry));
+    const trashEntry = createRecentlyDeletedEntry('world-entry', deletedEntry);
+    const nextTrash = withRecentlyDeleted(trashEntry);
     if (!commitStorageUpdates([[WORLD_ENTRIES_STORAGE_KEY, nextEntries], [RECENTLY_DELETED_KEY, nextTrash]])) {
       showToast('Could not delete this world entry. Your browser storage may be unavailable.');
       return;
@@ -9194,7 +9744,10 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
     renderRecentlyDeleted();
     deleteDialog.close();
     if (activeWorldEntryId === characterId) closeWorldEntryEditor();
-    showToast('World entry moved to Recently Deleted.');
+    showToast('World entry moved to Recently Deleted.', {
+      label: 'Undo',
+      onAction: () => restoreRecentlyDeleted(trashEntry.id),
+    });
     return;
   }
   if (kind === 'place') {
@@ -9226,11 +9779,17 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
         ...Object.values(storyDrafts),
       ].filter((story) => (story.chapterPlaces || []).some((item) => item.placeId === characterId))
         .map((story) => ({ id: story.id, chapterPlaces: (story.chapterPlaces || []).filter((item) => item.placeId === characterId) })),
-      bookSeries: bookSeries.filter((series) => (series.placeIds || []).includes(characterId))
-        .map((series) => ({ id: series.id, placeIds: [characterId] })),
+      bookSeries: [
+        ...bookSeries.filter((series) => (series.placeIds || []).includes(characterId))
+          .map((series) => ({ id: series.id, placeIds: [characterId] })),
+        ...recentlyDeleted.filter((entry) => entry.kind === 'book-series'
+          && (entry.record.placeIds || []).includes(characterId))
+          .map((entry) => ({ id: entry.record.id, placeIds: [characterId] })),
+      ],
       placeDraft: placeDrafts[characterId] || null,
     };
-    const nextTrash = withRecentlyDeleted(createRecentlyDeletedEntry('place', deletedPlace, related));
+    const trashEntry = createRecentlyDeletedEntry('place', deletedPlace, related);
+    const nextTrash = removeLinkFromDeletedSeries(withRecentlyDeleted(trashEntry), characterId, 'placeIds');
     const updates = [[PLACES_STORAGE_KEY, nextPlaces]];
     if (nextStories.some((story, index) => story !== savedStories[index])) updates.push([STORIES_STORAGE_KEY, nextStories]);
     if (JSON.stringify(nextStoryDrafts) !== JSON.stringify(storyDrafts)) updates.push([STORY_DRAFTS_KEY, nextStoryDrafts]);
@@ -9260,7 +9819,10 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
       placeHasChanges = false;
       closePlaceNow();
     }
-    showToast('Place moved to Recently Deleted.');
+    showToast('Place moved to Recently Deleted.', {
+      label: 'Undo',
+      onAction: () => restoreRecentlyDeleted(trashEntry.id),
+    });
     return;
   }
   if (kind === 'story') {
@@ -9274,11 +9836,12 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
     const versions = storyVersions[characterId] || null;
     const nextVersions = { ...storyVersions };
     delete nextVersions[characterId];
-    const nextTrash = withRecentlyDeleted(createRecentlyDeletedEntry('story', savedStory || draft, {
+    const trashEntry = createRecentlyDeletedEntry('story', savedStory || draft, {
       saved: savedStory,
       draft,
       versions,
-    }));
+    });
+    const nextTrash = withRecentlyDeleted(trashEntry);
     if (!commitStorageUpdates([
       [STORIES_STORAGE_KEY, nextStories],
       [STORY_DRAFTS_KEY, nextDrafts],
@@ -9299,7 +9862,10 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
     renderRecentlyDeleted();
     persistCharacterLibrary();
     deleteDialog.close();
-    showToast(wasSaved ? 'Story moved to Recently Deleted.' : 'Story draft moved to Recently Deleted.');
+    showToast(wasSaved ? 'Story moved to Recently Deleted.' : 'Story draft moved to Recently Deleted.', {
+      label: 'Undo',
+      onAction: () => restoreRecentlyDeleted(trashEntry.id),
+    });
     return;
   }
   const deletedCharacter = characters.find((character) => character.id === characterId);
@@ -9322,8 +9888,13 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
       .map((item) => ({ id: item.id, characterIds: [characterId] })),
     places: places.filter((item) => (item.characterIds || []).includes(characterId))
       .map((item) => ({ id: item.id, characterIds: [characterId] })),
-    bookSeries: bookSeries.filter((item) => (item.characterIds || []).includes(characterId))
-      .map((item) => ({ id: item.id, characterIds: [characterId] })),
+    bookSeries: [
+      ...bookSeries.filter((item) => (item.characterIds || []).includes(characterId))
+        .map((item) => ({ id: item.id, characterIds: [characterId] })),
+      ...recentlyDeleted.filter((entry) => entry.kind === 'book-series'
+        && (entry.record.characterIds || []).includes(characterId))
+        .map((entry) => ({ id: entry.record.id, characterIds: [characterId] })),
+    ],
     characterBonds: characters.filter((item) => item.id !== characterId)
       .map((item) => ({ id: item.id, bonds: parseBonds(item.bonds).filter((bond) => bond.id === characterId) }))
       .filter((item) => item.bonds.length),
@@ -9331,7 +9902,8 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
   };
   const nextVersions = { ...characterVersions };
   delete nextVersions[characterId];
-  const nextTrash = withRecentlyDeleted(createRecentlyDeletedEntry('character', deletedCharacter, related));
+  const trashEntry = createRecentlyDeletedEntry('character', deletedCharacter, related);
+  const nextTrash = removeLinkFromDeletedSeries(withRecentlyDeleted(trashEntry), characterId, 'characterIds');
   if (!commitStorageUpdates([
     [STORAGE_KEY, nextCharacters],
     [STORIES_STORAGE_KEY, nextStories],
@@ -9359,7 +9931,10 @@ document.querySelector('#confirm-delete').addEventListener('click', () => {
   renderRecentlyDeleted();
   deleteDialog.close();
   if (activeId === characterId) resetForm();
-  showToast('Character moved to Recently Deleted.');
+  showToast('Character moved to Recently Deleted.', {
+    label: 'Undo',
+    onAction: () => restoreRecentlyDeleted(trashEntry.id),
+  });
 });
 
 document.querySelector('#search-characters').addEventListener('input', debounce(renderCharacters, 140));
@@ -9879,8 +10454,8 @@ async function exportProjectFile(projectId) {
   }
 }
 
-function uniqueImportedProjectName(name) {
-  const existingNames = new Set(projects.map((project) => project.name.toLowerCase()));
+function uniqueImportedProjectName(name, existingProjects = projects) {
+  const existingNames = new Set(existingProjects.map((project) => project.name.toLowerCase()));
   if (!existingNames.has(name.toLowerCase())) return name;
   let suffix = ' (imported)';
   let candidate = `${name.slice(0, 80 - suffix.length)}${suffix}`;
@@ -10524,19 +11099,32 @@ function syncEntryRoute() {
   }
 }
 
-const navLinks = [...document.querySelectorAll('.nav-link[href], .nav-sublink[href], .project-navigation-link[href]')];
+const navLinks = [...document.querySelectorAll('.nav-link[href], .nav-sublink[href], .project-navigation-link[href], .breadcrumb-project-link[href]')];
 const mainContent = document.querySelector('.main-content');
 let sectionInsertionPoint = document.querySelector('.project-workspace-header');
 const navSections = [...document.querySelectorAll('#main-navigation a[href]')]
   .map((link) => document.querySelector(link.getAttribute('href')))
-  .filter((section) => section?.parentElement === mainContent);
-navSections.forEach((section) => {
+  .filter(Boolean);
+navSections.filter((section) => section.parentElement === mainContent).forEach((section) => {
   sectionInsertionPoint.after(section);
   sectionInsertionPoint = section;
 });
 const sidebar = document.querySelector('.sidebar');
 const mobileNavigationToggle = document.querySelector('#mobile-nav-toggle');
 const settingsDialog = document.querySelector('#settings-dialog');
+const settingsNavLink = document.querySelector('#settings-open');
+const navigationBreadcrumbs = {
+  'project-dashboard': { group: '', section: 'Overview' },
+  lore: { group: 'Writing', section: 'Stories' },
+  'dialogue-workshop': { group: 'Writing', section: 'Dialogue' },
+  'book-series': { group: 'Writing', section: 'Series' },
+  characters: { group: 'Characters', section: 'Character editor' },
+  cast: { group: 'Characters', section: 'Cast' },
+  places: { group: 'Worldbuilding', section: 'Places' },
+  'world-entries': { group: 'Worldbuilding', section: 'World Entries' },
+  planning: { group: '', section: 'Planning' },
+  settings: { group: '', section: 'Settings' },
+};
 let settingsReturnFocus = null;
 let scrollSpyFrame = 0;
 let pendingNavigationTarget = '';
@@ -10565,11 +11153,18 @@ document.querySelector('#project-import-open').addEventListener('click', () => {
   document.querySelector('#project-import-file').click();
 });
 document.querySelector('#project-import-file').addEventListener('change', importProjectFile);
-document.querySelector('#project-sample-open').addEventListener('click', createSampleProject);
+document.querySelectorAll('#project-sample-open, [data-open-sample-project]').forEach((button) => {
+  button.addEventListener('click', createSampleProject);
+});
 document.querySelector('#project-sample-empty').addEventListener('click', createSampleProject);
 document.querySelector('#project-create-close').addEventListener('click', () => toggleProjectCreateForm(false));
 document.querySelector('#project-create-cancel').addEventListener('click', () => toggleProjectCreateForm(false));
-document.querySelector('[data-open-project-form]').addEventListener('click', () => toggleProjectCreateForm(true));
+document.querySelectorAll('[data-open-project-form]').forEach((button) => {
+  button.addEventListener('click', () => {
+    if (!document.body.classList.contains('project-library-active')) openProjectLibrary();
+    toggleProjectCreateForm(true);
+  });
+});
 document.querySelector('#project-search').addEventListener('input', renderProjectLibrary);
 document.querySelector('#project-sort').addEventListener('change', renderProjectLibrary);
 document.querySelector('#project-create-panel').addEventListener('submit', (event) => {
@@ -10640,6 +11235,7 @@ function openSettings(focusStorage = false) {
   updateStorageMeter();
   renderBackupInformation();
   settingsDialog.showModal();
+  setActiveNavigation('settings');
   if (focusStorage) {
     requestAnimationFrame(() => document.querySelector('#settings-data-heading').scrollIntoView({ block: 'start' }));
   }
@@ -10853,6 +11449,7 @@ function closeSettings() {
   const returnFocus = settingsReturnFocus;
   settingsReturnFocus = null;
   settingsDialog.close();
+  scheduleNavigationSync();
   const menuTriggerIsHidden = sidebar.contains(returnFocus)
     && getComputedStyle(mobileNavigationToggle).display !== 'none'
     && !sidebar.classList.contains('is-open');
@@ -10889,6 +11486,7 @@ document.addEventListener('click', (event) => {
 });
 
 function setActiveNavigation(sectionId) {
+  if (settingsDialog.open) sectionId = 'settings';
   const mainNavigationSectionId = sectionId === 'cast' ? 'characters' : sectionId;
   navLinks.forEach((link) => {
     const isActive = link.getAttribute('href') === `#${sectionId}`
@@ -10898,6 +11496,17 @@ function setActiveNavigation(sectionId) {
     if (isActive) link.setAttribute('aria-current', 'location');
     else link.removeAttribute('aria-current');
   });
+  const settingsIsActive = sectionId === 'settings';
+  settingsNavLink.classList.toggle('active', settingsIsActive);
+  if (settingsIsActive) settingsNavLink.setAttribute('aria-current', 'page');
+  else settingsNavLink.removeAttribute('aria-current');
+  const breadcrumb = navigationBreadcrumbs[sectionId] || { group: '', section: 'Overview' };
+  const breadcrumbGroup = document.querySelector('#breadcrumb-group');
+  const breadcrumbGroupSeparator = document.querySelector('#breadcrumb-group-separator');
+  breadcrumbGroup.textContent = breadcrumb.group;
+  breadcrumbGroup.classList.toggle('hidden', !breadcrumb.group);
+  breadcrumbGroupSeparator.classList.toggle('hidden', !breadcrumb.group);
+  document.querySelector('#breadcrumb-section').textContent = breadcrumb.section;
   document.querySelectorAll('.nav-group').forEach((group) => {
     const hasActiveLink = Boolean(group.querySelector('.nav-sublink.active'));
     group.open = hasActiveLink;
@@ -10992,6 +11601,7 @@ if (savedDraft) {
     document.querySelector('#save-label').textContent = 'Update character';
     syncCharacterActions(true);
   }
+  setCharacterDisclosure(savedDraft);
 }
 renderTimelineEditor();
 renderCharacterSnapshotsEditor();
@@ -11015,6 +11625,19 @@ openProjectOverviewOnEntry();
 window.addEventListener('storage', updateStorageMeterSoon);
 updatePreview();
 initializeDataFolder();
-if (!window.FictionTaleStorage.isAvailable()) {
+if (window.FictionTaleStorage.hasUnavailableIndexedData()) {
+  storageAvailabilityError = 'Some existing saved data could not be loaded. Avoid editing or resetting content until browser storage is available again, or restore from a backup.';
+  storageProblemKeys.add('unavailable indexed data');
+  updateWorkspaceStorageStatus();
+  renderStorageWarning();
+  showToast(storageAvailabilityError);
+} else if (!window.FictionTaleStorage.canUseLocalStorage()) {
+  localStorageUnavailable = true;
+  storageAvailabilityError = 'Browser storage is not writable. Changes cannot be saved until storage access is restored.';
+  storageProblemKeys.add('browser storage');
+  updateWorkspaceStorageStatus();
+  renderStorageWarning();
+  showToast(storageAvailabilityError);
+} else if (!window.FictionTaleStorage.isAvailable()) {
   showToast('IndexedDB is unavailable. Large saves may be limited by browser storage.');
 }

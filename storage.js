@@ -7,6 +7,24 @@
   const generations = new Map();
   const writes = new Map();
   let database = null;
+  let localStorageAvailable = false;
+  let unavailableIndexedData = false;
+
+  function probeLocalStorage() {
+    const key = 'FictionTales.__storage_probe__';
+    try {
+      localStorage.setItem(key, '1');
+      localStorage.removeItem(key);
+      return true;
+    } catch {
+      try {
+        localStorage.removeItem(key);
+      } catch {
+        // The failed probe is reported to the app below.
+      }
+      return false;
+    }
+  }
 
   function isAppKey(key) {
     return key.startsWith('FictionTales.') || key.startsWith('fable.');
@@ -145,14 +163,19 @@
       try {
         const value = await getRecord(key);
         if (value !== undefined) values.set(key, value);
-        else console.error(`IndexedDB data for "${key}" is missing; the saved marker was preserved.`);
+        else {
+          unavailableIndexedData = true;
+          console.error(`IndexedDB data for "${key}" is missing; the saved marker was preserved.`);
+        }
       } catch (error) {
+        unavailableIndexedData = true;
         console.error(`Could not load "${key}" from IndexedDB.`, error);
       }
     }
   }
 
   async function initialize() {
+    localStorageAvailable = probeLocalStorage();
     try {
       await openDatabase();
       await migrateLegacyKeys();
@@ -162,6 +185,12 @@
     } catch (error) {
       database?.close();
       database = null;
+      try {
+        unavailableIndexedData = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+          .some((key) => key && isAppKey(key) && isMarker(localStorage.getItem(key)));
+      } catch {
+        unavailableIndexedData = true;
+      }
       console.error('IndexedDB storage could not be initialized. Existing browser data was left in place.', error);
       return false;
     }
@@ -261,26 +290,26 @@
 
   function remove(key) {
     const generation = (generations.get(key) || 0) + 1;
-    generations.set(key, generation);
-    values.delete(key);
     try {
       localStorage.removeItem(key);
-      if (database) {
-        const previous = writes.get(key) || Promise.resolve();
-        const pending = previous.catch(() => {}).then(() => {
-          if (generations.get(key) === generation) return deleteRecord(key);
-          return undefined;
-        }).catch((error) => notifyError(key, error)).finally(() => {
-          if (writes.get(key) === pending) writes.delete(key);
-        });
-        writes.set(key, pending);
-      }
-      window.dispatchEvent(new CustomEvent('fictiontale-storage-updated', { detail: { key } }));
-      return true;
     } catch (error) {
       console.error(`Could not remove "${key}" from browser storage.`, error);
       return false;
     }
+    generations.set(key, generation);
+    values.delete(key);
+    if (database) {
+      const previous = writes.get(key) || Promise.resolve();
+      const pending = previous.catch(() => {}).then(() => {
+        if (generations.get(key) === generation) return deleteRecord(key);
+        return undefined;
+      }).catch((error) => notifyError(key, error)).finally(() => {
+        if (writes.get(key) === pending) writes.delete(key);
+      });
+      writes.set(key, pending);
+    }
+    window.dispatchEvent(new CustomEvent('fictiontale-storage-updated', { detail: { key } }));
+    return true;
   }
 
   function getUsageBytes() {
@@ -349,5 +378,10 @@
     verify,
     clearAppData,
     isAvailable: () => Boolean(database),
+    canUseLocalStorage: () => {
+      localStorageAvailable = probeLocalStorage();
+      return localStorageAvailable;
+    },
+    hasUnavailableIndexedData: () => unavailableIndexedData,
   };
 })();

@@ -405,6 +405,11 @@
     const empty = document.querySelector('#relationship-history-empty');
     const previousPair = pairSelect.value;
     const entries = relationshipEntries();
+    const historyDisclosure = document.querySelector('.relationship-history-disclosure');
+    if (!historyDisclosure.dataset.initialized) {
+      historyDisclosure.open = entries.some((entry) => entry.directed.some(({ bond }) => bond.statusHistory.length));
+      historyDisclosure.dataset.initialized = 'true';
+    }
     pairSelect.replaceChildren(new Option('Choose a connection', ''));
     entries.forEach((entry) => pairSelect.add(new Option(`${entry.source.name} → ${entry.target.name}`, entry.key)));
     pairSelect.value = entries.some((entry) => entry.key === previousPair) ? previousPair : entries[0]?.key || '';
