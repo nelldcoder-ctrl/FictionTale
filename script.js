@@ -11168,6 +11168,25 @@ let settingsReturnFocus = null;
 let scrollSpyFrame = 0;
 let pendingNavigationTarget = '';
 let navigationFallbackTimer = 0;
+let activeWorkspaceSectionId = 'project-dashboard';
+
+function activateWorkspaceSection(sectionId, options = {}) {
+  if (sectionId === 'studio') sectionId = 'characters';
+  const section = document.querySelector(`#${CSS.escape(sectionId)}`);
+  if (!section) return;
+
+  activeWorkspaceSectionId = sectionId;
+  navSections.forEach((workspaceSection) => {
+    workspaceSection.classList.toggle('hidden', workspaceSection !== section);
+  });
+
+  setActiveNavigation(sectionId);
+  if (options.updateHistory !== false) {
+    history.replaceState(null, '', `#${sectionId}`);
+  }
+  window.scrollTo({ top: 0, behavior: options.behavior || 'auto' });
+  window.dispatchEvent(new Event('resize'));
+}
 
 document.querySelectorAll('[data-open-workspace]').forEach((link) => {
   link.addEventListener('click', (event) => {
@@ -11555,6 +11574,8 @@ function setActiveNavigation(sectionId) {
 
 function syncNavigationToScroll() {
   scrollSpyFrame = 0;
+  setActiveNavigation(activeWorkspaceSectionId);
+  return;
   const isBottomNavigation = window.matchMedia('(max-width: 780px)').matches;
   if (!isBottomNavigation && pendingNavigationTarget) return;
   const navigation = document.querySelector('.sidebar');
@@ -11584,6 +11605,9 @@ navLinks.forEach((link) => link.addEventListener('click', (event) => {
   event.preventDefault();
   const target = document.querySelector(link.getAttribute('href'));
   if (!target) return;
+  if (navSections.includes(target)) {
+    activateWorkspaceSection(target.id);
+  }
   if (target.id === 'dialogue-workshop') {
     flushDialogueDraft();
     const current = currentDialogueDraft();
@@ -11612,6 +11636,21 @@ window.addEventListener('resize', () => {
   if (!window.matchMedia('(min-width: 781px)').matches) finishNavigationScroll();
   scheduleNavigationSync();
 });
+window.addEventListener('hashchange', () => {
+  const sectionId = location.hash.slice(1);
+  if (navSections.some((section) => section.id === sectionId)) {
+    activateWorkspaceSection(sectionId, { updateHistory: false });
+  }
+});
+const initialWorkspaceHash = location.hash.slice(1);
+activateWorkspaceSection(
+  initialWorkspaceHash === 'studio'
+    ? 'characters'
+    : navSections.some((section) => section.id === initialWorkspaceHash)
+    ? initialWorkspaceHash
+    : 'project-dashboard',
+  { updateHistory: false }
+);
 syncNavigationToScroll();
 
 const savedDraft = readStorage(DRAFT_KEY, null);

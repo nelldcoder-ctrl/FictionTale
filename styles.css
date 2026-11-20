@@ -9569,3 +9569,41 @@ body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .project-card-archive:hover { transform: translateY(-1px); }
   .project-card:hover { transform: translateY(-2px); }
 }
+
+/* Keep the separate dark Project Library legible without changing its theme. */
+.project-library-page { --library-muted: #c4d1df; }
+.project-library-breadcrumb,
+.project-library-eyebrow { font-size: 12px; }
+.project-library-breadcrumb span { color: var(--library-muted); }
+.project-library-welcome > p:not(.project-library-eyebrow) { font-size: 15px; line-height: 1.65; }
+.project-library-warning { font-size: 13px; line-height: 1.5; }
+.project-create-open,
+.project-create-submit,
+.project-import-open,
+.project-sample-open,
+.project-create-cancel,
+.project-sample-empty { font-size: 12px; letter-spacing: .04em; }
+.project-create-fields label { font-size: 13px; }
+.project-create-fields input,
+.project-create-fields textarea { font-size: 14px; }
+.project-create-fields input::placeholder,
+.project-create-fields textarea::placeholder { color: var(--library-muted); }
+.project-field-optional { font-size: 12px; }
+.project-search input { font-size: 14px; }
+.project-search input::placeholder { color: var(--library-muted); }
+.project-library-tools select { font-size: 13px; }
+.project-card-type,
+.project-card-top time,
+.project-card-genre,
+.project-card-stats,
+.project-card-tags span,
+.project-card-open,
+.project-card-export,
+.project-card-archive,
+.project-card-delete,
+.project-sample-empty,
+.project-library-footer,
+.project-archive-section > summary span { font-size: 12px; }
+.project-card-description { font-size: 14px; line-height: 1.6; }
+.project-library-empty p { font-size: 14px; line-height: 1.6; }
+.project-archive-section > summary { font-size: 14px; }
