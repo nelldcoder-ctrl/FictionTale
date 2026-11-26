@@ -1,0 +1,1 @@
+self.FICTION_TALE_VERSION = '1.5.3';

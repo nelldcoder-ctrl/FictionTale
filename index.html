@@ -1,0 +1,2196 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#c8d6e2">
+  <meta name="description" content="A private, offline-friendly home for your characters and stories.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; script-src 'self' 'sha256-pADd24koSFtYD4XeYlCVwyvS5nt1x7cmp/Tc7LeSNUU=' 'sha256-EZjWGnf3UAQV55Hp+69AqniKM1NRDM7pRGxhpZEn6cc=' 'sha256-vzx4LjZkvVRKAO1wckQPYn5w8clohes/rIQ8a1ID7bE='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self'; manifest-src 'self'; worker-src 'self'">
+  <script>
+    (() => {
+      let theme;
+      try {
+        const stored = localStorage.getItem('FictionTales.ui.v1') || localStorage.getItem('fable.ui.v1');
+        const savedTheme = JSON.parse(stored || 'null')?.theme;
+        if (savedTheme === 'dark' || savedTheme === 'light') theme = savedTheme;
+      } catch {
+        // Use the system preference when browser storage is unavailable.
+      }
+      if (!theme) theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      document.documentElement.dataset.theme = theme;
+      document.querySelector('meta[name="theme-color"]').content = theme === 'dark' ? '#16284a' : '#c8d6e2';
+    })();
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Fiction Tale</title>
+  <script src="app-version.js"></script>
+  <script src="storage.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <script>
+    const route = location.hash.slice(1);
+    if (route === 'projects') {
+      document.body.classList.add('project-library-active');
+    } else if (['studio', 'characters', 'cast', 'cast-groups', 'lore', 'book-series', 'project-dashboard', 'dialogue-workshop', 'places', 'world-entries', 'planning'].includes(route)) {
+      document.body.classList.add('workspace-active');
+    }
+  </script>
+  <div class="landing-page" id="landing-page">
+    <header class="landing-header">
+      <a class="brand landing-brand" href="#landing-page" aria-label="FictionTale home">
+        <span class="brand-mark" aria-hidden="true">f.</span>
+        <span class="brand-wordmark">FictionTale</span>
+      </a>
+      <nav class="landing-nav" aria-label="Landing page navigation">
+        <a href="#features">Features</a>
+        <a href="#how-it-works">How it works</a>
+        <a href="#getting-started">Getting started</a>
+        <a href="#changelog">Changelog</a>
+      </nav>
+      <a class="button landing-header-cta" href="#projects" data-open-workspace>My Projects <span aria-hidden="true">→</span></a>
+    </header>
+
+    <main class="landing-main">
+      <section class="landing-start-point" aria-labelledby="landing-start-title">
+        <div class="landing-start-point-heading">
+          <p class="landing-kicker">YOUR CREATIVE WORKSPACE</p>
+          <h1 id="landing-start-title">What would you like to work on?</h1>
+        </div>
+        <div class="landing-start-actions">
+          <a class="landing-start-card" href="#projects" data-open-workspace>
+            <span class="landing-start-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></span>
+            <span><strong>My Projects</strong><small>Continue or manage your worlds.</small></span>
+          </a>
+          <button class="landing-start-card" type="button" data-open-project-form>
+            <span class="landing-start-icon" aria-hidden="true">＋</span>
+            <span><strong>New Project</strong><small>Start something from scratch.</small></span>
+          </button>
+        </div>
+        <div class="landing-start-explore">
+          <h2>Explore FictionTale</h2>
+          <nav class="landing-topic-links" aria-label="Explore workspace features">
+            <a href="#feature-stories">Stories</a>
+            <a href="#feature-characters">Characters</a>
+            <a href="#feature-worldbuilding">Worldbuilding</a>
+            <a href="#feature-planning">Planning</a>
+          </nav>
+          <div class="landing-resource-links" aria-label="Helpful resources">
+            <button type="button" data-tutorial-open="quick">Learn the basics</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" data-open-sample-project>Sample projects</button>
+            <span aria-hidden="true">·</span>
+            <button type="button" data-tutorial-open="detailed">Guides</button>
+            <span aria-hidden="true">·</span>
+            <a href="#changelog">What’s new</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-hero-panel" aria-labelledby="landing-title">
+        <div class="landing-hero-copy">
+          <p class="landing-eyebrow"><span></span> A HOME FOR YOUR ORIGINAL CHARACTERS</p>
+          <h2 id="landing-title">Every story starts<br>with <em>mystery</em></h2>
+          <p class="landing-tagline">An non ending creativity to imagine</p>
+          <p class="landing-lede">Create stories, develop characters, and build entire fictional worlds in one organized creative workspace.</p>
+          <div class="landing-hero-actions">
+            <a class="button landing-primary-cta" href="#projects" data-open-workspace>My Projects <span aria-hidden="true">→</span></a>
+            <a class="landing-text-link" href="#features">Explore what you can create <span aria-hidden="true">↓</span></a>
+          </div>
+          <p class="landing-privacy"><span class="status-dot"></span> Your work stays in this browser on this device.</p>
+        </div>
+        <div class="landing-art" aria-label="A preview of a character profile in FictionTale">
+          <div class="landing-art-orbit landing-art-orbit-one"></div>
+          <div class="landing-art-orbit landing-art-orbit-two"></div>
+          <article class="landing-profile-card">
+            <div class="landing-profile-cover"><span class="landing-profile-star">✳</span><span class="landing-profile-index">CHARACTER PROFILE · 01</span></div>
+            <div class="landing-profile-body">
+              <p>THE PEOPLE IN YOUR HEAD</p>
+              <h2>Make room for<br>someone remarkable.</h2>
+              <div class="landing-profile-tags"><span>Character</span><span>Story</span><span>World</span></div>
+              <div class="landing-profile-rule"></div>
+              <div class="landing-profile-meta"><span>✦</span><span>A universe, all your own</span><span>↗</span></div>
+            </div>
+          </article>
+          <span class="landing-art-note">A little space<br>for big stories</span>
+        </div>
+      </section>
+
+      <section class="landing-section" id="features" aria-labelledby="features-title">
+        <div class="landing-section-heading">
+          <p class="landing-kicker">YOUR CREATIVE WORKSPACE</p>
+          <h2 id="features-title">All the pieces of your story,<br><em>in one place.</em></h2>
+          <p>Build from a small spark or bring an entire universe. Your workspace grows with you.</p>
+        </div>
+        <div class="landing-feature-grid">
+          <article class="landing-feature-card" id="feature-stories">
+            <span class="landing-feature-icon" aria-hidden="true">✎</span>
+            <p class="landing-card-number">01 / STORIES</p>
+            <h3>Write it your way</h3>
+            <p>Draft scenes and chapters, connect your cast, and keep every story moving at your pace.</p>
+          </article>
+          <article class="landing-feature-card" id="feature-characters">
+            <span class="landing-feature-icon" aria-hidden="true">✳</span>
+            <p class="landing-card-number">02 / CHARACTERS</p>
+            <h3>Meet your cast</h3>
+            <p>Shape vivid profiles with personalities, histories, relationships, and room to change.</p>
+          </article>
+          <article class="landing-feature-card" id="feature-worldbuilding">
+            <span class="landing-feature-icon" aria-hidden="true">◈</span>
+            <p class="landing-card-number">03 / WORLDBUILDING</p>
+            <h3>Make a world of it</h3>
+            <p>Collect places, groups, artifacts, and the little details that make a world feel real.</p>
+          </article>
+          <article class="landing-feature-card" id="feature-planning">
+            <span class="landing-feature-icon" aria-hidden="true">⌘</span>
+            <p class="landing-card-number">04 / PLANNING</p>
+            <h3>Find your next step</h3>
+            <p>Arrange scene ideas, follow timelines, set writing goals, and keep your projects in view.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="landing-how" id="how-it-works" aria-labelledby="how-title">
+        <div class="landing-how-intro">
+          <p class="landing-kicker">HOW IT WORKS</p>
+          <h2 id="how-title">A simple place<br>to <em>begin.</em></h2>
+          <p>FictionTale brings your writing tools together without getting between you and the story.</p>
+          <a class="landing-text-link" href="#projects" data-open-workspace>Take a look inside <span aria-hidden="true">→</span></a>
+        </div>
+        <div class="landing-how-steps">
+          <article><span>01</span><div><h3>Start with a spark</h3><p>Create a character, jot down a story idea, or sketch the world around them.</p></div></article>
+          <article><span>02</span><div><h3>Connect the pieces</h3><p>Link your stories, characters, and places so your whole universe stays close at hand.</p></div></article>
+          <article><span>03</span><div><h3>Keep making it yours</h3><p>Write, plan, and revisit your work whenever inspiration finds you. Your drafts save on this device.</p></div></article>
+        </div>
+      </section>
+
+      <section class="landing-section landing-started" id="getting-started" aria-labelledby="getting-started-title">
+        <div class="landing-started-copy">
+          <p class="landing-kicker">A FRIENDLY FIRST STEP</p>
+          <h2 id="getting-started-title">Ready when<br><em>you are.</em></h2>
+          <p>Whether you like to dive right in or explore every tool first, there’s a guide to help you settle in.</p>
+          <button class="button landing-outline-cta" id="about-website" type="button">Open the tutorial <span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="landing-guide-cards">
+          <article class="landing-guide-card">
+            <span class="landing-guide-icon" aria-hidden="true">✦</span>
+            <div><p class="landing-card-number">A QUICK START</p><h3>Make your first story</h3><p>Follow a short walkthrough to create a character, write a story, and keep your work safe.</p></div>
+            <button type="button" class="landing-guide-link" data-tutorial-open="quick">Read the quick start <span aria-hidden="true">→</span></button>
+          </article>
+          <article class="landing-guide-card">
+            <span class="landing-guide-icon" aria-hidden="true">✧</span>
+            <div><p class="landing-card-number">HELPFUL GUIDES</p><h3>Explore every corner</h3><p>Learn about stories, series, planning, worldbuilding, backups, and more.</p></div>
+            <button type="button" class="landing-guide-link" data-tutorial-open="detailed">Browse the detailed guide <span aria-hidden="true">→</span></button>
+          </article>
+        </div>
+      </section>
+
+      <section class="landing-section landing-changelog" id="changelog" aria-labelledby="landing-changelog-title">
+        <div class="landing-changelog-heading">
+          <div><p class="landing-kicker">A WORK IN PROGRESS, IN THE BEST WAY</p><h2 id="landing-changelog-title">Fresh from the <em>workshop.</em></h2></div>
+          <button class="landing-text-link landing-changelog-more" id="changelog-open" type="button">View all updates <span aria-hidden="true">↗</span></button>
+        </div>
+        <div class="landing-changelog-list" id="landing-changelog-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <footer class="landing-footer">
+      <a class="landing-footer-brand" href="#landing-page"><span class="brand-mark" aria-hidden="true">f.</span> FictionTale</a>
+      <p>Made for the characters who won’t leave you alone. <span aria-hidden="true">✦</span></p>
+      <div><span id="landing-version">FictionTale</span><span class="landing-footer-dot">·</span><span>Your stories stay yours.</span></div>
+    </footer>
+  </div>
+  <div class="project-library-page" id="project-library">
+    <header class="project-library-header">
+      <a class="brand project-library-brand" href="#landing-page" data-go-home aria-label="FictionTale home">
+        <span class="brand-mark" aria-hidden="true">f.</span>
+        <span class="brand-wordmark">FictionTale</span>
+      </a>
+      <span class="project-library-breadcrumb">YOUR WORKSPACE <span>/</span> <strong>PROJECT LIBRARY</strong></span>
+      <button class="button project-create-open project-sample-open" id="project-sample-open" type="button" aria-expanded="false" aria-controls="sample-project-picker">Explore sample projects</button>
+      <button class="button project-create-open project-import-open" id="project-import-open" type="button">Import project file</button>
+      <button class="button project-create-open" id="project-create-open" type="button" aria-expanded="false" aria-controls="project-create-panel">＋ New project</button>
+      <input class="visually-hidden" id="project-import-file" type="file" accept=".json,application/json" aria-label="Choose a FictionTale project file">
+    </header>
+    <main class="project-library-main">
+      <section class="project-library-welcome" aria-labelledby="project-library-title">
+        <p class="project-library-eyebrow">YOUR STORIES, YOUR WAY</p>
+        <h1 id="project-library-title">A home for every <em>project.</em></h1>
+        <p>Choose a project to enter its workspace, or start a new one. Each project is the home for its stories, characters, places, lore, and plans. Browse three sample projects, or export any project as a portable file with its progress and drafts.</p>
+        <p class="project-library-warning hidden" id="project-library-warning" role="alert"></p>
+      </section>
+      <section class="project-sample-picker hidden" id="sample-project-picker" aria-labelledby="sample-project-picker-title">
+        <div class="project-section-heading">
+          <div>
+            <p class="project-library-eyebrow">A FEW WAYS TO BEGIN</p>
+            <h2 id="sample-project-picker-title" tabindex="-1">Choose a sample project</h2>
+          </div>
+        </div>
+        <p class="project-sample-intro">Each sample opens as its own editable project. Make a copy, explore how the pieces connect, or use it as a starting point for your own story.</p>
+        <div class="project-card-grid">
+          <article class="project-card sample-project-card">
+            <div class="project-card-top"><span class="project-card-type">FANTASY · MYSTERY</span><span class="project-card-type">SAMPLE</span></div>
+            <h3>The Lanterns of Brinewake</h3>
+            <p class="project-card-description">A mapmaker follows her mother's tide chart toward a harbor that appears only at the lowest spring tides.</p>
+            <p class="sample-project-features">Cast groups · Chapters · Series · Worldbuilding</p>
+            <div class="project-card-actions"><button class="project-card-open" type="button" data-sample-project="brinewake">Create and open</button></div>
+          </article>
+          <article class="project-card sample-project-card">
+            <div class="project-card-top"><span class="project-card-type">REALISTIC FICTION</span><span class="project-card-type">SAMPLE</span></div>
+            <h3>A Place at the Table</h3>
+            <p class="project-card-description">A high-school senior and her neighbors try to keep a familiar community kitchen open through a difficult year.</p>
+            <p class="sample-project-features">Cast groups · Chapters · Story planning</p>
+            <div class="project-card-actions"><button class="project-card-open" type="button" data-sample-project="table">Create and open</button></div>
+          </article>
+          <article class="project-card sample-project-card">
+            <div class="project-card-top"><span class="project-card-type">ADVENTURE FICTION</span><span class="project-card-type">SAMPLE</span></div>
+            <h3>Beyond the Copper Pass</h3>
+            <p class="project-card-description">A small expedition crosses a remote mountain route to deliver a beacon and find a missing field team.</p>
+            <p class="sample-project-features">Cast groups · Chapters · Series · Places</p>
+            <div class="project-card-actions"><button class="project-card-open" type="button" data-sample-project="copper-pass">Create and open</button></div>
+          </article>
+        </div>
+      </section>
+      <form class="project-create-panel hidden" id="project-create-panel">
+        <div class="project-create-heading"><div><p class="project-library-eyebrow">A FRESH PAGE</p><h2>Create a project</h2></div><button class="project-create-close" id="project-create-close" type="button" aria-label="Close project form">×</button></div>
+        <div class="project-create-fields">
+          <label>Project name <span aria-hidden="true">*</span><input id="project-name" name="name" maxlength="80" required placeholder="e.g. The Glass Orchard"></label>
+          <label>About this project <span class="project-field-optional">Optional</span><textarea id="project-description" name="description" rows="2" maxlength="300" placeholder="A short note to help you find your way back."></textarea></label>
+          <label>Genre <span class="project-field-optional">Optional</span><input id="project-genre" name="genre" maxlength="60" placeholder="e.g. Fantasy, mystery"></label>
+          <label>Tags <span class="project-field-optional">Optional · separate with commas</span><input id="project-tags" name="tags" maxlength="200" placeholder="e.g. fantasy, book one, drafting"></label>
+        </div>
+        <div class="project-create-actions"><button class="button project-create-cancel" id="project-create-cancel" type="button">Cancel</button><button class="button project-create-submit" type="submit">Create and open workspace <span aria-hidden="true">→</span></button></div>
+      </form>
+      <section class="project-library-section" aria-labelledby="project-recent-title">
+        <div class="project-section-heading"><div><p class="project-library-eyebrow">PICK UP WHERE YOU LEFT OFF</p><h2 id="project-recent-title">Recently opened</h2></div></div>
+        <div class="project-card-grid" id="project-recent-grid"></div>
+        <p class="project-library-empty hidden" id="project-recent-empty">Your recent projects will show up here.</p>
+      </section>
+      <section class="project-library-section" aria-labelledby="project-all-title">
+        <div class="project-section-heading project-all-heading">
+          <div><p class="project-library-eyebrow">YOUR PROJECT LIBRARY</p><h2 id="project-all-title">All projects <span id="project-active-count"></span></h2></div>
+          <div class="project-library-tools">
+            <label class="project-search" for="project-search"><span aria-hidden="true">⌕</span><input id="project-search" type="search" placeholder="Find a project…" autocomplete="off"></label>
+            <label class="visually-hidden" for="project-sort">Sort projects</label>
+            <select id="project-sort"><option value="recent">Recently opened</option><option value="updated">Recently updated</option><option value="name">Name A–Z</option><option value="created">Date created</option></select>
+          </div>
+        </div>
+        <div class="project-card-grid" id="project-active-grid"></div>
+        <div class="project-library-empty hidden" id="project-empty">
+          <span class="project-empty-icon" aria-hidden="true">✦</span>
+          <h3>Your next story starts here.</h3>
+          <p>Create a project to bring its stories, characters, places, and planning together.</p>
+          <div class="project-empty-actions">
+            <button class="button project-create-submit" type="button" data-open-project-form>Create your first project <span aria-hidden="true">→</span></button>
+            <button class="button project-sample-empty" type="button" id="project-sample-empty">Explore sample projects</button>
+          </div>
+        </div>
+      </section>
+      <details class="project-archive-section" id="project-archive-section">
+        <summary>Archived projects <span id="project-archived-count">0</span></summary>
+        <div class="project-card-grid" id="project-archived-grid"></div>
+        <p class="project-library-empty hidden" id="project-archive-empty">Archived projects will be kept here until you restore them.</p>
+      </details>
+      <footer class="project-library-footer"><a href="#landing-page" data-go-home>← Back to FictionTale home</a><span>Projects are saved in this browser on this device.</span></footer>
+    </main>
+  </div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand workspace-home-link" href="#landing-page" aria-label="FictionTale home">
+        <span class="brand-mark" aria-hidden="true">f.</span>
+        <span class="brand-wordmark">FictionTale</span>
+      </a>
+
+      <div class="workspace-label" id="active-project-label">YOUR PROJECT</div>
+      <nav class="side-nav" id="main-navigation" aria-label="Main navigation">
+        <a class="nav-link" href="#project-dashboard"><span class="nav-icon" aria-hidden="true">▤</span><span class="nav-label">Overview</span></a>
+        <details class="nav-group">
+          <summary class="nav-link"><span class="nav-icon" aria-hidden="true">✎</span><span class="nav-label">Writing</span><span class="nav-count" id="writing-sidebar-count">0</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="nav-submenu">
+            <a class="nav-sublink" href="#lore">Stories<span class="nav-count" id="story-sidebar-count">0</span></a>
+            <a class="nav-sublink" href="#dialogue-workshop">Dialogue<span class="nav-count" id="dialogue-sidebar-count">0</span></a>
+            <a class="nav-sublink" href="#book-series">Series<span class="nav-count" id="series-sidebar-count">0</span></a>
+          </div>
+        </details>
+        <details class="nav-group">
+          <summary class="nav-link"><span class="nav-icon" aria-hidden="true">✳</span><span class="nav-label">Characters</span><span class="nav-count" id="sidebar-count">0</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="nav-submenu">
+            <a class="nav-sublink" href="#characters">Character editor</a>
+            <a class="nav-sublink" href="#cast">Cast<span class="nav-count" id="cast-sidebar-count">0</span></a>
+            <a class="nav-sublink" href="#cast-groups">Cast Groups<span class="nav-count" id="cast-groups-sidebar-count">0</span></a>
+          </div>
+        </details>
+        <details class="nav-group">
+          <summary class="nav-link"><span class="nav-icon" aria-hidden="true">✧</span><span class="nav-label">Worldbuilding</span><span class="nav-count" id="worldbuilding-sidebar-count">0</span><span class="nav-chevron" aria-hidden="true">⌄</span></summary>
+          <div class="nav-submenu">
+            <a class="nav-sublink" href="#places">Places<span class="nav-count" id="place-sidebar-count">0</span></a>
+            <a class="nav-sublink" href="#world-entries">World Entries<span class="nav-count" id="world-entry-sidebar-count">0</span></a>
+          </div>
+        </details>
+        <a class="nav-link" href="#planning"><span class="nav-icon" aria-hidden="true">⌘</span><span class="nav-label">Planning</span></a>
+        <div class="sidebar-utility-nav">
+          <button class="nav-link help-nav-link" id="workspace-help-open" type="button" aria-label="Help and guides" aria-haspopup="dialog"><span class="nav-icon" aria-hidden="true">?</span><span class="nav-label">Help &amp; guides</span></button>
+          <button class="nav-link settings-nav-link" id="settings-open" type="button" aria-label="Settings" aria-haspopup="dialog"><span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-label">Settings</span></button>
+        </div>
+      </nav>
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" type="button" aria-expanded="false" aria-controls="main-navigation">
+        <span aria-hidden="true">☷</span><span>Menu</span>
+      </button>
+
+      <div class="sidebar-footer"><span class="status-dot"></span> Your work is stored on this device</div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <nav class="breadcrumb" aria-label="Breadcrumb">
+          <a class="breadcrumb-project-link" id="project-breadcrumb-name" href="#project-dashboard" aria-label="Return to project overview">YOUR PROJECT</a>
+          <span aria-hidden="true">/</span>
+          <span class="breadcrumb-group hidden" id="breadcrumb-group"></span>
+          <span class="breadcrumb-group-separator hidden" id="breadcrumb-group-separator" aria-hidden="true">/</span>
+          <strong id="breadcrumb-section">Overview</strong>
+        </nav>
+        <a class="brand mobile-brand workspace-home-link" href="#landing-page" aria-label="FictionTale home">
+          <span class="brand-mark" aria-hidden="true">f.</span>
+          <span class="brand-wordmark">FictionTale</span>
+        </a>
+        <div class="topbar-tools">
+          <label class="global-search" for="global-search-input"><span aria-hidden="true">⌕</span><input id="global-search-input" type="search" placeholder="Search everything…" autocomplete="off"><kbd>Ctrl K</kbd></label>
+          <button class="workspace-storage-status" id="workspace-storage-status" type="button" aria-haspopup="dialog" aria-controls="settings-dialog" aria-label="Storage and backup status">
+            <span class="workspace-storage-dot" aria-hidden="true"></span>
+            <span class="workspace-storage-copy"><strong id="workspace-storage-label">Checking storage</strong><small id="workspace-storage-detail">Waiting for save confirmation</small></span>
+          </button>
+          <button class="button button-quiet project-library-top-link" type="button" data-open-project-library>Project Library</button>
+          <button class="button button-quiet hidden" id="install-app" type="button">Install app</button>
+        </div>
+      </header>
+      <section class="global-search-results hidden" id="global-search-results" aria-label="Search results">
+        <div class="global-search-results-heading"><strong>Search your workspace</strong><span id="global-search-count"></span><button type="button" id="global-search-close" aria-label="Close search results">×</button></div>
+        <div id="global-search-list"></div>
+      </section>
+
+      <section class="project-workspace-header" aria-label="Project workspace">
+        <div class="project-workspace-heading">
+          <div class="project-workspace-summary">
+            <p class="project-workspace-eyebrow">PROJECT WORKSPACE</p>
+            <h1 id="workspace-project-title">Your project</h1>
+            <p class="project-workspace-meta" id="workspace-project-meta"></p>
+          </div>
+          <span class="project-workspace-status"><span aria-hidden="true"></span> Active project</span>
+        </div>
+      </section>
+
+      <section class="characters-workspace" id="characters" aria-label="Characters">
+      <section class="studio-section" id="studio">
+        <div class="studio-intro">
+          <div class="studio-intro-copy">
+            <p class="eyebrow">CREATE CHARACTERS</p>
+            <h2>Create a character</h2>
+            <p>Start with the essentials. You can fill in the rest whenever you're ready.</p>
+          </div>
+          <div class="studio-intro-actions">
+            <a class="project-navigation-link" href="#cast">Browse cast</a>
+            <button class="button button-outline" id="character-preview-open" type="button"><span aria-hidden="true">◉</span> Live preview</button>
+            <button class="button button-primary" id="character-new-button" type="button"><span aria-hidden="true">+</span> New character</button>
+          </div>
+        </div>
+      <section class="studio-grid" aria-label="Character editor">
+        <div class="panel editor-panel">
+          <div class="panel-heading">
+            <div><p class="eyebrow">CHARACTER EDITOR</p><h2>Tell us about them</h2></div>
+            <span class="autosave-label"><span class="status-dot"></span> <span id="autosave-status">Draft autosaves here</span></span>
+          </div>
+
+          <form id="character-form">
+            <input id="character-id" type="hidden">
+            <details class="progressive-group" id="character-essentials" open>
+              <summary><span class="progressive-icon" aria-hidden="true">01</span><span><strong>Essentials</strong><small>Name, role, personality, and a short description</small></span></summary>
+              <div class="progressive-group-content">
+            <fieldset class="form-section" id="basic-details">
+              <legend><span class="section-number">1</span> The basics</legend>
+              <p class="section-help">Only a name is required. Add a description now, or save just the name and come back later.</p>
+              <div class="form-row two-columns">
+                <label class="field">Character name <span class="required">*</span>
+                  <input id="name" name="name" type="text" placeholder="e.g. Rowan Vale" maxlength="48" required>
+                </label>
+                <label class="field">Story role <span class="optional-label">Optional</span>
+                  <input id="role" name="role" type="text" list="character-role-options" placeholder="e.g. Protagonist, side character, or your own" maxlength="60">
+                  <datalist id="character-role-options">
+                    <option value="Protagonist"></option>
+                    <option value="Side character"></option>
+                    <option value="Antagonist"></option>
+                    <option value="Narrator"></option>
+                    <option value="Ensemble character"></option>
+                  </datalist>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset class="form-section" id="personality-details">
+              <legend><span class="section-number">2</span> Personality</legend>
+              <p class="section-help">Describe who they are in everyday life. A sentence or two is plenty.</p>
+              <label class="field">Quick description
+                <textarea id="description" name="description" rows="3" maxlength="360" placeholder="What are they like? What might someone notice when they first meet?"></textarea>
+                <span class="field-hint"><span id="description-count">0</span> / 360</span>
+              </label>
+              <label class="field">A few traits <span class="field-hint inline-hint">Use commas between traits</span>
+                <input id="traits" name="traits" type="text" placeholder="e.g. curious, brave, a little stubborn" maxlength="160">
+              </label>
+            </fieldset>
+              </div>
+            </details>
+
+            <details class="progressive-group" id="character-depth">
+              <summary><span class="progressive-icon" aria-hidden="true">02</span><span><strong>Character depth</strong><small>Backstory, goals, fears, secrets, voice, and arc</small></span></summary>
+              <div class="progressive-group-content">
+            <details class="optional-section" id="character-context-details">
+              <summary><span><strong>Identity &amp; context</strong><small>Pronouns, age, species, groups, and tags.</small></span><span class="optional-label">Optional</span></summary>
+              <div class="profile-extra-fields">
+                <div class="form-row three-columns">
+                  <label class="field">Pronouns
+                    <input id="pronouns" name="pronouns" type="text" placeholder="e.g. they / them" maxlength="30">
+                  </label>
+                  <label class="field">Age
+                    <input id="age" name="age" type="text" placeholder="e.g. 27" maxlength="24">
+                  </label>
+                  <label class="field">Species
+                    <input id="species" name="species" type="text" placeholder="e.g. Human" maxlength="36">
+                  </label>
+                </div>
+                <div class="form-row">
+                  <label class="field">Affiliations or factions <span class="field-hint inline-hint">Use commas between affiliations</span>
+                    <input id="groups" name="groups" type="text" placeholder="e.g. Crimson Guild, House Vale" maxlength="120">
+                  </label>
+                  <label class="field">Tags <span class="field-hint inline-hint">Use commas between tags</span>
+                    <input id="character-tags" name="tags" type="text" placeholder="e.g. protagonist, found family, book one" maxlength="200">
+                  </label>
+                </div>
+              </div>
+            </details>
+            <fieldset class="form-section" id="background-details">
+              <legend><span class="section-number">3</span> Their background</legend>
+              <p class="section-help">This is their past: where they came from, what happened, and what matters to them.</p>
+              <label class="field">Backstory <span class="optional-label">Optional</span>
+                <textarea id="story" name="story" rows="5" maxlength="4000" placeholder="Where did they grow up? What shaped them? Is there a moment that changed everything?"></textarea>
+                <span class="field-hint"><span id="backstory-count">0</span> / 4000</span>
+              </label>
+            </fieldset>
+
+            <div class="prompt-box" id="prompt-box">
+              <button class="button button-quiet" id="prompt-spark" type="button">✦ Need a nudge?</button>
+              <div class="prompt-card hidden" id="prompt-card">
+                <p id="prompt-text"></p>
+                <div class="prompt-actions">
+                  <button class="button button-outline" id="prompt-use" type="button">Answer it</button>
+                  <button class="button button-quiet" id="prompt-next" type="button">Another one</button>
+                </div>
+              </div>
+            </div>
+
+            <details class="optional-section" id="depth-details">
+              <summary><span><strong>Go deeper</strong><small>Goals, fears, secrets, and how they look and sound.</small></span><span class="optional-label">Optional</span></summary>
+              <div class="profile-extra-fields">
+                <label class="field">Goal <span class="field-hint inline-hint">What do they want most?</span>
+                  <textarea id="goal" name="goal" rows="2" maxlength="200" placeholder="e.g. Map the one place no one has charted"></textarea>
+                </label>
+                <label class="field">Fear
+                  <textarea id="fear" name="fear" rows="2" maxlength="200" placeholder="What keeps them up at night?"></textarea>
+                </label>
+                <label class="field">Secret
+                  <textarea id="secret" name="secret" rows="2" maxlength="300" placeholder="Something they hope no one finds out"></textarea>
+                </label>
+                <label class="field">Flaw
+                  <textarea id="flaw" name="flaw" rows="2" maxlength="200" placeholder="The habit or blind spot that gets them into trouble"></textarea>
+                </label>
+                <label class="field">Voice or catchphrase
+                  <input id="voice" name="voice" type="text" maxlength="160" placeholder="e.g. “Measure twice, run once.”">
+                </label>
+                <label class="field">Dialogue samples <span class="field-hint inline-hint">A few lines in different moods; one line per sample.</span>
+                  <textarea id="voice-samples" name="voiceSamples" rows="4" maxlength="1600" placeholder="“That’s not a plan. That’s a weather forecast.”&#10;“I’m fine. The smoke is unrelated.”"></textarea>
+                </label>
+                <label class="field">Appearance
+                  <textarea id="appearance" name="appearance" rows="3" maxlength="500" placeholder="Build, hair, clothing, scars, the way they carry themselves…"></textarea>
+                </label>
+              </div>
+            </details>
+
+            <details class="optional-section" id="questionnaire-details">
+              <summary><span><strong>Character questionnaire</strong><small>Answer up to 20 prompts when you need a way into their personality.</small></span><span class="optional-label" id="questionnaire-count">None answered</span></summary>
+              <div class="profile-extra-fields">
+                <p class="section-help">Pick a question, write the character’s answer, and keep the responses that reveal something useful.</p>
+                <div class="questionnaire-entry">
+                  <label class="field">Question
+                    <select id="questionnaire-question" aria-label="Choose a character questionnaire prompt"></select>
+                  </label>
+                  <label class="field">Their answer
+                    <textarea id="questionnaire-answer" rows="3" maxlength="600" placeholder="Answer in their own words, or describe what they would say."></textarea>
+                  </label>
+                  <button class="button button-quiet" id="questionnaire-add" type="button">＋ Keep this answer</button>
+                </div>
+                <ol class="questionnaire-list" id="questionnaire-list" aria-live="polite"></ol>
+                <input id="questionnaire" name="questionnaire" type="hidden">
+              </div>
+            </details>
+
+            <details class="optional-section" id="character-arc-details">
+              <summary><span><strong>Character arc</strong><small>Track the belief they outgrow and how they change across chapters.</small></span><span class="optional-label">Optional</span></summary>
+              <div class="profile-extra-fields arc-editor">
+                <p class="section-help">Map the shift from the lie they believe to the truth they learn.</p>
+                <label class="field">Starting state · the lie they believe
+                  <textarea id="arc-start" name="arcStart" rows="2" maxlength="400" placeholder="e.g. Depending on anyone always ends in betrayal"></textarea>
+                </label>
+                <label class="field">Turning point
+                  <textarea id="arc-turning-point" name="arcTurningPoint" rows="2" maxlength="400" placeholder="What forces them to question that belief?"></textarea>
+                </label>
+                <label class="field">End state · the truth they learn
+                  <textarea id="arc-end" name="arcEnd" rows="2" maxlength="400" placeholder="e.g. Trust is a choice worth making, even when it is frightening"></textarea>
+                </label>
+              </div>
+            </details>
+              </div>
+            </details>
+
+            <details class="progressive-group" id="character-advanced">
+              <summary><span class="progressive-icon" aria-hidden="true">03</span><span><strong>Advanced details</strong><small>Portraits, snapshots, custom sections, connections, timelines, and history</small></span></summary>
+              <div class="progressive-group-content">
+            <details class="optional-section" id="appearance-details">
+              <summary><span><strong>Portrait &amp; appearance</strong><small>Set a profile color, add image links or upload images up to 5 MB, then crop and zoom.</small></span><span class="optional-label">Optional</span></summary>
+              <div class="form-row appearance-row">
+                <div class="field">
+                  <label for="avatar">Profile picture</label>
+                  <span class="avatar-input-wrap"><input id="avatar" name="avatar" type="text" placeholder="Paste an image link, or upload with ↑"><span class="upload-chip hidden" id="avatar-chip"><img alt=""><span class="upload-chip-text"></span><button class="upload-chip-remove" type="button" aria-label="Remove profile picture">Remove</button></span><button class="upload-button" id="select-avatar-file" type="button" title="Upload a portrait" aria-label="Upload a portrait">↑</button><button class="upload-button crop-button" id="edit-avatar-crop" type="button" title="Crop or zoom portrait" aria-label="Crop or zoom portrait">✂</button></span>
+                  <input id="avatar-file" class="visually-hidden" type="file" accept="image/*" tabindex="-1" aria-label="Choose a profile picture file">
+                </div>
+                <div class="field">
+                  <label for="cover">Cover image <span class="field-hint inline-hint">Optional. Leave empty to use your portrait as the banner.</span></label>
+                  <span class="avatar-input-wrap"><input id="cover" name="cover" type="text" placeholder="Paste an image link, or upload with ↑"><span class="upload-chip hidden" id="cover-chip"><img alt=""><span class="upload-chip-text"></span><button class="upload-chip-remove" type="button" aria-label="Remove cover image">Remove</button></span><button class="upload-button" id="select-cover-file" type="button" title="Upload a cover image" aria-label="Upload a cover image">↑</button><button class="upload-button crop-button" id="edit-cover-crop" type="button" title="Crop or zoom cover" aria-label="Crop or zoom cover">✂</button></span>
+                  <input id="cover-file" class="visually-hidden" type="file" accept="image/*" tabindex="-1" aria-label="Choose a cover image file">
+                </div>
+                <label class="field accent-field">Profile background
+                  <span class="color-control">
+                    <input id="accent-hex" type="text" value="#4385e8" maxlength="7" pattern="#[0-9A-Fa-f]{6}" placeholder="#4385e8" aria-label="Profile background HEX color">
+                    <input id="accent" name="accent" type="color" value="#4385e8" aria-label="Choose profile background color">
+                  </span>
+                </label>
+              </div>
+            </details>
+
+            <details class="optional-section" id="character-snapshots-details">
+              <summary><span><strong>Chapter or timeline snapshots</strong><small>Record how they change across a story point.</small></span><span class="optional-label">Optional</span></summary>
+              <div class="profile-extra-fields">
+                <p class="section-help">Track age, appearance, knowledge, trust, location, and availability. Use the same chapter or timeline label as Relationship History to link snapshots.</p>
+                <div class="bond-block">
+                  <div class="snapshot-fields">
+                    <label class="field">Chapter or moment
+                      <input id="snapshot-when" type="text" maxlength="60" placeholder="e.g. Chapter 4 · After the reveal">
+                    </label>
+                    <label class="field">Appearance
+                      <textarea id="snapshot-appearance" rows="2" maxlength="300" placeholder="What has changed about their appearance?"></textarea>
+                    </label>
+                    <label class="field">What they know
+                      <textarea id="snapshot-knowledge" rows="2" maxlength="400" placeholder="Facts, clues, or secrets they know by this point"></textarea>
+                    </label>
+                    <label class="field">Who they trust
+                      <textarea id="snapshot-trust" rows="2" maxlength="300" placeholder="Who do they trust now, and why?"></textarea>
+                    </label>
+                    <label class="field">Where they are
+                      <input id="snapshot-location" type="text" maxlength="120" placeholder="e.g. The old observatory">
+                    </label>
+                    <label class="field">Age at this point <span class="optional-label">Optional</span>
+                      <input id="snapshot-age" type="text" maxlength="24" placeholder="e.g. 27">
+                    </label>
+                    <label class="field">Availability at this point
+                      <select id="snapshot-availability"><option value="">Not specified</option><option value="present">Alive / can appear</option><option value="absent">Absent from the scene</option><option value="dead">Dead</option></select>
+                    </label>
+                    <button class="button button-quiet" id="snapshot-add" type="button">＋ Add snapshot</button>
+                  </div>
+                  <ul class="bond-list" id="snapshot-list"></ul>
+                  <input id="snapshots" name="snapshots" type="hidden">
+                </div>
+              </div>
+            </details>
+
+            <details class="optional-section profile-extras" id="profile-extras">
+              <summary><span><strong>More profile sections</strong><small>Optional extras; only details you add appear on the profile.</small></span><span class="optional-label">Optional</span></summary>
+              <div class="profile-extra-fields">
+                <div class="field">
+                  <label for="gallery-url">More images <span class="field-hint inline-hint">Upload images or add image links. They show up below as thumbnails.</span></label>
+                  <ul class="gallery-thumbs" id="gallery-thumbs" aria-label="Extra profile images"></ul>
+                  <span class="avatar-input-wrap gallery-add">
+                    <input id="gallery-url" type="text" placeholder="Paste an image link, then choose Add">
+                    <button class="button button-quiet" id="gallery-url-add" type="button">Add</button>
+                    <button class="upload-button" id="select-gallery-files" type="button" title="Upload extra profile images" aria-label="Upload extra profile images">↑</button>
+                  </span>
+                  <textarea id="gallery" name="gallery" class="visually-hidden" tabindex="-1" aria-hidden="true" maxlength="20000000"></textarea>
+                  <input id="gallery-files" class="visually-hidden" type="file" accept="image/*" multiple tabindex="-1" aria-label="Choose extra profile images">
+                </div>
+                <div class="bond-block">
+                  <span class="bond-title">Connections <span class="field-hint inline-hint">Describe what they are to each other, their current status, and their shared history</span></span>
+                  <div class="bond-add bond-editor-add">
+                    <select id="bond-character" aria-label="Character to connect"></select>
+                    <select id="bond-type" aria-label="Optional connection type">
+                      <option value="">Type (optional)</option>
+                      <option value="ally">Friend</option><option value="rival">Rival</option><option value="family">Family</option>
+                      <option value="secret-crush">Romantic connection</option><option value="betrayed">Trust changed</option><option value="other">Other</option>
+                    </select>
+                    <select id="bond-status" aria-label="Optional connection status">
+                      <option value="">Status (optional)</option>
+                      <option value="strangers">Strangers</option><option value="acquaintances">Acquaintances</option>
+                      <option value="friends">Friends</option><option value="rivals">Rivals</option>
+                      <option value="active">Ongoing</option><option value="complicated">Complicated</option>
+                      <option value="strained">Distant</option><option value="broken">No contact</option><option value="reconciled">Reconnected</option>
+                    </select>
+                    <input id="bond-label" type="text" maxlength="40" placeholder="Optional detail, e.g. sibling, friend, coworker" aria-label="Optional connection detail">
+                    <textarea id="bond-history-note" rows="2" maxlength="500" placeholder="Optional history: how did this connection begin?" aria-label="Optional shared history"></textarea>
+                    <button class="button button-quiet" id="bond-add" type="button">Add</button>
+                  </div>
+                  <ul class="bond-list" id="bond-list"></ul>
+                  <input id="bonds" name="bonds" type="hidden">
+                </div>
+                <div class="bond-block">
+                  <span class="bond-title">Life timeline <span class="field-hint inline-hint">Key moments in order, from earliest to latest</span></span>
+                  <div class="bond-add">
+                    <input class="timeline-when" id="timeline-when" type="text" maxlength="24" placeholder="When? e.g. Age 12" aria-label="When did it happen">
+                    <input id="timeline-text" type="text" maxlength="200" placeholder="What happened?" aria-label="What happened">
+                    <button class="button button-quiet" id="timeline-add" type="button">Add</button>
+                  </div>
+                  <label class="field timeline-knowledge-field">What they know at this point <span class="optional-label">Optional</span>
+                    <textarea id="timeline-knowledge" rows="2" maxlength="400" placeholder="Secrets, clues, or facts this character knows after the event"></textarea>
+                  </label>
+                  <ul class="bond-list" id="timeline-list"></ul>
+                  <input id="timeline" name="timeline" type="hidden">
+                </div>
+                <label class="field">Relationships
+                  <textarea id="relations" name="relations" rows="2" maxlength="700" placeholder="Who matters to them? Add one relationship per line."></textarea>
+                </label>
+                <label class="field">Links
+                  <textarea id="links" name="links" rows="2" maxlength="700" placeholder="Add a URL, one per line."></textarea>
+                </label>
+                <label class="field">World or setting
+                  <textarea id="worlds" name="worlds" rows="2" maxlength="700" placeholder="Where does their story take place?"></textarea>
+                </label>
+                <label class="field">Extra stats <span class="field-hint inline-hint">One detail per line</span>
+                  <textarea id="stats" name="stats" rows="2" maxlength="700" placeholder="Occupation: Cartographer&#10;Likes: Old maps"></textarea>
+                </label>
+              </div>
+            </details>
+
+            <details class="optional-section" id="custom-details">
+              <summary><span><strong>Custom sections</strong><small>Add your own sections, like Weapons, Home town, or Favorite food.</small></span><span class="optional-label" id="custom-count">None yet</span></summary>
+              <div class="custom-editor">
+                <div class="custom-suggestions" id="custom-suggestions"><span>Quick add:</span></div>
+                <div class="custom-list" id="custom-list"></div>
+                <button class="button button-quiet" id="custom-add" type="button">＋ Add a section</button>
+                <input id="customSections" name="customSections" type="hidden">
+              </div>
+            </details>
+
+            <details class="optional-section" id="character-history-panel">
+              <summary><span><strong>Version history</strong><small>A snapshot is kept each time you save (latest 10). Restoring fills the form; nothing changes until you save.</small></span><span class="optional-label" id="character-history-count">None yet</span></summary>
+              <ul class="story-history-list" id="character-history-list"></ul>
+            </details>
+              </div>
+            </details>
+
+            <div class="form-actions">
+              <button class="button button-primary" type="submit"><span id="save-label">Save character</span><span aria-hidden="true">→</span></button>
+              <label class="export-format character-export-format">Export as
+                <select id="character-export-format" aria-label="Choose character export format">
+                  <option value="json">JSON</option>
+                  <option value="yaml">YAML</option>
+                  <option value="csv">CSV</option>
+                  <option value="txt">Text</option>
+                </select>
+              </label>
+              <button class="button button-quiet" id="export-character" type="button">Export character</button>
+              <button class="button button-quiet hidden" id="duplicate-character" type="button" title="Start a new character from this one">Duplicate</button>
+              <button class="button button-danger hidden" id="delete-character" type="button">Delete character</button>
+            </div>
+          </form>
+        </div>
+      </section>
+      </section>
+      </section>
+      <section class="cast-section" id="cast">
+        <div class="section-heading">
+          <div><p class="eyebrow">THE PEOPLE IN YOUR HEAD</p><h2>Cast <span id="cast-total">(0)</span></h2></div>
+          <div class="cast-tools">
+            <button class="button button-outline" id="compare-characters" type="button" disabled>Compare characters</button>
+            <select class="cast-select hidden" id="cast-group-filter" aria-label="Filter by character affiliation"></select>
+            <select class="cast-select" id="cast-sort" aria-label="Sort characters">
+              <option value="added">Newest added</option>
+              <option value="edited">Recently edited</option>
+              <option value="name">Name A–Z</option>
+            </select>
+            <label class="search-box"><span aria-hidden="true">⌕</span><input id="search-characters" type="search" placeholder="Find a character…" aria-label="Find a character"></label>
+          </div>
+        </div>
+        <div class="character-grid" id="character-grid"></div>
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">✳</div><h3>Your story is a blank page.</h3><p>Create a character to see their card and profile details here.</p>
+          <button class="button button-outline" id="empty-create" type="button">＋ Create your first character</button>
+        </div>
+      </section>
+      <section class="cast-groups-section" id="cast-groups" aria-labelledby="cast-groups-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">ORGANIZE YOUR PROJECT’S CAST</p><h2 id="cast-groups-title" tabindex="-1">Cast Groups</h2></div>
+        </div>
+        <p class="lore-intro">Give each character one primary cast group; profile affiliations and tags remain separate. Drag a character between groups, or press and hold on touch screens. Near the screen edge, the page scrolls as you drag.</p>
+        <form class="cast-group-create-form" id="cast-group-create-form">
+          <label for="cast-group-name">New group name
+            <input id="cast-group-name" type="text" maxlength="60" placeholder="e.g. Antagonists or a custom group">
+          </label>
+          <button class="button button-primary" type="submit">＋ Add group</button>
+        </form>
+        <div class="cast-groups-list" id="cast-groups-list" aria-live="polite"></div>
+      </section>
+      <section class="lore-section" id="lore" aria-labelledby="lore-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">WRITE IT YOUR WAY</p><h2 id="lore-title">Stories <span id="lore-count">(0)</span></h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-primary" id="new-story" type="button"><span>＋</span> New story</button>
+            <button class="button button-outline story-preview-open" id="story-preview-open" type="button">Open full preview <span aria-hidden="true">↗</span></button>
+          </div>
+        </div>
+        <p class="lore-intro">Start with a note, a scene, or a whole story. There’s no set format.</p>
+        <div class="story-filter-bar" id="story-filter-bar">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="story-search" type="search" placeholder="Find a story, tag, or character…" aria-label="Find a story"></label>
+          <select id="story-filter-kind" aria-label="Filter by type">
+            <option value="">All types</option>
+            <option value="story">Stories</option>
+            <option value="scene">Scenes</option>
+            <option value="world">World notes</option>
+            <option value="lore">Lore entries</option>
+          </select>
+          <select id="story-filter-progress" aria-label="Filter by progress">
+            <option value="">Any progress</option>
+            <option value="idea">Idea</option>
+            <option value="drafting">Drafting</option>
+            <option value="finished">Finished</option>
+          </select>
+          <select id="story-sort" aria-label="Sort stories">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="title">Title A–Z</option>
+          </select>
+        </div>
+        <div class="story-library-tools">
+          <label class="export-format">Export as
+            <select id="story-export-format" aria-label="Choose story export format">
+              <option value="json">JSON</option>
+              <option value="yaml">YAML</option>
+              <option value="md">Markdown</option>
+              <option value="txt">Plain text</option>
+              <option value="docx">Word (.docx)</option>
+              <option value="epub">EPUB</option>
+            </select>
+          </label>
+          <button class="button button-quiet" id="story-export-stories" type="button">Export stories</button>
+        </div>
+        <div class="story-library" id="story-library" aria-live="polite"></div>
+        <p class="story-no-results hidden" id="story-no-results">No stories match those filters. Try clearing the search or choosing “All types”.</p>
+        <div class="story-empty" id="story-empty">
+          <div class="empty-icon">✧</div>
+          <h3>Your stories can start anywhere.</h3>
+          <p>Write a first idea or build a whole world—use as much or as little detail as you like.</p>
+          <button class="button button-outline" id="story-empty-create" type="button">＋ Write your first story</button>
+        </div>
+      </section>
+      <section class="lore-section" id="book-series" aria-labelledby="book-series-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">KEEP THE BIG PICTURE</p><h2 id="book-series-title">Book series</h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-primary" id="series-create" type="button">＋ Create a series</button>
+          </div>
+        </div>
+        <p class="lore-intro">Group books in order, keep shared characters and places together, and track events across the series.</p>
+        <div class="series-library-tools">
+          <label for="series-record-select">Edit a series
+            <select id="series-record-select"><option value="">Choose a series</option></select>
+          </label>
+          <button class="button button-outline" id="series-edit-selected" type="button" disabled>Edit series</button>
+        </div>
+        <div class="series-library" id="series-library" aria-live="polite"></div>
+        <div class="project-dashboard-empty" id="series-empty">
+          <h3>No series yet.</h3>
+          <p>Create a series, then add books to it from their story details.</p>
+          <button class="button button-outline" id="series-empty-create" type="button">＋ Create your first series</button>
+        </div>
+        <form class="series-editor hidden" id="series-editor">
+          <input id="series-id" type="hidden">
+          <div class="series-editor-heading">
+            <div><p class="eyebrow">SERIES DETAILS</p><h3 id="series-editor-title">Create a series</h3></div>
+            <button class="button button-quiet" id="series-editor-close" type="button">Close</button>
+          </div>
+          <div class="series-basic-fields">
+            <label for="series-name">Series name <span class="required">*</span>
+              <input id="series-name" type="text" maxlength="100" placeholder="e.g. The Glass Sea trilogy" required>
+            </label>
+            <label for="series-summary">About this series
+              <textarea id="series-summary" rows="2" maxlength="500" placeholder="A short note to help you remember the series’ main idea"></textarea>
+            </label>
+          </div>
+          <div class="series-link-grid">
+            <fieldset>
+              <legend>Shared characters</legend>
+              <p>Choose characters who appear across the series.</p>
+              <div id="series-characters" class="series-shared-picker"></div>
+            </fieldset>
+            <fieldset>
+              <legend>Shared places</legend>
+              <p>Choose places that appear across the series.</p>
+              <div id="series-places" class="series-shared-picker"></div>
+            </fieldset>
+          </div>
+          <section class="series-events-editor" aria-labelledby="series-events-title">
+            <div class="series-events-heading"><div><p class="eyebrow">SERIES TIMELINE</p><h4 id="series-events-title">Events across books</h4></div><p>Add events in story order to keep the shared timeline clear.</p></div>
+            <div class="series-event-fields">
+              <label for="series-event-title">Event
+                <input id="series-event-title" type="text" maxlength="120" placeholder="e.g. The first gate opens">
+              </label>
+              <label for="series-event-book">Book
+                <select id="series-event-book"><option value="">Series-wide / not assigned</option></select>
+              </label>
+              <label for="series-event-chapter">Chapter or point in time
+                <input id="series-event-chapter" type="text" maxlength="100" placeholder="e.g. Chapter 4">
+              </label>
+              <label for="series-event-description" class="series-event-description">What happens?
+                <textarea id="series-event-description" rows="2" maxlength="500" placeholder="Add a short reminder about this event"></textarea>
+              </label>
+              <button class="button button-outline" id="series-event-add" type="button">＋ Add event</button>
+            </div>
+            <ol id="series-events-list" class="series-event-list"></ol>
+            <p id="series-events-empty" class="series-empty-note">No events added yet.</p>
+          </section>
+          <div class="series-editor-actions">
+            <button class="button button-danger hidden" id="series-delete" type="button">Delete series</button>
+            <button class="button button-outline" id="series-cancel" type="button">Cancel</button>
+            <button class="button button-primary" type="submit">Save series</button>
+          </div>
+        </form>
+      </section>
+      <section class="lore-section project-dashboard-section" id="project-dashboard" aria-labelledby="project-dashboard-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">YOUR PROJECT AT A GLANCE</p><h2 id="project-dashboard-title">Project Overview</h2></div>
+          <div class="project-dashboard-controls">
+            <label for="project-dashboard-story">Story to review
+              <select id="project-dashboard-story"><option value="">Choose a story</option></select>
+            </label>
+            <button class="button button-outline" id="project-dashboard-open-story" type="button" disabled>Open story</button>
+          </div>
+        </div>
+        <section class="project-overview-panel" aria-labelledby="project-overview-heading">
+          <div class="project-overview-heading">
+            <div><p class="eyebrow">PROJECT DETAILS</p><h3 id="project-overview-heading">Your project</h3></div>
+            <button class="button button-quiet" id="project-overview-edit" type="button">Edit overview</button>
+          </div>
+          <div class="project-overview-summary">
+            <div class="project-overview-cover">
+              <img class="hidden" id="project-overview-cover-image" alt="">
+              <span id="project-overview-cover-empty" aria-hidden="true">Add a cover image</span>
+            </div>
+            <div class="project-overview-copy">
+              <h4 id="project-overview-name"></h4>
+              <p id="project-overview-description"></p>
+              <p class="project-overview-genre" id="project-overview-genre"></p>
+              <div class="project-overview-tags" id="project-overview-tags" aria-label="Project tags"></div>
+            </div>
+          </div>
+          <div class="project-overview-metrics">
+            <article><span>Stories</span><strong id="project-overview-stories">0</strong></article>
+            <article><span>Characters</span><strong id="project-overview-characters">0</strong></article>
+            <article><span>Last modified</span><strong id="project-overview-modified">—</strong></article>
+          </div>
+          <div class="project-overview-progress">
+            <div class="project-overview-progress-heading">
+              <div><p class="eyebrow">OVERALL PROGRESS</p><strong id="project-overview-progress-label">0 words</strong></div>
+              <span id="project-overview-progress-percent">0%</span>
+            </div>
+            <div class="project-progress-track" id="project-overview-progress" role="progressbar" aria-label="Overall project word-goal progress" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <span id="project-overview-progress-fill"></span>
+            </div>
+            <p>Progress is based on the combined word goals of this project’s stories.</p>
+          </div>
+          <form class="project-overview-form hidden" id="project-overview-form">
+            <div class="project-overview-form-fields">
+              <label for="project-overview-name-input">Project title
+                <input id="project-overview-name-input" maxlength="80" required>
+              </label>
+              <label for="project-overview-description-input">Description
+                <textarea id="project-overview-description-input" rows="3" maxlength="300"></textarea>
+              </label>
+              <label for="project-overview-genre-input">Genre
+                <input id="project-overview-genre-input" maxlength="60" placeholder="e.g. Fantasy, mystery">
+              </label>
+              <label for="project-overview-tags-input">Tags <span>Separate with commas</span>
+                <input id="project-overview-tags-input" maxlength="200" placeholder="e.g. book one, drafting">
+              </label>
+              <label class="project-overview-cover-url" for="project-overview-cover-input">Cover image URL <span>Optional</span>
+                <input id="project-overview-cover-input" maxlength="2000" placeholder="https://example.com/cover.jpg">
+              </label>
+            </div>
+            <div class="project-overview-cover-actions">
+              <input class="visually-hidden" id="project-overview-cover-file" type="file" accept="image/*" aria-label="Choose a project cover image">
+              <button class="button button-outline" id="project-overview-upload" type="button">Upload image</button>
+              <button class="button button-quiet" id="project-overview-remove-cover" type="button">Remove cover</button>
+            </div>
+            <div class="project-overview-form-actions">
+              <button class="button button-quiet" id="project-overview-cancel" type="button">Cancel</button>
+              <button class="button button-primary" type="submit">Save overview</button>
+            </div>
+          </form>
+        </section>
+        <div class="project-dashboard-empty" id="project-dashboard-empty">
+          <h3>No writing projects yet.</h3>
+          <p>Start with a story. You can connect characters and places, organize chapters, track events, and check continuity as the draft grows.</p>
+          <button class="button button-outline" id="project-dashboard-create-story" type="button">＋ Create a story</button>
+        </div>
+        <div class="project-dashboard-content hidden" id="project-dashboard-content">
+          <div class="project-dashboard-metrics">
+            <article class="project-metric"><span>Total words</span><strong id="project-dashboard-words">0</strong><small>Chapter headings excluded</small></article>
+            <article class="project-metric"><span>Chapters</span><strong id="project-dashboard-chapters">0</strong><small>Based on your chapter headings</small></article>
+            <article class="project-metric"><span>Characters</span><strong id="project-dashboard-characters">0</strong><small>Linked to this story</small></article>
+            <article class="project-metric"><span>Last edited</span><strong id="project-dashboard-edited">—</strong><small id="project-dashboard-stage">Drafting</small></article>
+          </div>
+          <section class="project-workflow-panel" aria-labelledby="project-workflow-title">
+            <div class="project-workflow-heading">
+              <div><p class="eyebrow">YOUR STORY, CONNECTED</p><h3 id="project-workflow-title">From first page to final read</h3></div>
+              <p>Follow a suggested path or jump to any step. Your work stays connected to this story.</p>
+            </div>
+            <ol class="project-workflow-list" id="project-workflow-list"></ol>
+          </section>
+          <section class="project-progress-panel" aria-labelledby="project-dashboard-progress-title">
+            <div class="project-progress-heading">
+              <div><p class="eyebrow">KEEP MOVING</p><h3 id="project-dashboard-progress-title">Writing progress</h3></div>
+              <label for="project-dashboard-word-goal">Story word goal
+                <input id="project-dashboard-word-goal" type="number" min="100" max="1000000" step="100" value="50000">
+              </label>
+            </div>
+            <div class="project-progress-summary"><strong id="project-dashboard-progress-label">0 of 50,000 words</strong><span id="project-dashboard-progress-percent">0%</span></div>
+            <div class="project-progress-track" id="project-dashboard-progress" role="progressbar" aria-label="Project writing progress" aria-valuemin="0" aria-valuemax="50000" aria-valuenow="0">
+              <span id="project-dashboard-progress-fill"></span>
+            </div>
+          </section>
+          <section class="project-tasks-panel" aria-labelledby="project-dashboard-tasks-title">
+            <div class="project-tasks-heading"><div><p class="eyebrow">NEXT SMALL STEPS</p><h3 id="project-dashboard-tasks-title">Unfinished tasks</h3></div><span id="project-dashboard-task-count">0</span></div>
+            <ul id="project-dashboard-tasks" class="project-task-list"></ul>
+            <p class="project-tasks-empty hidden" id="project-dashboard-tasks-empty">No unfinished tasks for this project.</p>
+          </section>
+        </div>
+      </section>
+      <section class="lore-section dialogue-workshop-section" id="dialogue-workshop" aria-labelledby="dialogue-workshop-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">LET YOUR CHARACTERS SPEAK</p><h2 id="dialogue-workshop-title">Dialogue Workshop</h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-outline" id="dialogue-new" type="button">＋ New conversation</button>
+          </div>
+        </div>
+        <p class="lore-intro">Draft a conversation on its own, then add it to a story whenever it is ready.</p>
+        <div class="dialogue-workshop-layout">
+          <form class="dialogue-editor-panel" id="dialogue-workshop-form">
+            <input id="dialogue-draft-id" type="hidden">
+            <label class="dialogue-field" for="dialogue-title">Conversation title
+              <input id="dialogue-title" type="text" maxlength="100" placeholder="e.g. The truth at the station" required>
+            </label>
+            <fieldset class="dialogue-participants">
+              <legend>Participating characters <span>Optional</span></legend>
+              <div class="dialogue-character-list" id="dialogue-character-list"></div>
+            </fieldset>
+            <label class="dialogue-field" for="dialogue-context">Emotional context <span>Optional</span>
+              <textarea id="dialogue-context" maxlength="700" rows="3" placeholder="What are they feeling, hiding, or hoping for?"></textarea>
+            </label>
+            <label class="dialogue-field" for="dialogue-text">Dialogue
+              <textarea id="dialogue-text" maxlength="15000" rows="12" placeholder="Write the conversation here. Add speaker names and stage directions as you like." required></textarea>
+            </label>
+            <div class="dialogue-save-status" id="dialogue-save-status" role="status" aria-live="polite">A new conversation is ready.</div>
+            <div class="dialogue-workshop-actions">
+              <button class="button button-outline" id="dialogue-save-draft" type="button">Save draft</button>
+              <label class="dialogue-story-select" for="dialogue-story">
+                Add to story
+                <select id="dialogue-story"><option value="">Choose a story</option></select>
+              </label>
+              <button class="button button-primary" id="dialogue-add-to-story" type="button" disabled>Add conversation</button>
+            </div>
+            <button class="button button-quiet dialogue-create-story hidden" id="dialogue-create-story" type="button">Create a story first</button>
+          </form>
+          <aside class="dialogue-drafts-panel" aria-labelledby="dialogue-drafts-title">
+            <div class="dialogue-drafts-heading"><h3 id="dialogue-drafts-title">Saved conversations</h3><span id="dialogue-draft-count">0</span></div>
+            <div class="dialogue-draft-list" id="dialogue-draft-list" aria-live="polite"></div>
+            <p class="dialogue-drafts-empty" id="dialogue-drafts-empty">Your saved conversations will appear here.</p>
+          </aside>
+        </div>
+      </section>
+      <section class="lore-section" id="places" aria-labelledby="places-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">BUILD YOUR WORLD</p><h2 id="places-title">Places &amp; Settings <span id="place-count">(0)</span></h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-primary" id="new-place" type="button"><span>＋</span> New place</button>
+          </div>
+        </div>
+        <p class="lore-intro">Describe the cities, buildings, and wild corners your characters live in.</p>
+        <div class="story-filter-bar hidden" id="place-filter-bar">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="place-search" type="search" placeholder="Find a place, tag, or character…" aria-label="Find a place"></label>
+          <select id="place-filter-kind" aria-label="Filter by type"><option value="">All types</option><option value="region">Region or realm</option><option value="city">City or town</option><option value="building">Building</option><option value="landmark">Landmark</option><option value="wild">Wilderness</option><option value="other">Other</option></select>
+          <select id="place-sort" aria-label="Sort places">
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+        <div class="story-library" id="place-library" aria-live="polite"></div>
+        <p class="story-no-results hidden" id="place-no-results">No places match those filters. Try clearing the search or choosing “All types”.</p>
+        <div class="story-empty" id="place-empty">
+          <div class="empty-icon">◈</div>
+          <h3>Your world is waiting.</h3>
+          <p>Add a city, a house, or a forest. Say how it looks and feels, and link the characters who belong there.</p>
+          <button class="button button-outline" id="place-empty-create" type="button">＋ Create your first place</button>
+        </div>
+      </section>
+      <section class="lore-section" id="world-entries" aria-labelledby="world-entries-title">
+        <div class="section-heading lore-heading">
+          <div><p class="eyebrow">THE REST OF YOUR WORLD</p><h2 id="world-entries-title">World Entries <span id="world-entry-count">(0)</span></h2></div>
+          <div class="lore-heading-actions">
+            <button class="button button-primary" id="new-world-entry" type="button"><span>＋</span> New entry</button>
+          </div>
+        </div>
+        <p class="lore-intro">Keep factions, artifacts, magic or technology, species, languages, religions, and glossary terms together in one searchable library.</p>
+        <div class="story-filter-bar hidden" id="world-entry-filter-bar">
+          <label class="search-box"><span aria-hidden="true">⌕</span><input id="world-entry-search" type="search" placeholder="Find an entry, category, or tag…" aria-label="Find a world entry"></label>
+          <select id="world-entry-filter-category" aria-label="Filter world entries by category">
+            <option value="">All categories</option><option value="faction">Factions &amp; organizations</option><option value="artifact">Items &amp; artifacts</option><option value="system">Magic &amp; technology</option><option value="species">Species</option><option value="language">Languages</option><option value="religion">Religions</option><option value="glossary">Glossary</option><option value="other">Other</option>
+          </select>
+          <select id="world-entry-sort" aria-label="Sort world entries"><option value="newest">Recently edited</option><option value="name">Name A–Z</option><option value="category">Category</option></select>
+        </div>
+        <div class="story-library" id="world-entry-library" aria-live="polite"></div>
+        <p class="story-no-results hidden" id="world-entry-no-results">No entries match those filters. Try clearing the search or choosing “All categories”.</p>
+        <div class="story-empty" id="world-entry-empty">
+          <div class="empty-icon">✧</div><h3>Your wider world has room here.</h3>
+          <p>Start a faction, name an artifact, define a language or belief system, or save a glossary term.</p>
+          <button class="button button-outline" id="world-entry-empty-create" type="button">＋ Create a world entry</button>
+        </div>
+      </section>
+
+      <section class="planning-section" id="planning" aria-labelledby="planning-title">
+        <div class="section-heading planning-heading">
+          <div><p class="eyebrow">SEE THE BIGGER PICTURE</p><h2 id="planning-title">Story Planning</h2></div>
+          <p>Connect your cast, events, inspiration, and scenes in one place.</p>
+        </div>
+        <div class="planning-navigation" role="group" aria-label="Story planning navigation">
+          <button type="button" class="planning-tab active" data-planning-tab="overview" aria-selected="true">Start here</button>
+          <details class="planning-advanced-details" id="planning-advanced-details">
+            <summary><strong>Advanced planning</strong><span>Relationships, timelines, inspiration, and outlines</span></summary>
+            <nav class="planning-tabs" aria-label="Advanced planning tools">
+              <button type="button" class="planning-tab" data-planning-tab="relationships" aria-selected="false">Relationships</button>
+              <button type="button" class="planning-tab" data-planning-tab="timeline" aria-selected="false">Master timeline</button>
+              <button type="button" class="planning-tab" data-planning-tab="moodboard" aria-selected="false">Mood boards</button>
+              <button type="button" class="planning-tab" data-planning-tab="prompts" aria-selected="false">What if?</button>
+              <button type="button" class="planning-tab" data-planning-tab="outline" aria-selected="false">Plot outline</button>
+            </div>
+            <div class="planning-advanced-panels">
+        <div class="planning-panel hidden" id="planning-relationships" data-planning-panel="relationships">
+          <div class="planning-panel-heading"><div><p class="eyebrow">YOUR CAST AT A GLANCE</p><h3>Character relationship map</h3></div><div class="planning-view-toggle"><button type="button" class="active" data-relationship-view="map">Connection map</button><button type="button" data-relationship-view="matrix">Matrix</button></div></div>
+          <p class="planning-hint">Connections use each character profile’s relationship type, current status, and shared history. Line color shows relationship type and line style shows status. Select a character or matrix cell to inspect the details.</p>
+          <div id="relationship-graph" class="relationship-graph"></div>
+          <div class="relationship-legend" aria-label="Relationship line colors">
+            <span class="legend-ally">Friend</span><span class="legend-rival">Rival</span><span class="legend-family">Family</span>
+            <span class="legend-secret-crush">Romantic connection</span><span class="legend-betrayed">Trust changed</span><span class="legend-other">Other</span>
+          </div>
+          <div id="relationship-details" class="relationship-details" aria-live="polite">Choose a character or relationship to see its details.</div>
+          <div id="relationship-matrix" class="relationship-matrix hidden"></div>
+          <div id="relationship-empty" class="planning-empty hidden">Add characters and link them with <strong>Connections</strong> in a profile to see your cast map.</div>
+          <details class="planning-optional-fields relationship-history-disclosure">
+            <summary>Track changes over time <span>Optional</span></summary>
+            <section class="relationship-history" aria-labelledby="relationship-history-title">
+              <div class="relationship-history-heading">
+                <div><p class="eyebrow">HOW YOUR CHARACTERS CHANGE</p><h4 id="relationship-history-title">Relationship History</h4></div>
+              </div>
+              <p class="relationship-history-hint">Record a connection’s status at a chapter or timeline point. Character snapshots with the same chapter number or timeline label appear beside that change.</p>
+              <form class="relationship-history-form" id="relationship-history-form">
+                <label>Connection
+                  <select id="relationship-history-pair" required><option value="">Choose a connection</option></select>
+                </label>
+                <label>Chapter or timeline point
+                  <input id="relationship-history-when" type="text" maxlength="60" list="relationship-history-chapters" placeholder="e.g. Chapter 5" required>
+                  <datalist id="relationship-history-chapters"></datalist>
+                </label>
+                <label>Status
+                  <select id="relationship-history-status" required>
+                    <option value="strangers">Strangers</option>
+                    <option value="acquaintances">Acquaintances</option>
+                    <option value="friends">Friends</option>
+                    <option value="rivals">Rivals</option>
+                    <option value="active">Ongoing</option>
+                    <option value="complicated">Complicated</option>
+                    <option value="strained">Distant</option>
+                    <option value="broken">No contact</option>
+                    <option value="reconciled">Reconnected</option>
+                  </select>
+                </label>
+                <label>What changed? <span>Optional</span>
+                  <input id="relationship-history-note" type="text" maxlength="300" placeholder="A brief turning point or note">
+                </label>
+                <button class="button button-primary" type="submit">Record change</button>
+              </form>
+              <p class="relationship-history-empty hidden" id="relationship-history-empty"></p>
+              <div class="relationship-history-list" id="relationship-history-list" aria-live="polite"></div>
+            </section>
+          </details>
+        </div>
+        <div class="planning-panel hidden" id="planning-timeline" data-planning-panel="timeline">
+          <div class="planning-panel-heading"><div><p class="eyebrow">ONE WORLD, MANY STORIES</p><h3>Master chronology</h3></div>
+            <label class="planning-control">Order
+              <select id="master-timeline-order" aria-label="Choose timeline order"><option value="world">In-world chronology</option><option value="writing">Writing order</option></select>
+            </label>
+          </div>
+          <p class="planning-hint">Character life events and stories appear here alongside any world events you add. Use dates like “Year 412” or “2026-03-14”.</p>
+          <form id="world-event-form" class="planning-form planning-event-form">
+            <label>When<input name="date" type="text" maxlength="40" placeholder="e.g. Year 412" required></label>
+            <label>Event<input name="title" type="text" maxlength="180" placeholder="What happened?" required></label>
+            <button class="button button-primary" type="submit">＋ Add event</button>
+            <details class="planning-optional-fields"><summary>Link a character or story <span>Optional</span></summary><div class="planning-optional-grid"><label>Character<select name="characterId" id="world-event-character"><option value="">No character</option></select></label><label>Story<select name="storyId" id="world-event-story"><option value="">No story</option></select></label><label class="planning-wide-field">What does this character know? <textarea name="knowledge" maxlength="600" rows="2" placeholder="Secrets or clues they know at this point"></textarea></label></div></details>
+          </form>
+          <ol id="master-timeline-list" class="master-timeline-list"></ol>
+          <p id="master-timeline-empty" class="planning-empty hidden">No chronology yet. Add a dated event, or create a character timeline or story.</p>
+        </div>
+        <div class="planning-panel hidden" id="planning-moodboard" data-planning-panel="moodboard">
+          <div class="planning-panel-heading"><div><p class="eyebrow">COLLECT THE FEELING</p><h3>Scene mood &amp; aesthetic board</h3></div></div>
+          <form id="moodboard-form" class="planning-form moodboard-form">
+            <label>Attach to<select id="moodboard-scope" name="scope"><option value="character">Character</option><option value="story">Story</option><option value="place">Place</option></select></label>
+            <label id="moodboard-entity-label">Character<select id="moodboard-entity" name="entityId" required></select></label>
+            <label>Image URL<input name="image" type="url" maxlength="1000" placeholder="https://…"></label>
+            <button class="button button-primary" type="submit">＋ Pin inspiration</button>
+            <details class="planning-optional-fields"><summary>Add a note, tags, or color <span>Optional</span></summary><div class="planning-optional-grid"><label>Aesthetic tags<input name="tags" type="text" maxlength="120" placeholder="e.g. moonlit, velvet, storm"></label><label class="moodboard-quote">Quote or note<textarea name="quote" rows="2" maxlength="400" placeholder="A line of dialogue, a visual cue, or a reminder"></textarea></label><label>Palette<input name="color" type="color" value="#7193ad" aria-label="Board accent color"></label></div></details>
+          </form>
+          <div class="moodboard-filter">
+            <label>Show board for<select id="moodboard-filter-scope"><option value="all">Everything</option><option value="character">Characters</option><option value="story">Stories</option><option value="place">Places</option></select></label>
+            <select id="moodboard-filter-entity" aria-label="Filter mood boards by item"><option value="all">All items</option></select>
+          </div>
+          <div id="moodboard-grid" class="moodboard-grid"></div>
+          <p id="moodboard-empty" class="planning-empty hidden">Your board is waiting for its first image, palette, or note.</p>
+        </div>
+        <div class="planning-panel hidden" id="planning-prompts" data-planning-panel="prompts">
+          <div class="planning-panel-heading"><div><p class="eyebrow">A LITTLE NUDGE FROM YOUR UNIVERSE</p><h3>What if…?</h3></div><button type="button" class="button button-primary" id="generate-universe-prompt">✦ Make a prompt</button></div>
+          <p class="planning-hint">Combine characters and places you already created with a fresh conflict. Every nudge is unique to your world.</p>
+          <div class="prompt-generator-options">
+            <label>Character<select id="prompt-character"><option value="random">Surprise me</option></select></label>
+            <label>Place<select id="prompt-place"><option value="random">Surprise me</option></select></label>
+          </div>
+          <article id="universe-prompt-result" class="universe-prompt-result" aria-live="polite"><span>YOUR NEXT SPARK</span><p>Pick a character and place—or let FictionTale choose—and see what happens.</p></article>
+          <button type="button" class="button button-outline" id="prompt-to-outline" disabled>Add this spark to the outline</button>
+        </div>
+        <div class="planning-panel hidden" id="planning-outline" data-planning-panel="outline">
+          <div class="planning-panel-heading"><div><p class="eyebrow">FROM IDEA TO SCENE</p><h3>Plot arc &amp; scene cards</h3></div>
+            <details class="planning-optional-fields outline-story-control"><summary>Attach to a story <span>Optional</span></summary><label class="planning-control">Story
+              <select id="outline-story"><option value="">General outline</option></select>
+            </label></details>
+          </div>
+          <form id="outline-form" class="planning-form outline-form">
+            <label>Scene or beat<input name="title" type="text" maxlength="100" placeholder="e.g. The map goes missing" required></label>
+            <button class="button button-primary" type="submit">＋ Add scene card</button>
+            <details class="planning-optional-fields"><summary>Add a summary or act <span>Optional</span></summary><div class="planning-optional-grid"><label>What happens?<input name="summary" type="text" maxlength="300" placeholder="A short beat, obstacle, or turning point"></label><label>Act<select name="act"><option value="1">Act I · Setup</option><option value="2">Act II · Confrontation</option><option value="3">Act III · Resolution</option></select></label></div></details>
+          </form>
+          <div id="outline-board" class="outline-board"></div>
+          <p id="outline-empty" class="planning-empty hidden">Add a scene card to start arranging your story. Move cards between acts or reorder them as ideas change.</p>
+        </div>
+            </div>
+          </details>
+        </nav>
+        <div class="planning-panel planning-overview" id="planning-overview" data-planning-panel="overview">
+          <div class="planning-welcome">
+            <div><p class="eyebrow">A GENTLE PLACE TO BEGIN</p><h3>One small idea is enough.</h3><p>Pick a starting point. You can skip steps, change your mind, and come back whenever you like.</p></div>
+            <span class="planning-welcome-art" aria-hidden="true">✦</span>
+          </div>
+          <div class="planning-journey">
+            <article class="planning-journey-card"><span class="planning-step">01 · FIND A SPARK</span><h4>Not sure what to write?</h4><p>Mix a character and a place you already know. FictionTale will suggest a “what if?” to get you going.</p><button type="button" class="button button-outline" data-open-planning="prompts">Make a writing prompt <span aria-hidden="true">→</span></button></article>
+            <article class="planning-journey-card"><span class="planning-step">02 · SHAPE THE STORY</span><h4>Got an idea already?</h4><p>Turn it into a few scene cards. Start simple—acts and summaries are optional helpers, not rules.</p><button type="button" class="button button-outline" data-open-planning="outline">Add a scene card <span aria-hidden="true">→</span></button></article>
+            <article class="planning-journey-card"><span class="planning-step">03 · EXPLORE YOUR WORLD</span><h4>Want to see how things connect?</h4><p>Bring together character bonds, important events, and the places that make your world feel real.</p><button type="button" class="button button-outline" data-open-planning="relationships">Explore connections <span aria-hidden="true">→</span></button></article>
+          </div>
+          <div class="planning-guide"><span class="planning-guide-icon" aria-hidden="true">i</span><p><strong>New to story planning?</strong> Start with a prompt or one scene card. Everything saves as you go, and you never need to fill in every section.</p></div>
+        </div>
+      </section>
+      <footer class="page-footer">
+        <div class="page-footer-left">
+          <span>FictionTale</span>
+          <button class="reset-content-button" id="reset-content" type="button" aria-describedby="reset-content-help">
+            <span>Hold to reset all content</span>
+          </button>
+          <span class="reset-content-help" id="reset-content-help">Hold for 1.4 seconds to open the confirmation.</span>
+        </div>
+        <span>Made for the characters who won't leave you alone. <b>✦</b></span>
+      </footer>
+    </main>
+  </div>
+  <button class="back-to-top" id="back-to-top" type="button" aria-label="Scroll back to top" title="Back to top">
+    <span aria-hidden="true">↑</span>
+  </button>
+  <dialog class="character-dialog" id="character-dialog" aria-labelledby="profile-name">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <button class="profile-back" id="profile-back" type="button"><span aria-hidden="true">←</span> <span id="profile-back-label">Back to characters</span></button>
+        <button class="profile-close" id="profile-close" type="button" aria-label="Close character profile">×</button>
+      </div>
+      <div class="profile-scroll">
+        <header class="full-profile-hero" id="full-profile-hero">
+          <div class="profile-cover">
+            <img class="profile-cover-image hidden" id="profile-cover-image" alt="">
+            <div class="profile-hero-shade"></div>
+          </div>
+          <div class="profile-hero-content">
+            <div class="profile-avatar-wrap">
+              <img class="profile-avatar hidden" id="profile-avatar" alt="">
+              <span class="profile-avatar-placeholder" id="profile-avatar-placeholder">✳</span>
+            </div>
+            <h1 id="profile-name">Character name</h1>
+            <p class="profile-role" id="profile-role"></p>
+            <div class="profile-tag-list" id="profile-tags"></div>
+            <p class="profile-about" id="profile-about"></p>
+            <div class="profile-actions" aria-label="Character profile actions">
+              <button class="button profile-edit-button" id="profile-edit" type="button">Edit this character</button>
+              <button class="button profile-edit-button" id="profile-print" type="button">Print / Save PDF</button>
+              <button class="button profile-edit-button" id="profile-export-image" type="button">Export character sheet image</button>
+            </div>
+          </div>
+        </header>
+        <nav class="profile-sections" aria-label="Character profile sections">
+          <details class="profile-section" open>
+            <summary>Background <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content">
+              <div class="profile-story-block hidden" id="profile-story-block"><h3>Background</h3><p id="profile-story"></p></div>
+            </div>
+          </details>
+          <details class="profile-section">
+            <summary>Images <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div class="profile-gallery" id="profile-gallery"></div><p class="profile-empty hidden" id="profile-gallery-empty">No extra images yet. Add image URLs in the profile editor.</p></div>
+          </details>
+          <details class="profile-section">
+            <summary>Stats <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div class="profile-stats" id="profile-stats"></div></div>
+          </details>
+          <details class="profile-section">
+            <summary>Depth <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><dl class="profile-depth" id="profile-depth"></dl></div>
+          </details>
+          <details class="profile-section">
+            <summary>Personality &amp; voice <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content">
+              <div class="profile-questionnaire" id="profile-questionnaire"></div>
+              <div class="profile-voice" id="profile-voice"></div>
+            </div>
+          </details>
+          <details class="profile-section">
+            <summary>Relations <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><p id="profile-relations"></p></div>
+          </details>
+          <details class="profile-section">
+            <summary>Connections <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div class="profile-story-links" id="profile-connections"></div></div>
+          </details>
+          <details class="profile-section">
+            <summary>Timeline <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><ol class="profile-timeline" id="profile-timeline"></ol></div>
+          </details>
+          <details class="profile-section">
+            <summary>Character arc <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div id="profile-arc"></div></div>
+          </details>
+          <details class="profile-section">
+            <summary>Snapshots <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><ol class="profile-timeline" id="profile-snapshots"></ol></div>
+          </details>
+          <div id="profile-custom-sections"></div>
+          <details class="profile-section">
+            <summary>Links <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div class="profile-links" id="profile-links"></div></div>
+          </details>
+          <details class="profile-section">
+            <summary>Worlds <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><p id="profile-worlds"></p></div>
+          </details>
+          <details class="profile-section">
+            <summary>Stories <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div class="profile-story-links" id="profile-stories"></div></div>
+          </details>
+          <details class="profile-section">
+            <summary>Places <span class="profile-section-icon">⌄</span></summary>
+            <div class="profile-section-content"><div class="profile-story-links" id="profile-places"></div></div>
+          </details>
+        </nav>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog compare-dialog" id="compare-dialog" aria-labelledby="compare-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label">CAST COMPARISON</span>
+        <button class="profile-close" id="compare-close" type="button" aria-label="Close character comparison">×</button>
+      </div>
+      <div class="profile-scroll">
+        <header class="about-hero">
+          <p class="eyebrow"><span class="eyebrow-line"></span> PUT TWO CHARACTERS SIDE BY SIDE</p>
+          <h1 id="compare-title">Compare your <em>characters.</em></h1>
+          <p>Look for contrasts, shared traits, and places their goals or beliefs collide.</p>
+        </header>
+        <div class="compare-controls">
+          <label class="field">First character<select id="compare-character-a"></select></label>
+          <span aria-hidden="true">↔</span>
+          <label class="field">Second character<select id="compare-character-b"></select></label>
+        </div>
+        <div class="character-comparison" id="character-comparison" aria-live="polite"></div>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog settings-dialog" id="settings-dialog" aria-labelledby="settings-heading">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="settings-toolbar-label">SETTINGS</span>
+        <button class="profile-close" id="settings-close" type="button" aria-label="Close settings">×</button>
+      </div>
+      <div class="profile-scroll settings-scroll">
+        <section class="settings-content" aria-labelledby="settings-heading">
+          <p class="eyebrow"><span class="eyebrow-line"></span> YOUR WORKSPACE</p>
+          <h1 id="settings-heading">Settings</h1>
+          <section class="settings-group" aria-labelledby="settings-appearance-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-appearance-heading">Appearance</h2>
+              <p>Choose the look that feels right for your workspace.</p>
+            </div>
+            <button class="button button-quiet" id="theme-toggle" type="button" aria-label="Switch to dark theme" aria-pressed="false">☾ <span>Dark mode</span></button>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-editor-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-editor-heading">Editor Preferences</h2>
+              <p>Set the defaults for new stories and your writing space. Existing stories keep their saved appearance.</p>
+            </div>
+            <div class="settings-editor-fields">
+              <label for="settings-default-font">Default font
+                <select id="settings-default-font" aria-label="Default writing font"></select>
+              </label>
+              <label for="settings-font-size">Font size
+                <select id="settings-font-size" aria-label="Writing font size">
+                  <option value="16">16 px</option>
+                  <option value="18">18 px</option>
+                  <option value="19" selected>19 px</option>
+                  <option value="20">20 px</option>
+                  <option value="22">22 px</option>
+                  <option value="24">24 px</option>
+                </select>
+              </label>
+              <label for="settings-line-spacing">Line spacing
+                <select id="settings-line-spacing" aria-label="Writing line spacing">
+                  <option value="1.4">Compact</option>
+                  <option value="1.6">Comfortable</option>
+                  <option value="1.75" selected>Relaxed</option>
+                  <option value="2">Double</option>
+                </select>
+              </label>
+              <label for="settings-editor-width">Editor width
+                <select id="settings-editor-width" aria-label="Writing editor width">
+                  <option value="640px">Narrow</option>
+                  <option value="800px">Standard</option>
+                  <option value="1000px">Wide</option>
+                  <option value="100%" selected>Full width</option>
+                </select>
+              </label>
+              <label for="settings-writing-goal">Default writing goal
+                <span class="settings-goal-input"><input id="settings-writing-goal" type="number" min="50" max="20000" step="50" value="500" aria-label="Default daily writing goal in words"><span>words / day</span></span>
+              </label>
+            </div>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-writing-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-writing-heading">Writing Preferences</h2>
+              <p>Set defaults for new stories and chapter headings, choose the live word-count display, and set the reading background for new stories.</p>
+            </div>
+            <div class="settings-editor-fields">
+              <label for="settings-story-type">Default story type
+                <select id="settings-story-type" aria-label="Default story type">
+                  <option value="story" selected>Story</option>
+                  <option value="scene">Scene</option>
+                  <option value="world">World note</option>
+                  <option value="lore">Lore entry</option>
+                </select>
+              </label>
+              <label for="settings-chapter-format">Default chapter format
+                <select id="settings-chapter-format" aria-label="Default chapter heading format">
+                  <option value="markdown-h2" selected>## Chapter 1 · Standard</option>
+                  <option value="markdown-h1"># Chapter 1 · Large heading</option>
+                  <option value="plain">Chapter 1 · Plain text</option>
+                </select>
+              </label>
+              <label for="settings-word-count">Word count preferences
+                <select id="settings-word-count" aria-label="Story editor word count display">
+                  <option value="words-characters" selected>Words and characters</option>
+                  <option value="words">Words only</option>
+                  <option value="words-reading-time">Words and reading time</option>
+                  <option value="all">Words, characters, and reading time</option>
+                </select>
+              </label>
+              <label for="settings-reading-appearance">Default reading appearance
+                <select id="settings-reading-appearance" aria-label="Default story reading appearance">
+                  <option value="#fbfdff" selected>Cool paper</option>
+                  <option value="#fbf5e8">Warm paper</option>
+                  <option value="#18243a">Night</option>
+                </select>
+              </label>
+            </div>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-accessibility-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-accessibility-heading">Accessibility</h2>
+              <p>Adjust motion, contrast, and interface text size to suit your needs.</p>
+            </div>
+            <div class="settings-accessibility-options">
+              <label class="settings-accessibility-option" for="settings-reduced-motion">
+                <input id="settings-reduced-motion" type="checkbox">
+                <span><strong>Reduced motion</strong><small>Limit animation and smooth scrolling.</small></span>
+              </label>
+              <label class="settings-accessibility-option" for="settings-high-contrast">
+                <input id="settings-high-contrast" type="checkbox">
+                <span><strong>Higher contrast</strong><small>Strengthen text, borders, and focus outlines.</small></span>
+              </label>
+              <label class="settings-accessibility-option" for="settings-large-text">
+                <input id="settings-large-text" type="checkbox">
+                <span><strong>Larger interface text</strong><small>Scale up the interface for easier reading.</small></span>
+              </label>
+            </div>
+            <div class="settings-accessibility-preview">
+              <div class="settings-accessibility-demo">
+                <span class="settings-accessibility-demo-dot" aria-hidden="true"></span>
+                <div>
+                  <strong>Live preview</strong>
+                  <p>Sample text responds to contrast and text size.</p>
+                  <small id="settings-accessibility-motion-status">Motion preview: animation on</small>
+                </div>
+              </div>
+              <p id="settings-accessibility-preview-status" role="status" aria-live="polite">Preview changes first; settings are not saved until you choose Save &amp; apply.</p>
+              <div class="settings-accessibility-preview-actions">
+                <button class="button button-quiet" id="settings-accessibility-preview" type="button">Preview changes</button>
+                <div class="hidden" id="settings-accessibility-preview-controls">
+                  <button class="button button-primary" id="settings-accessibility-apply" type="button">Save &amp; apply</button>
+                  <button class="button button-quiet" id="settings-accessibility-cancel" type="button">Cancel preview</button>
+                </div>
+              </div>
+            </div>
+          </section>
+          <section class="settings-group settings-editor-group" aria-labelledby="settings-about-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-about-heading">About FictionTale</h2>
+              <p>Explore information and resources about the application.</p>
+            </div>
+            <div class="settings-about-options" role="group" aria-label="About FictionTale">
+              <button class="button button-quiet" type="button" data-about-placeholder="version" aria-controls="settings-about-version" aria-expanded="false">Application version</button>
+              <button class="button button-quiet" type="button" data-about-placeholder="changelog" aria-controls="settings-about-changelog" aria-expanded="false">Changelog</button>
+              <button class="button button-quiet" type="button" data-about-placeholder="tutorial" aria-controls="settings-about-tutorial" aria-expanded="false">Tutorial</button>
+              <button class="button button-quiet" type="button" data-about-placeholder="credits" aria-controls="settings-about-credits" aria-expanded="false">Credits</button>
+            </div>
+            <div class="settings-about-content" aria-live="polite">
+              <p class="hidden" id="settings-about-version">Application version information will appear here.</p>
+              <p class="hidden" id="settings-about-changelog">Changelog information will appear here.</p>
+              <p class="hidden" id="settings-about-tutorial">Tutorial information will appear here.</p>
+              <p class="hidden" id="settings-about-credits">Credits information will appear here.</p>
+            </div>
+          </section>
+          <section class="settings-group settings-data-group" aria-labelledby="settings-deleted-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-deleted-heading">Recently Deleted</h2>
+              <p>Restore deleted characters, stories, places, world entries, book series, and dialogue drafts, or permanently remove them from this device.</p>
+            </div>
+            <div class="recently-deleted-list" id="recently-deleted-list" aria-live="polite"></div>
+            <p class="recently-deleted-empty" id="recently-deleted-empty">Nothing has been deleted recently.</p>
+          </section>
+          <section class="settings-group settings-data-group" aria-labelledby="settings-data-heading">
+            <div class="settings-group-copy">
+              <h2 id="settings-data-heading">Data &amp; Storage</h2>
+              <p>Back up every project and see current browser storage usage.</p>
+            </div>
+            <div class="settings-storage-usage" aria-live="polite">
+              <p><span>FictionTale data</span><strong id="settings-app-usage">Calculating…</strong></p>
+              <p><span>Browser storage</span><strong id="settings-browser-usage">Checking availability…</strong></p>
+              <p><span>Persistent storage</span><strong id="settings-storage-persistence">Checking…</strong></p>
+            </div>
+            <p class="settings-storage-safety-note" id="settings-storage-persistence-detail">Checking whether this browser protects saved data from automatic eviction.</p>
+            <p class="settings-storage-warning hidden" id="settings-storage-warning" role="alert"></p>
+            <p class="settings-storage-safety-note"><strong>Your writing stays on this device.</strong> Clearing this browser’s site data, switching browser profiles, or losing the device can remove your work. Export a full backup and keep it somewhere separate.</p>
+            <div class="settings-data-actions">
+              <button class="button button-quiet" id="settings-export" type="button">Export full backup (.json)</button>
+              <button class="button button-quiet" id="settings-import" type="button">Import backup</button>
+              <input class="visually-hidden" id="settings-import-file" type="file" accept=".json,.yaml,.yml,.csv,application/json,text/yaml,text/csv" aria-label="Choose a backup file to import">
+            </div>
+            <div class="settings-backup-info" aria-live="polite">
+              <h3>Backup history</h3>
+              <div class="settings-backup-reminder" id="settings-backup-reminder" role="note">
+                <strong>Your first backup is still needed.</strong>
+                <p>Your work is saved in this browser, but it can be lost if browser data is cleared or the device is unavailable. Keep a separate copy of your projects.</p>
+                <button class="button button-outline" id="settings-first-backup" type="button">Export your first backup</button>
+              </div>
+              <p id="settings-backup-last">No successful backup recorded yet.</p>
+              <p id="settings-backup-latest">No backup attempts recorded yet.</p>
+              <ol class="settings-backup-history-list" id="settings-backup-history-list" aria-label="Recent backup attempts"></ol>
+              <p>Full backups include every project, its drafts, worldbuilding, and planning. New backups restore as separate projects; older backups ask before replacing matching records. Keep a copy outside this browser and device, or choose a folder for an automatically updated copy.</p>
+              <p class="settings-backup-location-note">A connected folder is only a destination. Its status changes to a completed backup only after the file is written. Browser downloads do not report the final save location or confirm that you kept the file; folder names are shown without the full path.</p>
+              <div class="settings-folder-control">
+                <button class="button button-quiet" id="connect-data-folder" type="button">Choose backup folder</button>
+                <span id="settings-folder-status" role="status">Using this browser for autosave</span>
+              </div>
+            </div>
+          </section>
+        </section>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="confirm-dialog reset-dialog" id="reset-dialog" aria-labelledby="reset-dialog-title" aria-describedby="reset-dialog-message">
+    <div class="confirm-dialog-content">
+      <span class="confirm-dialog-icon" aria-hidden="true">!</span>
+      <h2 id="reset-dialog-title">Reset all FictionTale content?</h2>
+      <p id="reset-dialog-message">This permanently removes all characters, stories, dialogue drafts, places, world entries, drafts, version history, and saved preferences from this browser, along with the connected FictionTale backup file. Export a backup first if you may want this content later.</p>
+      <div class="confirm-dialog-actions">
+        <button class="button button-quiet" id="cancel-reset" type="button">Keep my content</button>
+        <button class="button button-danger" id="confirm-reset" type="button">Erase all content</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog story-dialog" id="story-dialog" aria-labelledby="story-editor-title">
+    <div class="profile-window story-window">
+      <div class="profile-window-toolbar story-toolbar">
+        <button class="profile-back hidden" id="story-back-to-draft" type="button"><span aria-hidden="true">←</span> Back to Draft</button>
+        <div class="story-topbar-title">
+          <h1 class="visually-hidden" id="story-editor-title">Write a story</h1>
+          <label class="visually-hidden" for="story-title">Story title</label>
+          <input class="story-title-input" id="story-title" form="story-form" name="title" type="text" maxlength="100" placeholder="Give your story a name" aria-label="Story title" required>
+        </div>
+        <div class="story-mode-toggle" id="story-mode-toggle" role="group" aria-label="Story editor mode">
+          <button class="is-active" id="story-writing-mode" type="button" aria-pressed="true">Writing</button>
+          <button id="story-planning-mode" type="button" aria-pressed="false">Planning</button>
+        </div>
+        <span class="story-save-status" id="story-save-status" role="status">Draft autosaves here</span>
+        <button class="button button-quiet" id="story-editor-preview" type="button">Preview</button>
+        <button class="profile-close" id="story-close" type="button" aria-label="Close story editor and return to Stories" title="Return to Writing / Stories">×</button>
+      </div>
+      <form class="story-editor" id="story-form">
+        <details class="story-template-panel" id="story-template-panel">
+          <summary>Start with a template <span>Optional</span></summary>
+          <div class="story-template-content">
+            <div class="story-template-controls">
+              <label for="story-template-select" id="story-template-heading">Template
+                <select id="story-template-select">
+                  <option value="">Choose a template</option>
+                  <option value="fantasy">Fantasy</option>
+                  <option value="mystery">Mystery</option>
+                  <option value="adventure">Adventure</option>
+                  <option value="romance">Romance</option>
+                  <option value="science-fiction">Science fiction</option>
+                  <option value="general-fiction">General fiction</option>
+                </select>
+              </label>
+              <button class="button button-outline" id="story-template-apply" type="button" disabled>Apply template</button>
+            </div>
+            <p class="story-template-notice">Applying a template replaces the story text, but keeps your title and story details.</p>
+            <div class="story-template-preview hidden" id="story-template-preview" aria-live="polite">
+              <p id="story-template-description"></p>
+              <div class="story-template-preview-grid">
+                <section>
+                  <h2>Character prompts</h2>
+                  <ul id="story-template-characters"></ul>
+                </section>
+                <section>
+                  <h2>Story structure</h2>
+                  <ol id="story-template-structure"></ol>
+                </section>
+                <section class="story-template-chapters">
+                  <h2>Chapter outline</h2>
+                  <ol id="story-template-chapters"></ol>
+                </section>
+              </div>
+            </div>
+          </div>
+        </details>
+        <div class="story-compose-layout">
+          <aside class="story-chapter-sidebar" aria-label="Chapter navigation and details">
+            <div class="story-chapter-sidebar-heading"><strong>Chapters</strong><span id="story-chapter-count">None yet</span></div>
+            <p class="story-chapter-sidebar-hint">Drag to reorder. Select a chapter to edit its summary and details.</p>
+            <ol class="story-chapter-list" id="story-chapter-list"></ol>
+            <section class="story-chapter-details hidden" id="story-chapter-details" aria-labelledby="story-chapter-selected-title">
+              <h3 id="story-chapter-selected-title"></h3>
+              <label for="story-chapter-summary">Chapter summary
+                <textarea id="story-chapter-summary" maxlength="500" rows="3" placeholder="What happens in this chapter?"></textarea>
+              </label>
+              <div class="story-chapter-fields">
+                <label for="story-chapter-timeline-point">In-world time
+                  <input id="story-chapter-timeline-point" type="text" maxlength="60" placeholder="e.g. Year 412 or 2026-03-14">
+                </label>
+                <label for="story-chapter-status">Status
+                  <select id="story-chapter-status">
+                    <option value="draft">Draft</option>
+                    <option value="revising">Revising</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                </label>
+                <label for="story-chapter-pov">POV character
+                  <select id="story-chapter-pov"><option value="">No POV character</option></select>
+                </label>
+                <label for="story-chapter-location">Location
+                  <select id="story-chapter-location"><option value="">No location</option></select>
+                </label>
+              </div>
+              <p class="story-chapter-last-edited" id="story-chapter-last-edited"></p>
+              <section class="story-previous-summary" id="story-previous-summary" aria-live="polite">
+                <h4 id="story-previous-summary-title">Previous chapter</h4>
+                <p id="story-previous-summary-text"></p>
+              </section>
+            </section>
+          </aside>
+          <div class="story-compose-main">
+            <details class="story-toolbar-tools" id="story-toolbar-tools">
+              <summary>Formatting &amp; chapter tools</summary>
+              <div class="story-format-bar" id="story-format-bar" role="toolbar" aria-label="Formatting tools">
+                <button type="button" data-format="undo" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
+                <button type="button" data-format="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">↷</button>
+                <span class="story-format-divider" aria-hidden="true"></span>
+                <button type="button" data-format="bold" title="Bold" aria-label="Bold"><b>B</b></button>
+                <button type="button" data-format="italic" title="Italic" aria-label="Italic"><i>I</i></button>
+                <button type="button" data-format="quote" title="Quote" aria-label="Quote">❝</button>
+                <button type="button" data-format="break" title="Scene break" aria-label="Insert scene break">⁂</button>
+                <span class="story-format-divider" aria-hidden="true"></span>
+                <button type="button" data-format="chapter" title="Add a chapter at the cursor">＋ Chapter</button>
+              </div>
+            </details>
+            <p class="story-mention-hint">Type <code>@</code> followed by a character name to link them in a chapter.</p>
+            <textarea class="story-text-input" id="story-text" name="text" maxlength="30000" placeholder="Write anything you like. Type @ to mention a character." aria-label="Story text"></textarea>
+            <div class="story-mention-suggestions hidden" id="story-mention-suggestions" role="listbox" aria-label="Character mentions"></div>
+          </div>
+          <div class="story-editor-sidebars">
+            <aside class="story-peek-panel" id="story-peek-panel" aria-label="Character and place quick reference">
+              <div class="story-peek-heading"><strong>Quick peek</strong><button type="button" class="button button-quiet" id="story-peek-toggle" aria-expanded="false">Open</button></div>
+              <div class="story-peek-content hidden" id="story-peek-content">
+                <div class="story-peek-tabs"><button type="button" class="active" data-peek-kind="character">Characters</button><button type="button" data-peek-kind="place">Places</button><button type="button" data-peek-kind="world-entry">World</button></div>
+                <div class="story-peek-list" id="story-peek-list"></div>
+                <article class="story-peek-detail" id="story-peek-detail">Choose a character or place to see a quick reference.</article>
+              </div>
+            </aside>
+            <details class="story-style-settings story-details-settings" id="story-details">
+              <summary>Story details <span>Optional—add these only when useful</span></summary>
+              <div class="story-style-grid">
+                <label for="story-kind">Type
+                  <select id="story-kind" name="kind">
+                    <option value="story">Story</option>
+                    <option value="scene">Scene</option>
+                    <option value="world">World note</option>
+                    <option value="lore">Lore entry</option>
+                  </select>
+                </label>
+                <label for="story-progress">Progress
+                  <select id="story-progress" name="progress">
+                    <option value="idea">Idea</option>
+                    <option value="drafting">Drafting</option>
+                    <option value="finished">Finished</option>
+                  </select>
+                </label>
+                <label for="story-series">Series
+                  <select id="story-series" name="seriesId"><option value="">Not in a series</option></select>
+                </label>
+                <label for="story-series-order">Book number
+                  <input class="story-meta-input" id="story-series-order" name="seriesOrder" type="number" min="1" max="1000" step="1" value="1" aria-describedby="story-series-order-hint">
+                  <small id="story-series-order-hint" class="series-book-hint">Set the book’s position in the series.</small>
+                </label>
+                <label for="story-word-goal">Project word goal
+                  <input class="story-meta-input" id="story-word-goal" name="wordGoal" type="number" min="100" max="1000000" step="100" value="50000">
+                </label>
+                <div class="story-wide-field">
+                  <label for="story-summary">One-line summary</label>
+                  <input class="story-meta-input" id="story-summary" name="summary" type="text" maxlength="240" placeholder="What is this story about, in a sentence?">
+                </div>
+                <div>
+                  <label for="story-setting">Setting or world</label>
+                  <input class="story-meta-input" id="story-setting" name="setting" type="text" maxlength="160" placeholder="e.g. The drowned city of Veyra">
+                </div>
+                <div>
+                  <label for="story-tags">Tags</label>
+                  <input class="story-meta-input" id="story-tags" name="tags" type="text" maxlength="200" placeholder="e.g. fantasy, mystery, slow burn">
+                </div>
+                <div class="story-wide-field">
+                  <span class="story-field-label" id="story-characters-label">Characters in this story</span>
+                  <div class="story-character-picker" id="story-characters" role="group" aria-labelledby="story-characters-label"></div>
+                </div>
+                <div class="story-wide-field">
+                  <span class="story-field-label" id="story-places-label">Places in this story</span>
+                  <div class="story-character-picker" id="story-places" role="group" aria-labelledby="story-places-label"></div>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+        <p class="story-continuity-summary hidden" id="story-continuity-summary" role="status"></p>
+        <input class="visually-hidden" id="story-chapter-places" name="chapterPlaces" type="hidden">
+        <input class="visually-hidden" id="story-chapter-meta-data" name="chapterMeta" type="hidden">
+        <p class="story-word-count" id="story-word-count" aria-live="off">
+          <span id="story-chapter-word-count">Current chapter: 0 words</span>
+          <span id="story-total-word-count">Story total: 0 words</span>
+          <span id="story-word-count-extras"></span>
+        </p>
+        <section class="story-planning-tools" id="story-planning-tools" aria-label="Story planning tools">
+          <div class="story-planning-tools-heading"><strong>Planning tools</strong><span>Open only what you need.</span></div>
+          <div class="story-planning-grid">
+            <section class="story-writing-goal" aria-label="Daily writing goal">
+              <div class="story-writing-goal-heading">
+                <strong id="story-writing-goal-label">Today’s writing goal</strong>
+                <span id="story-writing-streak">0 day streak</span>
+              </div>
+              <div class="story-goal-progress" role="progressbar" id="story-goal-progress" aria-label="Daily writing goal progress" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0"><span id="story-goal-progress-fill"></span></div>
+              <div class="story-goal-controls">
+                <span id="story-writing-goal-count">0 / 500 words today</span>
+                <label for="story-daily-target">Daily target</label>
+                <input id="story-daily-target" type="number" min="50" max="20000" step="50" value="500" aria-label="Daily writing target in words">
+              </div>
+            </section>
+            <div class="story-starters" id="story-starters">
+              <span>Not sure where to begin?</span>
+              <button type="button" data-starter="scene">Scene</button>
+              <button type="button" data-starter="world">World note</button>
+              <button type="button" data-starter="outline">Plot outline</button>
+            </div>
+            <details class="story-style-settings story-chapters-panel" id="story-chapters-panel">
+              <summary>Pacing &amp; continuity</summary>
+              <div class="story-chapter-body">
+                <p class="story-chapter-hint" id="story-chapter-hint">Chapters are headings such as <code>## Chapter 1</code> or <code># Chapter 1</code>. Add in-world time and character snapshots to check chronology, age, availability, and locations. Checks are suggestions, not edits.</p>
+                <p class="story-pacing-summary" id="story-pacing-summary"></p>
+                <div class="story-continuity-checker" id="story-continuity-checker" aria-live="polite"></div>
+              </div>
+            </details>
+            <details class="story-style-settings story-notes-tasks" id="story-notes-tasks">
+              <summary>Margin notes &amp; to-do <span id="story-todo-count">0 tasks</span></summary>
+              <div class="story-writing-lists">
+                <section class="story-writing-list" aria-labelledby="story-notes-heading">
+                  <h3 id="story-notes-heading">Fix later / margin notes</h3>
+                  <div class="story-writing-add story-note-add-row"><input id="story-note-input" type="text" maxlength="300" placeholder="Add a note or select text first" aria-label="New margin note"><select id="story-note-chapter" aria-label="Chapter for this note"><option value="">Use cursor chapter</option><option value="__general__">No chapter</option></select><button class="button button-quiet" id="story-note-add" type="button">Add note</button></div>
+                  <ul id="story-notes-list" class="story-note-list"></ul>
+                  <input class="visually-hidden" id="story-notes-data" type="hidden">
+                </section>
+                <section class="story-writing-list" aria-labelledby="story-todos-heading">
+                  <h3 id="story-todos-heading">Story to-do</h3>
+                  <div class="story-writing-add"><input id="story-todo-input" type="text" maxlength="160" placeholder="e.g. Check the timeline in chapter 3" aria-label="New story task"><button class="button button-quiet" id="story-todo-add" type="button">Add task</button></div>
+                  <ul id="story-todos-list" class="story-note-list"></ul>
+                  <input class="visually-hidden" id="story-todos-data" type="hidden">
+                </section>
+              </div>
+            </details>
+            <details class="story-style-settings" id="story-style-settings">
+              <summary>Story appearance <span>Optional</span></summary>
+              <div class="story-style-grid">
+                <label for="story-title-font">Title font
+                  <select id="story-title-font" name="titleFont">
+                    <option value="playfair">Playfair Display · Elegant</option>
+                    <option value="lora">Lora · Literary</option>
+                    <option value="merriweather">Merriweather · Readable</option>
+                    <option value="cormorant">Cormorant Garamond · Graceful</option>
+                    <option value="libre-baskerville">Libre Baskerville · Classic</option>
+                    <option value="roboto-slab">Roboto Slab · Bold</option>
+                    <option value="dm-sans">DM Sans · Modern</option>
+                    <option value="lato">Lato · Warm</option>
+                    <option value="nunito-sans">Nunito Sans · Friendly</option>
+                    <option value="caveat">Caveat · Handwritten</option>
+                    <option value="roboto-mono">Roboto Mono · Typewriter</option>
+                    <option value="georgia">Georgia · System serif</option>
+                    <option value="courier">Courier New · System mono</option>
+                  </select>
+                </label>
+                <label for="story-body-font">Body font
+                  <select id="story-body-font" name="bodyFont">
+                    <option value="dm-sans">DM Sans · Modern</option>
+                    <option value="lato">Lato · Warm</option>
+                    <option value="nunito-sans">Nunito Sans · Friendly</option>
+                    <option value="lora">Lora · Literary</option>
+                    <option value="merriweather">Merriweather · Readable</option>
+                    <option value="roboto-slab">Roboto Slab · Soft slab</option>
+                    <option value="libre-baskerville">Libre Baskerville · Classic</option>
+                    <option value="cormorant">Cormorant Garamond · Graceful</option>
+                    <option value="playfair">Playfair Display · Elegant</option>
+                    <option value="caveat">Caveat · Handwritten</option>
+                    <option value="roboto-mono">Roboto Mono · Typewriter</option>
+                    <option value="georgia">Georgia · System serif</option>
+                    <option value="courier">Courier New · System mono</option>
+                  </select>
+                </label>
+                <div class="story-background-field">
+                  <label for="story-background-hex">Reader background</label>
+                  <span class="color-control">
+                    <input id="story-background-hex" type="text" value="#fbfdff" maxlength="7" pattern="#[0-9A-Fa-f]{6}" placeholder="#fbfdff" aria-label="Reader background HEX color">
+                    <input id="story-background" name="backgroundColor" type="color" value="#fbfdff" aria-label="Choose reader background color">
+                  </span>
+                </div>
+                <div class="story-cover-field">
+                  <label for="story-image-url">Cover image</label>
+                  <span class="story-image-control">
+                    <input id="story-image-url" name="image" type="text" placeholder="Paste an image link, or upload with ↑"><span class="upload-chip hidden" id="story-image-chip"><img alt=""><span class="upload-chip-text"></span><button class="upload-chip-remove" type="button" aria-label="Remove cover image">Remove</button></span>
+                    <button class="upload-button" id="story-image-upload-button" type="button" aria-label="Upload a cover image">↑</button>
+                  </span>
+                </div>
+                <input class="visually-hidden" id="story-image-file" type="file" accept="image/*" tabindex="-1" aria-label="Choose a story cover image">
+                <p class="story-style-hint">Choose a font for each part, set the reader background, and add a cover image by link or upload (up to 5 MB).</p>
+              </div>
+            </details>
+            <details class="story-style-settings story-history-panel" id="story-history-panel">
+              <summary>Version history <span id="story-history-count">None yet</span></summary>
+              <div class="story-chapter-body">
+                <p class="story-chapter-hint">A snapshot is kept each time you save (the latest 10). Select two versions to compare, or restore one to the editor. Restoring does not replace the saved story until you save.</p>
+                <ul class="story-history-list" id="story-history-list"></ul>
+                <div class="story-history-comparison hidden" id="story-history-comparison" aria-live="polite"></div>
+              </div>
+            </details>
+          </div>
+        </section>
+        <div class="story-editor-actions">
+          <span>Unfinished drafts are saved here automatically.</span>
+          <div class="story-editor-buttons">
+            <button class="button button-quiet story-discard-button" id="story-discard" type="button">Discard draft</button>
+            <button class="button button-outline" type="submit">Save story</button>
+            <button class="button button-primary" id="story-save-close" type="button">Save &amp; close</button>
+          </div>
+        </div>
+      </form>
+      <div class="story-reading-view hidden" id="story-reading-view">
+        <div class="story-reading-toolbar" id="story-reading-toolbar">
+          <div class="story-preview-toolbar" id="story-preview-toolbar">
+            <span>Finished presentation</span>
+            <button class="button button-outline" id="story-reading-mode-open" type="button">Start reading <span aria-hidden="true">→</span></button>
+          </div>
+          <div class="story-reader-toolbar hidden" id="story-reader-toolbar">
+            <button class="button button-quiet" id="story-reader-preview" type="button"><span aria-hidden="true">←</span> Preview</button>
+            <div class="story-reader-progress">
+              <div class="story-reader-progress-track" id="story-reader-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span id="story-reader-progress-fill"></span>
+              </div>
+              <span id="story-reader-progress-label">0% read</span>
+            </div>
+            <div class="story-reader-font-controls" aria-label="Reading text size">
+              <button class="button button-quiet" id="story-reader-font-down" type="button" aria-label="Decrease reading text size" title="Decrease text size">A−</button>
+              <span id="story-reader-font-size">19 px</span>
+              <button class="button button-quiet" id="story-reader-font-up" type="button" aria-label="Increase reading text size" title="Increase text size">A+</button>
+            </div>
+          </div>
+        </div>
+        <div class="story-reading-cover hidden" id="story-reading-cover-wrap">
+          <img id="story-reading-cover" alt="">
+        </div>
+        <article class="story-reading-copy">
+          <p class="eyebrow">STORY PREVIEW</p>
+          <h1 id="story-reading-title">Your story title</h1>
+          <p class="story-reading-summary hidden" id="story-reading-summary"></p>
+          <p class="story-reading-meta hidden" id="story-reading-meta"></p>
+          <div class="story-reading-body" id="story-reading-text"></div>
+          <button class="button button-primary" id="story-preview-edit" type="button">Edit this story</button>
+          <button class="button button-outline story-print-button" id="story-print" type="button">Print / Save PDF</button>
+          <div class="story-reading-export-actions" id="story-reading-export-actions" role="group" aria-label="Download story">
+            <button class="button button-outline" id="story-export-docx" type="button">Download Word (.docx)</button>
+            <button class="button button-outline" id="story-export-epub" type="button">Download EPUB</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog" id="about-dialog" aria-labelledby="about-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label">FictionTale · Tutorial</span>
+        <button class="profile-close" id="about-close" type="button" aria-label="Close FictionTale tutorial">×</button>
+      </div>
+      <div class="profile-scroll">
+        <header class="about-hero">
+          <p class="eyebrow"><span class="eyebrow-line"></span> YOUR WRITING WORKSPACE</p>
+          <h1 id="about-title">Welcome to <em>FictionTale</em></h1>
+          <p>Choose a quick start or explore a guide. FictionTale saves your work in this browser on this device.</p>
+        </header>
+        <div class="about-guide-content">
+          <div class="tutorial-choices" id="tutorial-choices" aria-label="Choose a guide">
+            <button class="tutorial-choice-card" id="simple-tutorial-open" type="button" aria-controls="simple-tutorial-panel">
+              <span class="tutorial-choice-icon" aria-hidden="true">✦</span>
+              <span class="tutorial-choice-title">Quick start <span aria-hidden="true">→</span></span>
+              <span class="tutorial-choice-copy">Start a story, organize your cast, and keep a backup.</span>
+            </button>
+            <button class="tutorial-choice-card" id="detailed-tutorial-open" type="button" aria-controls="detailed-tutorial-panel">
+              <span class="tutorial-choice-icon" aria-hidden="true">✧</span>
+              <span class="tutorial-choice-title">Detailed guide <span aria-hidden="true">→</span></span>
+              <span class="tutorial-choice-copy">See how characters, stories, timelines, series, and backups fit together.</span>
+            </button>
+          </div>
+          <section class="tutorial-panel hidden" id="simple-tutorial-panel" aria-labelledby="simple-tutorial-title" tabindex="-1">
+            <button class="tutorial-back button button-quiet" type="button">← All guides</button>
+            <h2 id="simple-tutorial-title">Quick start</h2>
+            <ol class="tutorial-steps">
+              <li><strong>Choose a project.</strong> A project keeps its stories, characters, places, and plans together. Try an editable sample project to see how they connect, or create your own.</li>
+              <li><strong>Write a story.</strong> Open <strong>Writing → Stories</strong>, choose <strong>New story</strong>, and start typing. Your draft saves on this device. Add chapters or notes whenever they help.</li>
+              <li><strong>Organize your cast.</strong> Start each character with a name and short description. Put them in a <strong>Cast Group</strong> such as Main or Supporting; use tags for details like “Mage” or “Merchant.”</li>
+              <li><strong>Build your setting.</strong> Use <strong>Worldbuilding → Places</strong> for locations. Use <strong>World Entries</strong> for things such as groups, objects, magic, species, languages, or terms you want to remember.</li>
+              <li><strong>Find your next step.</strong> Use a prompt or scene card to get an idea moving. Search from the top of the workspace to find characters, stories, places, or world entries.</li>
+              <li><strong>Keep a backup.</strong> Check the workspace header for save and backup status. Open it to reach <strong>Settings → Data &amp; Storage</strong> and export a full backup. New backup imports become separate projects; replacing matching older data asks for confirmation. You can also download stories as Markdown, plain text, Word (.docx), or EPUB, and print profiles or story previews to PDF.</li>
+            </ol>
+            <p class="tutorial-privacy-note">Your work is stored in this browser, not in the cloud. Clearing this browser’s site data, switching browser profiles, or losing the device can remove it. Export a full backup and keep it somewhere separate.</p>
+          </section>
+          <section class="tutorial-panel hidden" id="detailed-tutorial-panel" aria-labelledby="detailed-tutorial-title" tabindex="-1">
+            <button class="tutorial-back button button-quiet" type="button">← All guides</button>
+            <h2 id="detailed-tutorial-title">Detailed guide</h2>
+            <section class="about-guide-step">
+              <span class="creation-step-number">01</span>
+              <div><h3>Create characters</h3><p>Start with a name and short description. Everything else is optional. Put each character in one <strong>Cast Group</strong> to organize the cast; use tags for details that can apply to many characters. The optional questionnaire offers prompts to help you discover what a character thinks, feels, and chooses. Keep only the answers that help your story.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">02</span>
+              <div><h3>Write stories</h3><p>Create a story from scratch or use a template. Chapters keep a long draft in order; each chapter can have notes and an in-world time, such as “Day 2” or “Year 412.” The story timeline follows chapters in this one story. FictionTale can point out possible mix-ups in ages, places, or who is present, but it never changes your writing. Use Focus mode to hide extra controls. Version history lets you compare saved drafts or restore an earlier one.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">03</span>
+              <div><h3>Organize a book series</h3><p>Create a series, then open each book’s details to add it and set its book number. Mark characters and places shared across the books. The <strong>Series Timeline</strong> is a shared list of important events across the whole series; you can note which book and chapter each event belongs to. It sits alongside, rather than replaces, each book’s own chapter timeline.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">04</span>
+              <div><h3>Plan and track your writing</h3><p>The <strong>Dashboard</strong> shows a story’s word count, chapters, progress, and next tasks. In <strong>Plan</strong>, use scene cards, prompts, and the relationship map when they help. <strong>Relationship History</strong> records how a connection changes at a chapter or story point. A character snapshot records what that character knows, where they are, or who they trust at that point. Give both the same chapter or timeline label to see them together.</p><p><strong>Story timeline:</strong> dates chapters within one story. <strong>Master Chronology:</strong> brings character events, story events, and world events together across the project. Use it to compare what happens and when; it can show in-world order or writing order.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">05</span>
+              <div><h3>Build your setting</h3><p>Use <strong>Places</strong> for locations. Use <strong>World Entries</strong> for groups, objects, rules of magic or technology, species, languages, and terms. Add tags to make things easier to find.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">06</span>
+              <div><h3>Save and back up your work</h3><p>The header shows whether your latest changes are <strong>Saved</strong> on this device and whether a backup is due. Open it to reach <strong>Settings → Data &amp; Storage</strong> and export a full backup. Importing a new backup adds a separate project; replacing matching older data asks you first. Your work is not stored online, so keep a backup somewhere separate from this browser and device.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">07</span>
+              <div><h3>Appearance and offline use</h3><p>Choose a light or dark theme in <strong>Settings → Appearance</strong>. When opened from a secure website or local server, FictionTale can be installed and used without internet. Your writing still stays in this browser on this device; offline use is not an online backup.</p></div>
+            </section>
+            <section class="about-guide-step">
+              <span class="creation-step-number">08</span>
+              <div><h3>Draft conversations</h3><p>Use <strong>Dialogue</strong> to try out a conversation before adding it to your story. Choose who is speaking and note how the conversation feels. Add it to a story when you are ready.</p></div>
+            </section>
+            <aside class="about-note">
+              <span class="status-dot" aria-hidden="true"></span>
+              <p><strong>Keep your work safe:</strong> your writing is not backed up online. Export a full backup regularly and keep a copy somewhere separate from this browser and device.</p>
+            </aside>
+          </section>
+        </div>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog place-dialog" id="place-dialog" aria-labelledby="place-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label">WORLDBUILDING / PLACES</span>
+        <button class="profile-close" id="place-close" type="button" aria-label="Close place editor and return to Places" title="Return to Worldbuilding / Places">×</button>
+      </div>
+      <div class="profile-scroll">
+        <header class="about-hero">
+          <p class="eyebrow"><span class="eyebrow-line"></span> BUILD YOUR WORLD</p>
+          <h1 id="place-title">A new <em>place.</em></h1>
+          <p>Describe it the way you picture it. Only the name is required.</p>
+        </header>
+        <form class="place-form" id="place-form" autocomplete="off">
+          <div class="place-row">
+            <label class="field">Name<input id="place-name" name="name" type="text" maxlength="80" required placeholder="e.g. The Drowned City of Veyra"></label>
+            <label class="field">Type<select id="place-kind" name="kind"><option value="region">Region or realm</option><option value="city">City or town</option><option value="building">Building</option><option value="landmark">Landmark</option><option value="wild">Wilderness</option><option value="other">Other</option></select></label>
+          </div>
+          <label class="field">One-line summary<input id="place-summary" name="summary" type="text" maxlength="240" placeholder="What is this place, in a sentence?"></label>
+          <label class="field">Description <span class="field-hint inline-hint"><span id="place-description-count">0</span> / 8000</span>
+            <textarea id="place-description" name="description" rows="6" maxlength="8000" placeholder="What does it look like? Who lives here? What happens here?"></textarea>
+          </label>
+          <details class="progressive-fields" id="place-depth-details">
+            <summary><span><strong>Place depth</strong><small>Lore, atmosphere, secrets, and history</small></span></summary>
+            <label class="field">Lore &amp; story <span class="field-hint inline-hint"><span id="place-lore-count">0 words</span></span>
+              <textarea id="place-lore" name="lore" rows="8" maxlength="30000" placeholder="Write the history, legends, scenes, or stories tied to this place."></textarea>
+            </label>
+            <label class="field">Atmosphere <span class="field-hint inline-hint">Sights, sounds, and smells</span>
+              <textarea id="place-atmosphere" name="atmosphere" rows="2" maxlength="400" placeholder="Salt wind, creaking docks, and the smell of tar."></textarea>
+            </label>
+            <label class="field">Secrets, rules, or history
+              <textarea id="place-notes" name="notes" rows="3" maxlength="4000" placeholder="Anything else worth remembering about this place."></textarea>
+            </label>
+          </details>
+          <details class="progressive-fields" id="place-advanced-details">
+            <summary><span><strong>Advanced details</strong><small>Map context, tags, connections, and images</small></span></summary>
+            <div class="place-row">
+              <label class="field">Part of <input id="place-part-of" name="partOf" type="text" maxlength="80" placeholder="e.g. The Northern Reach"></label>
+              <label class="field">Tags <input id="place-tags" name="tags" type="text" maxlength="200" placeholder="e.g. port, haunted, trade"></label>
+            </div>
+            <div class="field">
+              <span class="story-field-label" id="place-characters-label">Characters linked to this place</span>
+              <div class="story-character-picker" id="place-characters" role="group" aria-labelledby="place-characters-label"></div>
+            </div>
+            <div class="field">
+              <label for="place-image-url">Image</label>
+              <span class="story-image-control">
+                <input id="place-image-url" name="image" type="text" placeholder="Paste an image link, or upload with ↑"><span class="upload-chip hidden" id="place-image-chip"><img alt=""><span class="upload-chip-text"></span><button class="upload-chip-remove" type="button" aria-label="Remove place image">Remove</button></span>
+                <button class="upload-button" id="place-image-upload-button" type="button" aria-label="Upload a place image">↑</button>
+              </span>
+              <input class="visually-hidden" id="place-image-file" type="file" accept="image/*" tabindex="-1" aria-label="Choose a place image">
+            </div>
+          </details>
+          <div class="place-actions">
+            <button class="button button-quiet hidden" id="place-delete" type="button">Delete place</button>
+            <button class="button button-outline" id="place-preview" type="button">Open full preview <span aria-hidden="true">↗</span></button>
+            <button class="button button-outline" id="place-cancel" type="button">Cancel</button>
+            <button class="button button-primary" id="place-save" type="submit">Save place</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog world-entry-dialog" id="world-entry-dialog" aria-labelledby="world-entry-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label">WORLDBUILDING / WORLD ENTRIES</span>
+        <button class="profile-close" id="world-entry-close" type="button" aria-label="Close world entry editor and return to World Entries" title="Return to Worldbuilding / World Entries">×</button>
+      </div>
+      <div class="profile-scroll">
+        <header class="about-hero">
+          <p class="eyebrow"><span class="eyebrow-line"></span> BUILD BEYOND THE MAP</p>
+          <h1 id="world-entry-title">A new <em>world entry.</em></h1>
+          <p>Only the name is required. Add a description now, or come back to the details later.</p>
+        </header>
+        <form class="place-form world-entry-form" id="world-entry-form" autocomplete="off">
+          <div class="place-row">
+            <label class="field">Name<input id="world-entry-name" name="name" type="text" maxlength="100" required placeholder="e.g. The Ashen Covenant"></label>
+            <label class="field">Category<select id="world-entry-category" name="category"><option value="faction">Faction or organization</option><option value="artifact">Item or artifact</option><option value="system">Magic or technology system</option><option value="species">Species</option><option value="language">Language</option><option value="religion">Religion or belief system</option><option value="glossary">Glossary term</option><option value="other">Other</option></select></label>
+          </div>
+          <label class="field">One-line summary<input id="world-entry-summary" name="summary" type="text" maxlength="240" placeholder="The one thing to remember"></label>
+          <label class="field">Description<textarea id="world-entry-description" name="description" rows="5" maxlength="8000" placeholder="What is it, who is involved, and why does it matter?"></textarea></label>
+          <details class="progressive-fields" id="world-entry-depth-details">
+            <summary><span><strong>Worldbuilding depth</strong><small>Lore, rules, origins, and history</small></span></summary>
+            <label class="field">Lore, rules, or history<textarea id="world-entry-details" name="details" rows="7" maxlength="12000" placeholder="Origins, rules, customs, limitations, notable members, or how it affects daily life."></textarea></label>
+          </details>
+          <details class="progressive-fields" id="world-entry-advanced-details">
+            <summary><span><strong>Advanced details</strong><small>Tags to help organize your world</small></span></summary>
+            <label class="field">Tags<input id="world-entry-tags" name="tags" type="text" maxlength="200" placeholder="e.g. forbidden, coastal, ancient"></label>
+          </details>
+          <div class="place-actions">
+            <button class="button button-quiet hidden" id="world-entry-delete" type="button">Delete entry</button>
+            <button class="button button-outline" id="world-entry-preview" type="button">Open full preview <span aria-hidden="true">↗</span></button>
+            <button class="button button-outline" id="world-entry-cancel" type="button">Cancel</button>
+            <button class="button button-primary" type="submit">Save entry</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog changelog-dialog" id="changelog-dialog" aria-labelledby="changelog-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label">FictionTale Changelog</span>
+        <button class="profile-close" id="changelog-close" type="button" aria-label="Close changelog">×</button>
+      </div>
+      <div class="profile-scroll">
+        <header class="about-hero">
+          <p class="eyebrow"><span class="eyebrow-line"></span> WHAT’S NEW</p>
+          <h1 id="changelog-title">The <em>changelog.</em></h1>
+          <p>Every update to FictionTale, newest first.</p>
+        </header>
+        <div class="changelog-list" id="changelog-list"></div>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="character-dialog about-dialog entity-preview-dialog" id="entity-preview-dialog" aria-labelledby="entity-preview-title">
+    <div class="profile-window">
+      <div class="profile-window-toolbar">
+        <span class="about-toolbar-label" id="entity-preview-label">PREVIEW</span>
+        <button class="profile-close" id="entity-preview-close" type="button" aria-label="Close preview">×</button>
+      </div>
+      <div class="profile-scroll">
+        <article class="entity-preview">
+          <img class="entity-preview-cover hidden" id="entity-preview-cover" alt="">
+          <p class="eyebrow" id="entity-preview-kind"></p>
+          <h1 id="entity-preview-title"></h1>
+          <p class="entity-preview-summary hidden" id="entity-preview-summary"></p>
+          <div class="entity-preview-facts" id="entity-preview-meta"></div>
+          <div class="entity-preview-body" id="entity-preview-body"></div>
+          <div class="entity-preview-tags hidden" id="entity-preview-tags"></div>
+          <div class="entity-preview-actions">
+            <button class="button button-primary profile-edit-button" id="entity-preview-edit" type="button">Edit</button>
+            <button class="button button-outline profile-edit-button" id="entity-preview-print" type="button">Print / Save PDF</button>
+          </div>
+        </article>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="confirm-dialog" id="delete-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-message">
+    <div class="confirm-dialog-content">
+      <span class="confirm-dialog-icon" aria-hidden="true">!</span>
+      <h2 id="delete-dialog-title">Delete character?</h2>
+      <p id="delete-dialog-message"></p>
+      <div class="confirm-dialog-actions">
+        <button class="button button-quiet" id="cancel-delete" type="button">Keep character</button>
+        <button class="button button-danger" id="confirm-delete" type="button">Delete character</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="confirm-dialog" id="cast-group-delete-dialog" aria-labelledby="cast-group-delete-title" aria-describedby="cast-group-delete-message">
+    <div class="confirm-dialog-content">
+      <span class="confirm-dialog-icon" aria-hidden="true">!</span>
+      <h2 id="cast-group-delete-title">Delete cast group?</h2>
+      <p id="cast-group-delete-message"></p>
+      <div class="confirm-dialog-actions">
+        <button class="button button-quiet" id="cancel-cast-group-delete" type="button">Keep group</button>
+        <button class="button button-danger" id="confirm-cast-group-delete" type="button">Delete group</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="confirm-dialog" id="project-delete-dialog" aria-labelledby="project-delete-title" aria-describedby="project-delete-message">
+    <div class="confirm-dialog-content">
+      <span class="confirm-dialog-icon" aria-hidden="true">!</span>
+      <h2 id="project-delete-title">Delete project permanently?</h2>
+      <p id="project-delete-message"></p>
+      <label class="project-delete-confirmation" for="project-delete-name-input">
+        Type the project title to confirm
+        <strong id="project-delete-name"></strong>
+        <input id="project-delete-name-input" type="text" autocomplete="off" spellcheck="false" aria-describedby="project-delete-message">
+      </label>
+      <div class="confirm-dialog-actions">
+        <button class="button button-quiet" id="cancel-project-delete" type="button">Keep project</button>
+        <button class="button button-danger" id="confirm-project-delete" type="button" disabled>Delete permanently</button>
+      </div>
+    </div>
+  </dialog>
+  <dialog class="image-crop-dialog" id="image-crop-dialog" aria-labelledby="image-crop-title">
+    <form class="image-crop-content" method="dialog">
+      <header class="image-crop-heading">
+        <div><p class="eyebrow">IMAGE ADJUSTMENT</p><h2 id="image-crop-title">Crop your image</h2></div>
+        <button class="profile-close image-crop-close" id="cancel-image-crop" type="button" aria-label="Cancel image adjustment">×</button>
+      </header>
+      <p class="image-crop-help">Drag the image or use the position sliders to frame it, then adjust the zoom. Your original image stays unchanged.</p>
+      <div class="image-crop-frame" id="image-crop-frame">
+        <img id="image-crop-preview" alt="Image crop preview">
+      </div>
+      <div class="image-position-controls">
+        <label for="image-crop-x">Left / right<input id="image-crop-x" type="range" min="0" max="0" step="0.1" value="0"></label>
+        <label for="image-crop-y">Up / down<input id="image-crop-y" type="range" min="0" max="0" step="0.1" value="0"></label>
+      </div>
+      <label class="image-zoom-control" for="image-crop-zoom">
+        <span>Zoom</span><input id="image-crop-zoom" type="range" min="1" max="3" step="0.01" value="1">
+        <output id="image-crop-zoom-value" for="image-crop-zoom">1.0×</output>
+      </label>
+      <div class="image-crop-actions">
+        <button class="button button-quiet" id="cancel-image-crop-action" type="button">Cancel</button>
+        <button class="button button-primary" id="confirm-image-crop" type="button">Use this image</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="visually-hidden" id="route-announcement" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const loadAppScript = (source) => new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = source;
+      script.addEventListener('load', resolve, { once: true });
+      script.addEventListener('error', () => reject(new Error(`Could not load ${source}.`)), { once: true });
+      document.body.append(script);
+    });
+
+    window.FictionTaleStorage.ready.then(async () => {
+      try {
+        await loadAppScript('script.js');
+        await loadAppScript('features.js');
+      } catch (error) {
+        console.error('Fiction Tale could not finish loading.', error);
+        document.querySelector('#autosave-status').textContent = 'App failed to load';
+      }
+    });
+  </script>
+</body>
+</html>
