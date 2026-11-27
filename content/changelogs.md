@@ -148,53 +148,37 @@ Release date: 2026/11/19
 ### Fixed bugs
 - Fixed blank PDF output for character profiles, stories, places, and world entries.
 
-## Version 1.4.2
-Release date: 2026/11/18
+## Version 1.4.0
+Release date: 2026/11/17
 
 ### Changes made
+- Added project file export and import for project details, stories, drafts, worldbuilding, and planning data. Imports create a separate project.
 - Simplified project navigation, added an editable connected sample project, and updated the quick-start guide.
 - Improved save and backup status indicators, including backup reminders.
 
 ### Fixed bugs
 - Fixed PDF exports clipping character profiles, stories, places, and world entries.
 - Successful save retries now clear the related error.
-
-## Version 1.4.0
-Release date: 2026/11/17
-
-### Changes made
-- Added project file export and import for project details, stories, drafts, worldbuilding, and planning data. Imports create a separate project.
-
-### Fixed bugs
 - Deleting the last project no longer recreates a starter project after reload.
-
-## Version 1.3.1
-Release date: 2026/11/11
-
-### Fixed bugs
-- Restoring deleted shared characters and places now preserves their book-series links.
-
-## Version 1.3
-Release date: 2026/11/11
-
-### Changes made
-- Added Book Series with book order, shared characters and places, cross-book timelines, and backup support.
-
-## Version 1.2
-Release date: 2026/11/11
-
-### Changes made
-- Added the Project Dashboard, per-story and draft word goals, Recently Deleted, and editor, writing, and accessibility settings.
 
 ## Version 1.1
 Release date: 2026/11/11
 
 ### Changes made
 - Added Dialogue Workshop for character-based conversations, emotional context, story insertion, and backup support.
+- Added the Project Dashboard, per-story and draft word goals, Recently Deleted, and editor, writing, and accessibility settings.
+- Added Book Series with book order, shared characters and places, cross-book timelines, and backup support.
+- Restoring deleted shared characters and places now preserves their book-series links.
 
 ## Version 1.0
 Release date: 2026/11/10
 
 ### Changes made
-- Released FictionTale with responsive layouts, character profiles, stories, scenes, worldbuilding, and planning tools.
+- Released FictionTale with Story Writing, Create Character, and Worldbuilding features.
 - Added search, organization, writing goals, exports, backups, print options, light and dark themes, accessibility settings, and offline installation.
+
+## Early Version 1.0
+Release date: 2026/10/27
+
+### Changes made
+- Project Started
