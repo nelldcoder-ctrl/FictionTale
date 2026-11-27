@@ -1,5 +1,5 @@
 # FictionTale 
-### Version Currently Running 1.5.3
+### Version Currently Running 1.6.0
 A Tool website for creating Stories, Characters, Lore and WorldBuilding!
 
 ## NOT GONNA UPDATE THIS INSTRUCTION THING, REFER TO THE WEBSITE CHANGELOGS!
