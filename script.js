@@ -297,204 +297,6 @@ let changelogCloseTimer = null;
 let changelogReturnFocus = null;
 
 // Add new releases at the top, using the same fields: version, date, changes, fixes, knownIssues.
-const CHANGELOG = [
-  {
-    version: window.FICTION_TALE_VERSION,
-    date: '2026/11/26',
-    changes: ['Standardized button hover, pressed, and keyboard-focus colors for both themes.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.5.2',
-    date: '2026/11/26',
-    changes: [
-      'Made the Places and World Entries preview actions easier to reach on mobile.',
-      'Kept Cast Groups in their own full-width section on mobile.',
-    ],
-    fixes: [
-      'Improved Install app visibility on touch devices and tablets.',
-      'Refreshed the cached app shell so mobile browsers receive the latest layout.',
-    ],
-    knownIssues: [],
-  },
-  {
-    version: '1.5.1',
-    date: '2026/11/26',
-    changes: [
-      'Request persistent browser storage after the first successful save and show its protection status in Data & Storage.',
-      'Added higher-contrast keyboard focus indicators, forced-colors support, accessible names for editor controls, and a restrictive Content Security Policy.',
-      'Added a prominent first-backup reminder and persistent, actionable save and backup failure alerts.',
-      'Simplified workspace navigation by hiding empty counts, grouping advanced planning tools, and focusing the default writing view.',
-    ],
-    fixes: [
-      'Fixed unsaved-change handling for Places and World Entries.',
-      'Fixed saving and applying Accessibility preview settings.',
-      'Prevented edits and resets from replacing markers for unavailable IndexedDB data.',
-    ],
-    knownIssues: [
-      'Story and project structure needs to be polished',
-    ],
-  },
-  {
-    version: '1.5.0',
-    date: '2026/11/25',
-    changes: [
-      'Improved story preview and PDF text readability across customized page colors.',
-      'Added project-specific Cast Groups with character assignment, drag-and-drop moves, reordering, and custom groups.',
-      'Added backup history and clearer browser-storage warnings to Settings, with a live preview for accessibility preferences.',
-      'Refreshed the sample projects and simplified tutorial guidance, including explanations of character questionnaires and timelines.',
-      'Improved navigation counts across Writing, Characters, and Worldbuilding, including Cast and Cast Groups.',
-    ],
-    fixes: [
-      'Fixed Cast Group editing and navigation behavior, including character counts and route announcements.',
-      'Kept the current workspace section open after reload and improved destructive-button contrast in dark mode.',
-    ],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.18',
-    date: '2026/11/25',
-    changes: ['Added direct DOCX and EPUB downloads to story previews and improved export formatting, metadata, and chapter navigation.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.12.1',
-    date: '2026/11/25',
-    changes: [
-      'Added install metadata, desktop and mobile screenshots, and app shortcuts for New story and My Projects.',
-      'Wait for users to reload before applying service-worker updates and keep the active app shell version-consistent.',
-      'Improved keyboard and screen-reader navigation between pages and workspace sections.',
-      'Aligned the installed-app startup theme color with the light theme.',
-      'Return the requested fallback when a browser storage read is blocked.',
-    ],
-    fixes: ['Prevent localStorage read errors from interrupting app rendering.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.12',
-    date: '2026/11/19',
-    changes: ['Redesigned the Story editor around writing, with Writing and Planning modes, chapter navigation, references, and a dedicated planning panel.'],
-    fixes: [
-      'Made the Story editor fill the desktop viewport and improved mobile toolbar and preview spacing.',
-      'Kept the mobile save status fully readable and prevented the editor footer from overflowing horizontally.',
-    ],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.11',
-    date: '2026/11/19',
-    changes: ['Moved Help & guides and Settings below the main navigation on desktop, with a modestly smaller utility style.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.10',
-    date: '2026/11/19',
-    changes: ['Standardized release records with version, release date, changes, fixes, and known issues.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.9',
-    date: '2026/11/19',
-    changes: [],
-    fixes: ['Improved readability of character descriptions over the colored profile header on mobile.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.8',
-    date: '2026/11/19',
-    changes: ['Refreshed the offline app cache so existing installations receive updated scripts.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.7',
-    date: '2026/11/19',
-    changes: ['Added Undo and expanded Recently Deleted to dialogue drafts and book series.', 'Clarified restore and permanent-delete actions, and explained what backup imports replace.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.6',
-    date: '2026/11/19',
-    changes: ['Added workspace breadcrumbs, clearer return paths, and sidebar access to Help & guides.'],
-    fixes: ['Kept the active navigation indicator aligned with nested sections such as Cast.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.5',
-    date: '2026/11/19',
-    changes: ['Grouped character editing into essentials, depth, and advanced details; only the name is required.', 'Collapsed optional details in place, world-entry, and story editors, and simplified planning with focused tabs.'],
-    fixes: ['Optional character lore no longer affects the completion score.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.4',
-    date: '2026/11/19',
-    changes: ['Put project actions first on the landing page.', 'Expanded backups to include every project, validate imports, and warn before replacing matching records.', 'Added clearer saved, saving, and unsaved states plus a warning when browser data cannot load.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.3',
-    date: '2026/11/19',
-    changes: [],
-    fixes: ['Fixed blank PDF output for character profiles, stories, places, and world entries.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.2',
-    date: '2026/11/18',
-    changes: ['Simplified project navigation, added an editable connected sample project, and updated the quick-start guide.', 'Improved save and backup status indicators, including backup reminders.'],
-    fixes: ['Fixed PDF exports clipping character profiles, stories, places, and world entries.', 'Successful save retries now clear the related error.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.4.0',
-    date: '2026/11/17',
-    changes: ['Added project file export and import for project details, stories, drafts, worldbuilding, and planning data. Imports create a separate project.'],
-    fixes: ['Deleting the last project no longer recreates a starter project after reload.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.3.1',
-    date: '2026/11/11',
-    changes: [],
-    fixes: ['Restoring deleted shared characters and places now preserves their book-series links.'],
-    knownIssues: [],
-  },
-  {
-    version: '1.3',
-    date: '2026/11/11',
-    changes: ['Added Book Series with book order, shared characters and places, cross-book timelines, and backup support.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.2',
-    date: '2026/11/11',
-    changes: ['Added the Project Dashboard, per-story and draft word goals, Recently Deleted, and editor, writing, and accessibility settings.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.1',
-    date: '2026/11/11',
-    changes: ['Added Dialogue Workshop for character-based conversations, emotional context, story insertion, and backup support.'],
-    fixes: [],
-    knownIssues: [],
-  },
-  {
-    version: '1.0',
-    date: '2026/11/10',
-    changes: ['Released FictionTale with responsive layouts, character profiles, stories, scenes, worldbuilding, and planning tools.', 'Added search, organization, writing goals, exports, backups, print options, light and dark themes, accessibility settings, and offline installation.'],
-    fixes: [],
-    knownIssues: [],
-  },
-];
 let pendingDeleteId = '';
 let pendingDeleteKind = '';
 let activeProfile = null;
@@ -526,6 +328,20 @@ const STORY_FONTS = {
   'roboto-mono': "'Roboto Mono', monospace",
   georgia: 'Georgia, serif',
   courier: "'Courier New', monospace",
+};
+const STORY_INLINE_SIZES = {
+  small: { css: '0.85em', docx: 20 },
+  normal: { css: '1em', docx: 24 },
+  medium: { css: '1.15em', docx: 28 },
+  large: { css: '1.35em', docx: 36 },
+  heading: { css: '1.6em', docx: 40 },
+};
+const STORY_INLINE_COLORS = {
+  blue: { light: '#1d4ed8', dark: '#93c5fd', export: '1D4ED8' },
+  green: { light: '#047857', dark: '#6ee7b7', export: '047857' },
+  amber: { light: '#b45309', dark: '#fcd34d', export: 'B45309' },
+  rose: { light: '#be123c', dark: '#fda4af', export: 'BE123C' },
+  violet: { light: '#6d28d9', dark: '#c4b5fd', export: '6D28D9' },
 };
 const STORY_FONT_GOOGLE_FAMILIES = {
   'roboto-slab': 'Roboto+Slab:wght@400;500;600;700',
@@ -742,15 +558,24 @@ function countWords(text) {
 }
 
 function countStoryGoalWords(text = '') {
-  return countWords(text.split('\n').filter((line) => !CHAPTER_PATTERN.test(line)).join('\n'));
+  return countWords(text.split('\n').filter((line) => (
+    !CHAPTER_PATTERN.test(line)
+    && !(/chapter/i.test(line) && CHAPTER_PATTERN.test(storyPlainInlineText(line)))
+  )).join('\n'));
 }
 
 function parseStoryChapters(text) {
   const chapters = [];
   let offset = 0;
   text.split('\n').forEach((line) => {
-    if (CHAPTER_PATTERN.test(line)) {
-      chapters.push({ title: line.replace(/^#{1,2}[ \t]+/, '').trim(), start: offset, headingLength: line.length });
+    const plainLine = /^#{1,2}[ \t]+/.test(line) || /chapter/i.test(line)
+      ? storyPlainInlineText(line) : line;
+    if (CHAPTER_PATTERN.test(plainLine)) {
+      chapters.push({
+        title: plainLine.replace(/^#{1,2}[ \t]+/, '').trim(),
+        start: offset,
+        headingLength: line.length,
+      });
     }
     offset += line.length + 1;
   });
@@ -762,33 +587,54 @@ function parseStoryChapters(text) {
 }
 
 function appendInlineMarkdown(parent, text) {
-  const markdownPattern = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g;
-  const mentions = findCharacterMentions(text);
-  const tokens = [];
-  for (const match of text.matchAll(markdownPattern)) {
-    tokens.push({ start: match.index, end: match.index + match[0].length, kind: 'markdown', text: match[0] });
-  }
-  mentions.forEach((mention) => tokens.push({ start: mention.start, end: mention.end, kind: 'mention', text: mention.text, character: mention.character }));
-  tokens.sort((a, b) => a.start - b.start || b.end - a.end);
-  let last = 0;
-  for (const token of tokens) {
-    if (token.start < last) continue;
-    if (token.start > last) parent.append(text.slice(last, token.start));
-    if (token.kind === 'mention') {
+  storyInlineTokens(text).forEach((token) => {
+    const mentions = findCharacterMentions(token.text);
+    let offset = 0;
+    mentions.forEach((mention) => {
+      if (mention.start > offset) appendStoryInlineNode(parent, token.text.slice(offset, mention.start), token);
       const link = document.createElement('button');
       link.type = 'button';
       link.className = 'story-character-mention';
-      link.dataset.characterId = token.character.id;
-      link.textContent = token.text;
-      parent.append(link);
-    } else {
-      const element = document.createElement(token.text.startsWith('**') ? 'strong' : 'em');
-      element.textContent = token.text.replace(/^\*+|\*+$/g, '');
-      parent.append(element);
-    }
-    last = token.end;
+      link.dataset.characterId = mention.character.id;
+      link.textContent = mention.text;
+      appendStoryInlineNode(parent, link, token);
+      offset = mention.end;
+    });
+    if (offset < token.text.length) appendStoryInlineNode(parent, token.text.slice(offset), token);
+  });
+}
+
+function appendStoryInlineNode(parent, content, token) {
+  if (content === '') return;
+  let node = content instanceof Node ? content : document.createTextNode(content);
+  if (token.strikethrough) {
+    const element = document.createElement('s');
+    element.append(node);
+    node = element;
   }
-  if (last < text.length) parent.append(text.slice(last));
+  if (token.underline) {
+    const element = document.createElement('u');
+    element.append(node);
+    node = element;
+  }
+  if (token.italic) {
+    const element = document.createElement('em');
+    element.append(node);
+    node = element;
+  }
+  if (token.bold) {
+    const element = document.createElement('strong');
+    element.append(node);
+    node = element;
+  }
+  if (token.size !== 'normal' || token.color !== 'default') {
+    const element = document.createElement('span');
+    if (token.size !== 'normal') element.dataset.ftSize = token.size;
+    if (token.color !== 'default') element.dataset.ftColor = token.color;
+    element.append(node);
+    node = element;
+  }
+  parent.append(node);
 }
 
 function findCharacterMentions(text) {
@@ -837,18 +683,20 @@ function renderStoryMarkdown(container, rawText) {
   const flushAll = () => { flushParagraph(); flushQuote(); flushList(); };
   lines.forEach((line) => {
     const markdownHeading = line.match(/^(#{1,3})[ \t]+(\S.*)$/);
-    const plainChapterHeading = line.match(/^(Chapter[ \t]+\d+\b.*)$/i);
-    const heading = markdownHeading || (plainChapterHeading
-      ? [plainChapterHeading[0], '##', plainChapterHeading[1]]
-      : null);
+    const plainChapterLine = /chapter/i.test(line) ? storyPlainInlineText(line) : line;
+    const plainChapterHeading = plainChapterLine.match(/^(Chapter[ \t]+\d+\b.*)$/i);
+    const heading = markdownHeading
+      ? { level: markdownHeading[1].length, text: markdownHeading[2] }
+      : plainChapterHeading ? { level: 2, text: line } : null;
     if (!line.trim()) { flushAll(); return; }
     if (heading) {
       flushAll();
-      const level = heading[1].length;
-      const element = document.createElement(level === 3 ? 'h3' : 'h2');
-      appendInlineMarkdown(element, heading[2].trim());
+      const element = document.createElement(heading.level === 3 ? 'h3' : 'h2');
+      appendInlineMarkdown(element, heading.text.trim());
       container.append(element);
-      if (level < 3) chapterHeadings.push({ title: heading[2].trim(), element });
+      if (heading.level < 3) {
+        chapterHeadings.push({ title: storyPlainInlineText(heading.text.trim()), element });
+      }
       return;
     }
     if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line.trim())) {
@@ -3247,6 +3095,7 @@ function updateStoryPreview(story) {
   const bodyFont = STORY_FONTS[story?.bodyFont] || STORY_FONTS['dm-sans'];
   const backgroundColor = normalizeStoryBackground(story?.backgroundColor);
   const textPalette = storyTextPalette(backgroundColor);
+  const inlineColorVariant = textPalette.body === '#ffffff' ? 'dark' : 'light';
   const imageSource = story?.image?.trim() || '';
   document.querySelector('#story-preview-open').disabled = !hasContent;
   document.querySelector('#story-editor-preview').disabled = !hasContent;
@@ -3281,6 +3130,9 @@ function updateStoryPreview(story) {
     element.style.setProperty('--story-muted-color', textPalette.muted);
     element.style.setProperty('--story-action-color', textPalette.action);
     element.style.setProperty('--story-action-text', textPalette.actionText);
+    Object.entries(STORY_INLINE_COLORS).forEach(([name, colors]) => {
+      element.style.setProperty(`--story-inline-${name}`, colors[inlineColorVariant]);
+    });
   });
   document.querySelector('#story-title-font').style.fontFamily = titleFont;
   document.querySelector('#story-body-font').style.fontFamily = bodyFont;
@@ -3400,10 +3252,75 @@ function replaceStoryTextRange(start, end, replacement, selectFrom = null, selec
   } catch { done = false; }
   if (!done) {
     textarea.setRangeText(replacement, start, end, 'end');
-    handleStoryEditorInput();
   }
   const from = selectFrom ?? start + replacement.length;
   textarea.setSelectionRange(from, selectTo ?? from);
+}
+
+function stripStoryInlineStyleSpans(text, kind) {
+  const allowed = kind === 'size'
+    ? Object.keys(STORY_INLINE_SIZES).join('|')
+    : `default|${Object.keys(STORY_INLINE_COLORS).join('|')}`;
+  const pattern = new RegExp(`<span data-ft-format="1" data-ft-${kind}="(?:${allowed})">([\\s\\S]*?)<\\/span>`, 'gi');
+  let result = text;
+  let previous;
+  do {
+    previous = result;
+    result = result.replace(pattern, '$1');
+  } while (result !== previous);
+  return result;
+}
+
+function storyEnclosingStyleSpan(text, start, end, kind) {
+  const pattern = /<span data-ft-format="1" data-ft-(size|color)="([a-z]+)">|<\/span>/gi;
+  const stack = [];
+  const selectedText = storyPlainInlineText(text.slice(start, end));
+  const matches = [];
+  for (const match of text.matchAll(pattern)) {
+    if (match[0] === '</span>') {
+      const span = stack.pop();
+      if (span?.kind === kind && span.contentStart <= start && match.index >= end
+        && storyPlainInlineText(text.slice(span.contentStart, match.index)) === selectedText) {
+        matches.push({ ...span, closeStart: match.index, openEnd: span.contentStart });
+      }
+    } else {
+      stack.push({
+        kind: match[1].toLowerCase(),
+        value: match[2],
+        start: match.index,
+        contentStart: match.index + match[0].length,
+      });
+    }
+  }
+  return matches.sort((a, b) => (a.closeStart - a.start) - (b.closeStart - b.start))[0] || null;
+}
+
+function applyStoryTextAppearance(kind, value) {
+  const textarea = document.querySelector('#story-text');
+  const { selectionStart: start, selectionEnd: end, value: text } = textarea;
+  if (start === end) {
+    showToast(`Select text to change its ${kind === 'size' ? 'size' : 'color'}.`);
+    textarea.focus();
+    return;
+  }
+  const enclosingSpan = storyEnclosingStyleSpan(text, start, end, kind);
+  if (enclosingSpan) {
+    if (enclosingSpan.value === value) {
+      textarea.focus();
+      textarea.setSelectionRange(start, end);
+      return;
+    }
+    const opening = `<span data-ft-format="1" data-ft-${kind}="${value}">`;
+    const selectionOffset = opening.length - enclosingSpan.openEnd + enclosingSpan.start;
+    replaceStoryTextRange(enclosingSpan.start, enclosingSpan.openEnd, opening, start + selectionOffset, end + selectionOffset);
+    handleStoryEditorInput();
+    return;
+  }
+  const selected = stripStoryInlineStyleSpans(text.slice(start, end), kind);
+  const prefix = `<span data-ft-format="1" data-ft-${kind}="${value}">`;
+  const replacement = `${prefix}${selected}</span>`;
+  replaceStoryTextRange(start, end, replacement, start + prefix.length, start + prefix.length + selected.length);
+  handleStoryEditorInput();
 }
 
 function applyStoryFormat(kind) {
@@ -3420,6 +3337,11 @@ function applyStoryFormat(kind) {
     const mark = kind === 'bold' ? '**' : '*';
     const inner = selected || (kind === 'bold' ? 'bold text' : 'italic text');
     replaceStoryTextRange(start, end, `${mark}${inner}${mark}`, start + mark.length, start + mark.length + inner.length);
+  } else if (kind === 'underline' || kind === 'strikethrough') {
+    const tag = kind === 'underline' ? 'u' : 's';
+    const inner = selected || (kind === 'underline' ? 'underlined text' : 'strikethrough text');
+    const replacement = `<${tag}>${inner}</${tag}>`;
+    replaceStoryTextRange(start, end, replacement, start + tag.length + 2, start + tag.length + 2 + inner.length);
   } else if (kind === 'quote') {
     const lineStart = value.lastIndexOf('\n', start - 1) + 1;
     const block = value.slice(lineStart, end) || 'A line worth remembering';
@@ -3984,7 +3906,10 @@ function updateStoryCounter(text = '') {
   }
   document.querySelector('#story-word-count-extras').textContent = extras.join(' · ');
   counter.classList.toggle('is-near-limit', text.length >= 27000);
-  document.querySelector('#story-starters').classList.toggle('hidden', Boolean(text.trim()));
+  const hasText = Boolean(text.trim());
+  document.querySelectorAll('#story-starters [data-starter]').forEach((button) => {
+    button.disabled = hasText;
+  });
 }
 
 function renderStoryNoteChapterOptions(chapters) {
@@ -4328,20 +4253,28 @@ function discardStoryChanges() {
 var storyViewTimer = 0;
 let storyMentionMatches = [];
 let storyMentionActiveIndex = 0;
+let storyMentionDismissed = false;
 let storyPeekKind = 'character';
 let storyCompareSelection = [];
 
 function renderStoryMentionSuggestions() {
   const textarea = document.querySelector('#story-text');
   const suggestions = document.querySelector('#story-mention-suggestions');
+  if (storyMentionDismissed) {
+    storyMentionMatches = [];
+    suggestions.classList.add('hidden');
+    return;
+  }
   const beforeCaret = textarea.value.slice(0, textarea.selectionStart);
   const mentionStart = beforeCaret.lastIndexOf('@');
   if (mentionStart < 0 || (mentionStart > 0 && /[\w@]/.test(beforeCaret[mentionStart - 1]))) {
+    storyMentionMatches = [];
     suggestions.classList.add('hidden');
     return;
   }
   const query = beforeCaret.slice(mentionStart + 1);
   if (/[\r\n]/.test(query) || query.length > 60) {
+    storyMentionMatches = [];
     suggestions.classList.add('hidden');
     return;
   }
@@ -4380,10 +4313,10 @@ function insertStoryMention(character) {
   const nextText = `${textarea.value.slice(0, mentionStart)}@${character.name} ${textarea.value.slice(caret)}`;
   const nextCaret = mentionStart + character.name.length + 2;
   textarea.value = nextText;
-  textarea.setSelectionRange(nextCaret, nextCaret);
-  document.querySelector('#story-mention-suggestions').classList.add('hidden');
+  storyMentionDismissed = true;
   handleStoryEditorInput();
   textarea.focus();
+  textarea.setSelectionRange(nextCaret, nextCaret);
 }
 
 function renderStoryPeekList() {
@@ -4477,6 +4410,7 @@ function renderStoryEditorViews() {
 function handleStoryEditorInput(event) {
   const storyText = document.querySelector('#story-text').value;
   if (event?.target?.id === 'story-text') {
+    storyMentionDismissed = false;
     const caret = event.target.selectionStart;
     const chapterIndex = parseStoryChapters(storyText).findIndex((chapter) => caret >= chapter.start && caret <= chapter.end);
     if (chapterIndex >= 0) {
@@ -8330,55 +8264,323 @@ compareDialog.addEventListener('close', () => {
   compareReturnFocus = null;
 });
 
-function renderChangelog() {
-  const renderList = (list, entries, compact = false) => {
-    list.replaceChildren();
-    entries.forEach((entry, index) => {
-      const card = document.createElement('article');
-      card.className = compact ? 'landing-changelog-entry' : 'changelog-entry';
-      const header = document.createElement(compact ? 'header' : 'div');
-      if (!compact) header.className = 'changelog-entry-header';
-      const version = document.createElement(compact ? 'h3' : 'h2');
-      version.textContent = `Version number: ${entry.version}`;
-      header.append(version);
-      if (index === 0) {
-        const badge = document.createElement('span');
-        badge.className = compact ? 'landing-latest-badge' : 'changelog-badge';
-        badge.textContent = 'Latest';
-        header.append(badge);
+const DOCUMENTATION_FILES = {
+  changelog: './content/changelogs.md',
+  quick: './content/tutorial/quick-start.md',
+  detailed: './content/tutorial/detailed-guide.md',
+};
+let changelogEntries = [];
+let changelogLoadPromise = null;
+const tutorialLoadPromises = new Map();
+
+async function fetchDocumentation(path) {
+  const response = await fetch(path, { cache: 'no-cache' });
+  if (!response.ok) throw new Error(`Request failed with status ${response.status}.`);
+  const markdown = await response.text();
+  if (!markdown.trim()) throw new Error('The documentation file is empty.');
+  return markdown;
+}
+
+function showDocumentationStatus(container, message, isError = false) {
+  const status = document.createElement('p');
+  status.className = 'documentation-status';
+  status.setAttribute('role', isError ? 'alert' : 'status');
+  status.textContent = message;
+  container.replaceChildren(status);
+}
+
+function appendDocumentationInline(parent, text, baseUrl) {
+  const tokens = /\[([^\]]+)\]\(([^)\s]+)(?:\s+"([^"]*)")?\)|\*\*(.+?)\*\*|__(.+?)__|\*(.+?)\*|_([^_\s].*?[^_\s])_|`([^`]+)`/g;
+  let offset = 0;
+  let match;
+  while ((match = tokens.exec(text))) {
+    if (match.index > offset) parent.append(document.createTextNode(text.slice(offset, match.index)));
+    if (match[1] !== undefined) {
+      let safeUrl = null;
+      try {
+        const url = new URL(match[2], baseUrl);
+        if (['http:', 'https:', 'mailto:'].includes(url.protocol)) safeUrl = url.href;
+      } catch (error) {
+        safeUrl = null;
       }
-      const date = document.createElement('time');
-      date.textContent = `Release date: ${entry.date}`;
-      date.dateTime = entry.date.replaceAll('/', '-');
-      header.append(date);
-      const details = document.createElement('div');
-      details.className = 'changelog-entry-details';
-      [
-        ['Changes made', entry.changes, 'None listed.'],
-        ['Fixed bugs', entry.fixes, 'None listed.'],
-        ['Known issues', entry.knownIssues, 'No known issues documented.'],
-      ].forEach(([label, items, emptyMessage]) => {
+      if (safeUrl) {
+        const link = document.createElement('a');
+        link.href = safeUrl;
+        if (match[3]) link.title = match[3];
+        appendDocumentationInline(link, match[1], baseUrl);
+        parent.append(link);
+      } else {
+        appendDocumentationInline(parent, match[1], baseUrl);
+      }
+    } else {
+      const strongText = match[4] ?? match[5];
+      const emphasisText = match[6] ?? match[7];
+      const element = document.createElement(strongText !== undefined ? 'strong' : emphasisText !== undefined ? 'em' : 'code');
+      element.textContent = strongText ?? emphasisText ?? match[8];
+      parent.append(element);
+    }
+    offset = tokens.lastIndex;
+  }
+  if (offset < text.length) parent.append(document.createTextNode(text.slice(offset)));
+}
+
+function renderDocumentationMarkdown(markdown, path, mode = 'generic') {
+  const fragment = document.createDocumentFragment();
+  const baseUrl = new URL(path, document.baseURI);
+  const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
+  let paragraph = [];
+  let list = null;
+  let listType = '';
+  let guideContent = null;
+
+  const target = () => guideContent || fragment;
+  const flushParagraph = () => {
+    if (!paragraph.length) return;
+    const text = paragraph.join(' ').trim();
+    const element = document.createElement('p');
+    appendDocumentationInline(element, text, baseUrl);
+    target().append(element);
+    paragraph = [];
+  };
+  const flushList = () => {
+    list = null;
+    listType = '';
+  };
+  const flushBlocks = () => {
+    flushParagraph();
+    flushList();
+  };
+
+  lines.forEach((line) => {
+    const heading = line.match(/^(#{1,6})[ \t]+(.+?)\s*#*\s*$/);
+    const bullet = line.match(/^[ \t]*[-*+][ \t]+(.+)$/);
+    const numbered = line.match(/^[ \t]*\d+[.)][ \t]+(.+)$/);
+    const quote = line.match(/^>[ \t]?(.*)$/);
+    if (!line.trim()) {
+      flushBlocks();
+      return;
+    }
+    if (heading) {
+      flushBlocks();
+      const guideHeading = mode === 'tutorial'
+        ? heading[2].match(/^(\d{2})\s*[·.)-]\s*(.+)$/)
+        : null;
+      if (guideHeading) {
+        const section = document.createElement('section');
+        section.className = 'about-guide-step';
+        const number = document.createElement('span');
+        number.className = 'creation-step-number';
+        number.textContent = guideHeading[1];
+        const content = document.createElement('div');
+        const title = document.createElement('h3');
+        appendDocumentationInline(title, guideHeading[2], baseUrl);
+        content.append(title);
+        section.append(number, content);
+        fragment.append(section);
+        guideContent = content;
+      } else {
+        guideContent = null;
+        const element = document.createElement(`h${heading[1].length}`);
+        appendDocumentationInline(element, heading[2].replace(/[ \t]+#+$/, '').trim(), baseUrl);
+        fragment.append(element);
+      }
+      return;
+    }
+    if (/^(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line.trim())) {
+      flushBlocks();
+      target().append(document.createElement('hr'));
+      return;
+    }
+    if (quote) {
+      flushParagraph();
+      flushList();
+      const element = document.createElement(mode === 'tutorial' && path === DOCUMENTATION_FILES.detailed ? 'aside' : 'blockquote');
+      if (mode === 'tutorial') {
+        element.className = path === DOCUMENTATION_FILES.quick ? 'tutorial-privacy-note' : 'about-note';
+        if (path === DOCUMENTATION_FILES.detailed) {
+          const dot = document.createElement('span');
+          dot.className = 'status-dot';
+          dot.setAttribute('aria-hidden', 'true');
+          element.append(dot);
+        }
+      }
+      const quoteParagraph = document.createElement('p');
+      appendDocumentationInline(quoteParagraph, quote[1], baseUrl);
+      element.append(quoteParagraph);
+      target().append(element);
+      return;
+    }
+    if (bullet || numbered) {
+      flushParagraph();
+      const nextType = numbered ? 'ol' : 'ul';
+      if (!list || listType !== nextType) {
+        list = document.createElement(nextType);
+        listType = nextType;
+        if (mode === 'tutorial' && path === DOCUMENTATION_FILES.quick && numbered) list.className = 'tutorial-steps';
+        target().append(list);
+      }
+      const item = document.createElement('li');
+      appendDocumentationInline(item, (bullet || numbered)[1], baseUrl);
+      list.append(item);
+      return;
+    }
+    flushList();
+    paragraph.push(line);
+  });
+  flushBlocks();
+  return fragment;
+}
+
+function parseChangelogMarkdown(markdown) {
+  const lines = markdown.replace(/\r\n?/g, '\n').split('\n');
+  const starts = [];
+  lines.forEach((line, index) => {
+    const heading = line.match(/^##[ \t]+Version[ \t]+(\S+)[ \t]*$/i);
+    if (heading) starts.push({ index, version: heading[1] });
+  });
+  if (!starts.length) throw new Error('No version entries were found.');
+
+  return starts.map((start, index) => {
+    const end = index + 1 < starts.length ? starts[index + 1].index : lines.length;
+    const entryLines = lines.slice(start.index + 1, end);
+    let date = '';
+    const sections = [];
+    let currentSection = null;
+    const preamble = [];
+    entryLines.forEach((line) => {
+      const dateLine = line.match(/^[ \t]*Release date:[ \t]*(\d{4}\/\d{2}\/\d{2})[ \t]*$/i);
+      if (dateLine) {
+        if (date) throw new Error(`Version ${start.version} has more than one release date.`);
+        date = dateLine[1];
+        return;
+      }
+      const sectionHeading = line.match(/^###[ \t]+(.+?)[ \t]*#*[ \t]*$/);
+      if (sectionHeading) {
+        currentSection = { label: sectionHeading[1], lines: [] };
+        sections.push(currentSection);
+      } else if (currentSection) {
+        currentSection.lines.push(line);
+      } else {
+        preamble.push(line);
+      }
+    });
+    if (!date) throw new Error(`Version ${start.version} is missing its release date.`);
+    return { version: start.version, date, preamble: preamble.join('\n').trim(), sections };
+  });
+}
+
+function renderChangelogList(container, entries, compact = false) {
+  container.replaceChildren();
+  entries.forEach((entry, index) => {
+    const card = document.createElement('article');
+    card.className = compact ? 'landing-changelog-entry' : 'changelog-entry';
+    const header = document.createElement(compact ? 'header' : 'div');
+    if (!compact) header.className = 'changelog-entry-header';
+    const version = document.createElement(compact ? 'h3' : 'h2');
+    version.textContent = `Version number: ${entry.version}`;
+    header.append(version);
+    if (index === 0) {
+      const badge = document.createElement('span');
+      badge.className = compact ? 'landing-latest-badge' : 'changelog-badge';
+      badge.textContent = 'Latest';
+      header.append(badge);
+    }
+    const date = document.createElement('time');
+    date.textContent = `Release date: ${entry.date}`;
+    date.dateTime = entry.date.replaceAll('/', '-');
+    header.append(date);
+
+    const details = document.createElement('div');
+    details.className = 'changelog-entry-details';
+    if (entry.preamble) {
+      const intro = document.createElement('div');
+      intro.className = 'changelog-category';
+      intro.append(renderDocumentationMarkdown(entry.preamble, DOCUMENTATION_FILES.changelog));
+      details.append(intro);
+    }
+    const categories = [
+      { label: 'Changes made', aliases: ['changes made', 'changes', 'new features'], empty: 'None listed.' },
+      { label: 'Fixed bugs', aliases: ['fixed bugs', 'fixes', 'bug fixes'], empty: 'None listed.' },
+      { label: 'Known issues', aliases: ['known issues'], empty: 'No known issues documented.' },
+    ];
+    categories.forEach((category) => {
+      const matched = entry.sections.filter((section) => category.aliases.includes(section.label.toLowerCase()));
+      const section = document.createElement('section');
+      section.className = 'changelog-category';
+      const heading = document.createElement(compact ? 'h4' : 'h3');
+      heading.textContent = category.label;
+      const content = document.createElement('div');
+      content.className = 'changelog-category-content';
+      const source = matched.map((item) => item.lines.join('\n').trim()).filter(Boolean).join('\n\n');
+      if (source) content.append(renderDocumentationMarkdown(source, DOCUMENTATION_FILES.changelog));
+      else {
+        const message = document.createElement('p');
+        message.textContent = category.empty;
+        content.append(message);
+      }
+      section.append(heading, content);
+      details.append(section);
+    });
+    entry.sections
+      .filter((section) => !categories.some((category) => category.aliases.includes(section.label.toLowerCase())))
+      .forEach((extra) => {
         const section = document.createElement('section');
         section.className = 'changelog-category';
         const heading = document.createElement(compact ? 'h4' : 'h3');
-        heading.textContent = label;
-        const list = document.createElement('ul');
-        (items.length ? items : [emptyMessage]).forEach((itemText) => {
-          const item = document.createElement('li');
-          item.textContent = itemText;
-          list.append(item);
-        });
-        section.append(heading, list);
+        heading.textContent = extra.label;
+        section.append(heading, renderDocumentationMarkdown(extra.lines.join('\n').trim(), DOCUMENTATION_FILES.changelog));
         details.append(section);
       });
-      card.append(header, details);
-      list.append(card);
-    });
-  };
-  renderList(document.querySelector('#changelog-list'), CHANGELOG);
-  renderList(document.querySelector('#landing-changelog-list'), CHANGELOG.slice(0, 3), true);
+    card.append(header, details);
+    container.append(card);
+  });
 }
-renderChangelog();
+
+function renderChangelog() {
+  renderChangelogList(document.querySelector('#changelog-list'), changelogEntries);
+  renderChangelogList(document.querySelector('#landing-changelog-list'), changelogEntries.slice(0, 3), true);
+}
+
+function loadChangelog() {
+  if (changelogLoadPromise) return changelogLoadPromise;
+  changelogLoadPromise = (async () => {
+    try {
+      const markdown = await fetchDocumentation(DOCUMENTATION_FILES.changelog);
+      changelogEntries = parseChangelogMarkdown(markdown);
+      if (changelogEntries[0].version !== window.FICTION_TALE_VERSION) {
+        console.error(`FictionTale version mismatch: changelogs.md starts with ${changelogEntries[0].version}, but app-version.js sets ${window.FICTION_TALE_VERSION}. Update both files manually.`);
+      }
+      renderChangelog();
+    } catch (error) {
+      console.error('FictionTale could not load its changelog.', error);
+      const message = 'Updates could not be loaded. Please try again later.';
+      showDocumentationStatus(document.querySelector('#changelog-list'), message, true);
+      showDocumentationStatus(document.querySelector('#landing-changelog-list'), message, true);
+      changelogLoadPromise = null;
+    }
+  })();
+  return changelogLoadPromise;
+}
+
+async function loadTutorial(key, container) {
+  const path = DOCUMENTATION_FILES[key];
+  showDocumentationStatus(container, `Loading ${key === 'quick' ? 'Quick Start' : 'Detailed Guide'}…`);
+  let load = tutorialLoadPromises.get(key);
+  if (!load) {
+    load = fetchDocumentation(path);
+    tutorialLoadPromises.set(key, load);
+  }
+  try {
+    const markdown = await load;
+    container.replaceChildren(renderDocumentationMarkdown(markdown, path, 'tutorial'));
+  } catch (error) {
+    tutorialLoadPromises.delete(key);
+    console.error(`FictionTale could not load the ${key} tutorial.`, error);
+    showDocumentationStatus(container, 'This guide could not be loaded. Please try again later.', true);
+  }
+}
+
+loadChangelog();
 document.querySelector('#landing-version').textContent = `Version ${window.FICTION_TALE_VERSION}`;
 
 function requestChangelogClose() {
@@ -8392,7 +8594,7 @@ function requestChangelogClose() {
 }
 document.querySelector('#changelog-open').addEventListener('click', (event) => {
   changelogReturnFocus = event.currentTarget;
-  renderChangelog();
+  loadChangelog();
   changelogDialog.classList.remove('is-closing');
   changelogDialog.showModal();
   syncModalScrollLock();
@@ -8447,6 +8649,7 @@ document.querySelector('#simple-tutorial-open').addEventListener('click', () => 
   const panel = document.querySelector('#simple-tutorial-panel');
   panel.classList.remove('hidden');
   panel.focus();
+  loadTutorial('quick', document.querySelector('#simple-tutorial-content'));
 });
 document.querySelector('#detailed-tutorial-open').addEventListener('click', () => {
   document.querySelector('#tutorial-choices').classList.add('hidden');
@@ -8454,6 +8657,7 @@ document.querySelector('#detailed-tutorial-open').addEventListener('click', () =
   const panel = document.querySelector('#detailed-tutorial-panel');
   panel.classList.remove('hidden');
   panel.focus();
+  loadTutorial('detailed', document.querySelector('#detailed-tutorial-content'));
 });
 document.querySelectorAll('.tutorial-back').forEach((button) => {
   button.addEventListener('click', () => {
@@ -8731,16 +8935,17 @@ function storyExportBlocks(story) {
   String(story.text || '').replace(/\r\n/g, '\n').split('\n').forEach((line) => {
     if (!line.trim()) { flush(); return; }
     const markdownHeading = line.match(/^(#{1,3})[ \t]+(\S.*)$/);
-    const plainChapterHeading = line.match(/^(Chapter[ \t]+\d+\b.*)$/i);
-    const heading = markdownHeading || (plainChapterHeading
-      ? [plainChapterHeading[0], '##', plainChapterHeading[1]]
-      : null);
+    const plainChapterLine = /chapter/i.test(line) ? storyPlainInlineText(line) : line;
+    const plainChapterHeading = plainChapterLine.match(/^(Chapter[ \t]+\d+\b.*)$/i);
+    const heading = markdownHeading
+      ? { level: markdownHeading[1].length, text: markdownHeading[2] }
+      : plainChapterHeading ? { level: 1, text: line } : null;
     if (heading) {
       flush();
       blocks.push({
         type: 'heading',
-        level: markdownHeading ? markdownHeading[1].length : 1,
-        text: heading[2].trim(),
+        level: heading.level,
+        text: heading.text.trim(),
       });
       return;
     }
@@ -8761,16 +8966,119 @@ function storyExportBlocks(story) {
 
 function storyInlineTokens(text) {
   const tokens = [];
-  const pattern = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g;
+  const pattern = /<span data-ft-format="1" data-ft-(size|color)="([a-z]+)">|<\/span>|<(strong|b|em|i|u|s|del)>|<\/(strong|b|em|i|u|s|del)>|\*\*\*|\*\*|\*/gi;
+  const htmlStyles = {
+    bold: false,
+    italic: false,
+    underline: false,
+    strikethrough: false,
+    size: 'normal',
+    color: 'default',
+  };
+  const markdownStyles = { bold: false, italic: false };
+  const stack = [];
   let offset = 0;
+  const append = (value) => {
+    if (!value) return;
+    const token = {
+      text: value,
+      bold: htmlStyles.bold || markdownStyles.bold,
+      italic: htmlStyles.italic || markdownStyles.italic,
+      underline: htmlStyles.underline,
+      strikethrough: htmlStyles.strikethrough,
+      size: htmlStyles.size,
+      color: htmlStyles.color,
+    };
+    const previous = tokens[tokens.length - 1];
+    if (previous && ['bold', 'italic', 'underline', 'strikethrough', 'size', 'color']
+      .every((key) => previous[key] === token[key])) {
+      previous.text += value;
+    } else {
+      tokens.push(token);
+    }
+  };
+  const hasClosingMarker = (marker, start) => {
+    let closing = text.indexOf(marker, start);
+    while (closing >= 0) {
+      if (marker.length > 1) {
+        if (closing > start) return true;
+      } else if (text[closing - 1] !== '*' && text[closing + 1] !== '*'
+        && /\S/.test(text[closing - 1] || '')) {
+        return true;
+      }
+      closing = text.indexOf(marker, closing + marker.length);
+    }
+    return false;
+  };
   for (const match of text.matchAll(pattern)) {
-    if (match.index > offset) tokens.push({ text: text.slice(offset, match.index) });
-    const bold = match[0].startsWith('**');
-    tokens.push({ text: match[0].replace(/^\*+|\*+$/g, ''), bold, italic: !bold });
+    const index = match.index;
+    const marker = match[0];
+    if (marker === '*' && !markdownStyles.italic
+      && (!/\S/.test(text[index + 1] || '') || /[\w]/.test(text[index - 1] || '')
+        || !hasClosingMarker('*', index + 1))) continue;
+    if (marker === '***' && !(markdownStyles.bold && markdownStyles.italic)
+      && !hasClosingMarker('***', index + 3)) continue;
+    if (marker === '**' && !markdownStyles.bold && !hasClosingMarker('**', index + 2)) continue;
+    append(text.slice(offset, index));
+    const openStyle = marker.match(/^<span data-ft-format="1" data-ft-(size|color)="([a-z]+)">$/i);
+    const openTag = marker.match(/^<(strong|b|em|i|u|s|del)>$/i);
+    const closeTag = marker.match(/^<\/(strong|b|em|i|u|s|del)>$/i);
+    if (openStyle) {
+      const [, kind, value] = openStyle;
+      const allowed = kind.toLowerCase() === 'size'
+        ? Object.prototype.hasOwnProperty.call(STORY_INLINE_SIZES, value)
+        : value === 'default' || Object.prototype.hasOwnProperty.call(STORY_INLINE_COLORS, value);
+      if (allowed && text.indexOf('</span>', index + marker.length) >= 0) {
+        stack.push({ tag: 'span', state: { ...htmlStyles } });
+        htmlStyles[kind.toLowerCase()] = value;
+      } else {
+        append(marker);
+      }
+    } else if (marker === '</span>') {
+      const entry = stack[stack.length - 1];
+      if (entry?.tag === 'span') {
+        Object.assign(htmlStyles, entry.state);
+        stack.pop();
+      } else {
+        append(marker);
+      }
+    } else if (openTag) {
+      const tag = openTag[1].toLowerCase();
+      const property = ['strong', 'b'].includes(tag) ? 'bold'
+        : ['em', 'i'].includes(tag) ? 'italic'
+          : tag === 'u' ? 'underline' : 'strikethrough';
+      const closingTag = `</${tag}>`;
+      if (text.toLowerCase().indexOf(closingTag, index + marker.length) >= 0) {
+        stack.push({ tag, state: { ...htmlStyles } });
+        htmlStyles[property] = true;
+      } else {
+        append(marker);
+      }
+    } else if (closeTag) {
+      const tag = closeTag[1].toLowerCase();
+      const stackIndex = stack.map((entry) => entry.tag).lastIndexOf(tag);
+      if (stackIndex >= 0) {
+        Object.assign(htmlStyles, stack[stackIndex].state);
+        stack.splice(stackIndex);
+      } else {
+        append(marker);
+      }
+    } else if (marker === '***') {
+      markdownStyles.bold = !markdownStyles.bold;
+      markdownStyles.italic = !markdownStyles.italic;
+    } else if (marker === '**') {
+      markdownStyles.bold = !markdownStyles.bold;
+    } else {
+      markdownStyles.italic = !markdownStyles.italic;
+    }
     offset = match.index + match[0].length;
   }
-  if (offset < text.length) tokens.push({ text: text.slice(offset) });
+  append(text.slice(offset));
   return tokens;
+}
+
+function storyPlainInlineText(text) {
+  return storyInlineTokens(text).map((token) => token.text).join('');
 }
 
 function storyExportMeta(story) {
@@ -8785,8 +9093,14 @@ function storyExportMeta(story) {
 
 function storyXhtmlInline(text) {
   return storyInlineTokens(text).map((token) => {
-    const content = xmlEscape(token.text);
-    return token.bold ? `<strong>${content}</strong>` : token.italic ? `<em>${content}</em>` : content;
+    let content = xmlEscape(token.text);
+    if (token.size !== 'normal') content = `<span class="ft-size-${token.size}">${content}</span>`;
+    if (token.color !== 'default') content = `<span class="ft-color-${token.color}">${content}</span>`;
+    if (token.strikethrough) content = `<span class="ft-strikethrough">${content}</span>`;
+    if (token.underline) content = `<span class="ft-underline">${content}</span>`;
+    if (token.italic) content = `<em>${content}</em>`;
+    if (token.bold) content = `<strong>${content}</strong>`;
+    return content;
   }).join('');
 }
 
@@ -8812,7 +9126,14 @@ function createDocx(stories) {
     return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${text}</w:p>`;
   };
   const runs = (text) => storyInlineTokens(text).map((token) => {
-    const formatting = [token.bold && '<w:b/>', token.italic && '<w:i/>'].filter(Boolean).join('');
+    const formatting = [
+      token.bold && '<w:b/>',
+      token.italic && '<w:i/>',
+      token.underline && '<w:u w:val="single"/>',
+      token.strikethrough && '<w:strike/>',
+      token.size !== 'normal' && `<w:sz w:val="${STORY_INLINE_SIZES[token.size].docx}"/>`,
+      token.color !== 'default' && `<w:color w:val="${STORY_INLINE_COLORS[token.color].export}"/>`,
+    ].filter(Boolean).join('');
     return `<w:r>${formatting ? `<w:rPr>${formatting}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlEscape(token.text)}</w:t></w:r>`;
   }).join('');
   stories.forEach((story, storyIndex) => {
@@ -8884,7 +9205,7 @@ function createEpub(stories) {
     { name: 'META-INF/container.xml', content: '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>' },
     { name: 'OEBPS/content.opf', content: `<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid" xml:lang="en"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="bookid">urn:fictiontale:${Date.now()}</dc:identifier><dc:title>${xmlEscape(bookTitle)}</dc:title><dc:creator>FictionTale</dc:creator><dc:language>en</dc:language><dc:date>${modified.slice(0, 10)}</dc:date><meta property="dcterms:modified">${modified}</meta></metadata><manifest>${manifest}</manifest><spine>${spine}</spine></package>` },
     { name: 'OEBPS/nav.xhtml', content: `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title></head><body><nav epub:type="toc" id="toc"><h1>Contents</h1><ol>${nav}</ol></nav></body></html>` },
-    { name: 'OEBPS/style.css', content: 'body{font-family:serif;line-height:1.65;margin:5%}h1{text-align:center;margin:2em 0 1em}h2,h3,h4{margin-top:2em;page-break-after:avoid}.summary{text-align:center;font-style:italic}.story-meta{text-align:center;color:#555;font-size:.9em;margin-bottom:3em}blockquote{margin:1em 1.5em;font-style:italic}ul{padding-left:1.5em}li{margin:.4em 0}.scene-break{border:0;text-align:center;margin:2em auto;width:30%}.scene-break:after{content:"⁂"}' },
+    { name: 'OEBPS/style.css', content: 'body{font-family:serif;line-height:1.65;margin:5%}h1{text-align:center;margin:2em 0 1em}h2,h3,h4{margin-top:2em;page-break-after:avoid}.summary{text-align:center;font-style:italic}.story-meta{text-align:center;color:#555;font-size:.9em;margin-bottom:3em}blockquote{margin:1em 1.5em;font-style:italic}ul{padding-left:1.5em}li{margin:.4em 0}.scene-break{border:0;text-align:center;margin:2em auto;width:30%}.scene-break:after{content:"⁂"}.ft-size-small{font-size:.85em}.ft-size-normal{font-size:1em}.ft-size-medium{font-size:1.15em}.ft-size-large{font-size:1.35em}.ft-size-heading{font-size:1.6em}.ft-color-blue{color:#1d4ed8}.ft-color-green{color:#047857}.ft-color-amber{color:#b45309}.ft-color-rose{color:#be123c}.ft-color-violet{color:#6d28d9}.ft-underline{text-decoration:underline}.ft-strikethrough{text-decoration:line-through}' },
     ...entries.map((entry) => ({ name: `OEBPS/${entry.id}.xhtml`, content: entry.html })),
   ]);
 }
@@ -11236,6 +11557,8 @@ document.querySelector('#story-text').addEventListener('keydown', (event) => {
     insertStoryMention(storyMentionMatches[storyMentionActiveIndex]);
   } else if (event.key === 'Escape') {
     suggestions.classList.add('hidden');
+    storyMentionMatches = [];
+    storyMentionDismissed = true;
   }
 });
 document.querySelector('#story-text').addEventListener('keyup', (event) => {
@@ -11245,6 +11568,13 @@ document.querySelector('#story-text').addEventListener('keyup', (event) => {
   }
 });
 document.querySelector('#story-text').addEventListener('click', syncStoryChapterFromCaret);
+document.addEventListener('pointerdown', (event) => {
+  const suggestions = document.querySelector('#story-mention-suggestions');
+  if (suggestions.classList.contains('hidden') || suggestions.contains(event.target)) return;
+  suggestions.classList.add('hidden');
+  storyMentionMatches = [];
+  storyMentionDismissed = true;
+}, true);
 document.querySelector('#story-peek-toggle').addEventListener('click', (event) => {
   const content = document.querySelector('#story-peek-content');
   const open = content.classList.toggle('hidden') === false;
@@ -11288,6 +11618,14 @@ document.querySelector('#story-discard').addEventListener('click', discardStoryC
 document.querySelector('#story-format-bar').addEventListener('click', (event) => {
   const button = event.target.closest('button[data-format]');
   if (button) applyStoryFormat(button.dataset.format);
+});
+document.querySelector('#story-text-size').addEventListener('change', (event) => {
+  if (event.currentTarget.value) applyStoryTextAppearance('size', event.currentTarget.value);
+  event.currentTarget.value = '';
+});
+document.querySelector('#story-text-color').addEventListener('change', (event) => {
+  if (event.currentTarget.value) applyStoryTextAppearance('color', event.currentTarget.value);
+  event.currentTarget.value = '';
 });
 document.querySelector('#story-starters').addEventListener('click', (event) => {
   const button = event.target.closest('button[data-starter]');

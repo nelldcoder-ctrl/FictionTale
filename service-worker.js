@@ -13,9 +13,12 @@ const CORE_FILES = [
 ];
 const CORE_PATHS = new Set(CORE_FILES.map((file) => new URL(file, self.location).pathname));
 
-// Nice to have offline (icons, fonts, manifest). A missing file here is logged but never blocks installation.
+// Nice to have offline (documentation, icons, fonts, manifest). Missing files never block installation.
 const OPTIONAL_FILES = [
   './manifest.json',
+  './content/changelogs.md',
+  './content/tutorial/quick-start.md',
+  './content/tutorial/detailed-guide.md',
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
@@ -30,6 +33,11 @@ const OPTIONAL_FILES = [
   './fonts/karla-400-normal.woff2',
   './fonts/karla-600-normal.woff2',
 ];
+const DOCUMENTATION_PATHS = new Set([
+  './content/changelogs.md',
+  './content/tutorial/quick-start.md',
+  './content/tutorial/detailed-guide.md',
+].map((file) => new URL(file, self.location).pathname));
 
 async function cacheAll(cache, urls) {
   const results = await Promise.allSettled(urls.map((url) => cache.add(new Request(url, { cache: 'reload' }))));
@@ -66,6 +74,30 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
   const url = new URL(request.url);
+  if (DOCUMENTATION_PATHS.has(url.pathname)) {
+    event.respondWith((async () => {
+      let response;
+      try {
+        response = await fetch(new Request(request, { cache: 'no-cache' }));
+      } catch (error) {
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(request, { ignoreSearch: true });
+        if (cached) return cached;
+        throw error;
+      }
+
+      if (response.ok && response.type === 'basic') {
+        try {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        } catch (error) {
+          console.error('Failed to cache the documentation network response:', error);
+        }
+      }
+      return response;
+    })());
+    return;
+  }
   if (CORE_PATHS.has(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
