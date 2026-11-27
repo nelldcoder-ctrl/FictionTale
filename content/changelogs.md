@@ -198,3 +198,9 @@ Release date: 2026/11/10
 ### Changes made
 - Released FictionTale with responsive layouts, character profiles, stories, scenes, worldbuilding, and planning tools.
 - Added search, organization, writing goals, exports, backups, print options, light and dark themes, accessibility settings, and offline installation.
+
+## Version 0.1
+Release date: 2026/10/27
+
+### Changes made
+- Project OC Creation started
