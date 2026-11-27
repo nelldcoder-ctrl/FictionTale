@@ -193,7 +193,7 @@
           <div><p class="landing-kicker">A WORK IN PROGRESS, IN THE BEST WAY</p><h2 id="landing-changelog-title">Fresh from the <em>workshop.</em></h2></div>
           <button class="landing-text-link landing-changelog-more" id="changelog-open" type="button">View all updates <span aria-hidden="true">↗</span></button>
         </div>
-        <div class="landing-changelog-list" id="landing-changelog-list" aria-live="polite"></div>
+        <div class="landing-changelog-list" id="landing-changelog-list" aria-live="polite"><p class="documentation-status">Loading updates…</p></div>
       </section>
     </main>
 
@@ -755,39 +755,41 @@
           </div>
         </div>
         <p class="lore-intro">Start with a note, a scene, or a whole story. There’s no set format.</p>
-        <div class="story-filter-bar" id="story-filter-bar">
-          <label class="search-box"><span aria-hidden="true">⌕</span><input id="story-search" type="search" placeholder="Find a story, tag, or character…" aria-label="Find a story"></label>
-          <select id="story-filter-kind" aria-label="Filter by type">
-            <option value="">All types</option>
-            <option value="story">Stories</option>
-            <option value="scene">Scenes</option>
-            <option value="world">World notes</option>
-            <option value="lore">Lore entries</option>
-          </select>
-          <select id="story-filter-progress" aria-label="Filter by progress">
-            <option value="">Any progress</option>
-            <option value="idea">Idea</option>
-            <option value="drafting">Drafting</option>
-            <option value="finished">Finished</option>
-          </select>
-          <select id="story-sort" aria-label="Sort stories">
-            <option value="newest">Newest first</option>
-            <option value="oldest">Oldest first</option>
-            <option value="title">Title A–Z</option>
-          </select>
-        </div>
-        <div class="story-library-tools">
-          <label class="export-format">Export as
-            <select id="story-export-format" aria-label="Choose story export format">
-              <option value="json">JSON</option>
-              <option value="yaml">YAML</option>
-              <option value="md">Markdown</option>
-              <option value="txt">Plain text</option>
-              <option value="docx">Word (.docx)</option>
-              <option value="epub">EPUB</option>
+        <div class="story-library-toolbar">
+          <div class="story-filter-bar" id="story-filter-bar">
+            <label class="search-box"><span aria-hidden="true">⌕</span><input id="story-search" type="search" placeholder="Find a story, tag, or character…" aria-label="Find a story"></label>
+            <select id="story-filter-kind" aria-label="Filter by type">
+              <option value="">All types</option>
+              <option value="story">Stories</option>
+              <option value="scene">Scenes</option>
+              <option value="world">World notes</option>
+              <option value="lore">Lore entries</option>
             </select>
-          </label>
-          <button class="button button-quiet" id="story-export-stories" type="button">Export stories</button>
+            <select id="story-filter-progress" aria-label="Filter by progress">
+              <option value="">Any progress</option>
+              <option value="idea">Idea</option>
+              <option value="drafting">Drafting</option>
+              <option value="finished">Finished</option>
+            </select>
+            <select id="story-sort" aria-label="Sort stories">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="title">Title A–Z</option>
+            </select>
+          </div>
+          <div class="story-library-tools">
+            <label class="export-format">Export as
+              <select id="story-export-format" aria-label="Choose story export format">
+                <option value="json">JSON</option>
+                <option value="yaml">YAML</option>
+                <option value="md">Markdown</option>
+                <option value="txt">Plain text</option>
+                <option value="docx">Word (.docx)</option>
+                <option value="epub">EPUB</option>
+              </select>
+            </label>
+            <button class="button button-quiet" id="story-export-stories" type="button">Export stories</button>
+          </div>
         </div>
         <div class="story-library" id="story-library" aria-live="polite"></div>
         <p class="story-no-results hidden" id="story-no-results">No stories match those filters. Try clearing the search or choosing “All types”.</p>
@@ -1606,6 +1608,132 @@
             </div>
           </div>
         </details>
+        <section class="story-planning-tools" id="story-planning-tools" aria-label="Story planning tools">
+          <div class="story-planning-grid">
+            <section class="story-planning-group story-progress-group" aria-labelledby="story-progress-heading">
+              <h3 class="story-planning-section-heading" id="story-progress-heading">01 — Writing progress</h3>
+              <section class="story-writing-goal" aria-label="Daily writing goal">
+                <div class="story-writing-goal-heading">
+                  <strong id="story-writing-goal-label">Today’s writing goal</strong>
+                  <span id="story-writing-streak">0 day streak</span>
+                </div>
+                <div class="story-goal-progress" role="progressbar" id="story-goal-progress" aria-label="Daily writing goal progress" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0"><span id="story-goal-progress-fill"></span></div>
+                <div class="story-goal-controls">
+                  <span id="story-writing-goal-count">0 / 500 words today</span>
+                  <label for="story-daily-target">Daily target</label>
+                  <input id="story-daily-target" type="number" min="50" max="20000" step="50" value="500" aria-label="Daily writing target in words">
+                </div>
+              </section>
+            </section>
+            <section class="story-planning-group story-quick-actions" aria-labelledby="story-quick-actions-heading">
+              <h3 class="story-planning-section-heading" id="story-quick-actions-heading">02 — Quick actions</h3>
+              <div class="story-starters" id="story-starters">
+                <span>Not sure where to begin?</span>
+                <button type="button" data-starter="scene">Scene</button>
+                <button type="button" data-starter="world">World note</button>
+                <button type="button" data-starter="outline">Plot outline</button>
+              </div>
+            </section>
+            <section class="story-planning-group story-workspace-group" aria-labelledby="story-workspace-heading">
+              <h3 class="story-planning-section-heading" id="story-workspace-heading">03 — Planning workspace</h3>
+              <div class="story-planning-workspace-grid">
+                <details class="story-style-settings story-notes-tasks" id="story-notes-tasks" open>
+                  <summary>Margin notes &amp; to-do <span id="story-todo-count">0 tasks</span></summary>
+                  <div class="story-writing-lists">
+                    <section class="story-writing-list" aria-labelledby="story-notes-heading">
+                      <h3 id="story-notes-heading">Fix later / margin notes</h3>
+                      <div class="story-writing-add story-note-add-row"><input id="story-note-input" type="text" maxlength="300" placeholder="Add a note or select text first" aria-label="New margin note"><select id="story-note-chapter" aria-label="Chapter for this note"><option value="">Use cursor chapter</option><option value="__general__">No chapter</option></select><button class="button button-quiet" id="story-note-add" type="button">Add note</button></div>
+                      <ul id="story-notes-list" class="story-note-list"></ul>
+                      <input class="visually-hidden" id="story-notes-data" type="hidden">
+                    </section>
+                    <section class="story-writing-list" aria-labelledby="story-todos-heading">
+                      <h3 id="story-todos-heading">Story to-do</h3>
+                      <div class="story-writing-add"><input id="story-todo-input" type="text" maxlength="160" placeholder="e.g. Check the timeline in chapter 3" aria-label="New story task"><button class="button button-quiet" id="story-todo-add" type="button">Add task</button></div>
+                      <ul id="story-todos-list" class="story-note-list"></ul>
+                      <input class="visually-hidden" id="story-todos-data" type="hidden">
+                    </section>
+                  </div>
+                </details>
+                <details class="story-style-settings story-chapters-panel" id="story-chapters-panel">
+                  <summary>Pacing &amp; continuity</summary>
+                  <div class="story-chapter-body">
+                    <p class="story-chapter-hint" id="story-chapter-hint">Chapters are headings such as <code>## Chapter 1</code> or <code># Chapter 1</code>. Add in-world time and character snapshots to check chronology, age, availability, and locations. Checks are suggestions, not edits.</p>
+                    <p class="story-pacing-summary" id="story-pacing-summary"></p>
+                    <div class="story-continuity-checker" id="story-continuity-checker" aria-live="polite"></div>
+                  </div>
+                </details>
+              </div>
+            </section>
+            <section class="story-planning-group story-additional-group" aria-labelledby="story-additional-heading">
+              <h3 class="story-planning-section-heading" id="story-additional-heading">04 — Additional story options</h3>
+              <div class="story-additional-options">
+                <details class="story-style-settings" id="story-style-settings">
+                  <summary>Story appearance <span>Optional</span></summary>
+                  <div class="story-style-grid">
+                    <label for="story-title-font">Title font
+                      <select id="story-title-font" name="titleFont">
+                        <option value="playfair">Playfair Display · Elegant</option>
+                        <option value="lora">Lora · Literary</option>
+                        <option value="merriweather">Merriweather · Readable</option>
+                        <option value="cormorant">Cormorant Garamond · Graceful</option>
+                        <option value="libre-baskerville">Libre Baskerville · Classic</option>
+                        <option value="roboto-slab">Roboto Slab · Bold</option>
+                        <option value="dm-sans">DM Sans · Modern</option>
+                        <option value="lato">Lato · Warm</option>
+                        <option value="nunito-sans">Nunito Sans · Friendly</option>
+                        <option value="caveat">Caveat · Handwritten</option>
+                        <option value="roboto-mono">Roboto Mono · Typewriter</option>
+                        <option value="georgia">Georgia · System serif</option>
+                        <option value="courier">Courier New · System mono</option>
+                      </select>
+                    </label>
+                    <label for="story-body-font">Body font
+                      <select id="story-body-font" name="bodyFont">
+                        <option value="dm-sans">DM Sans · Modern</option>
+                        <option value="lato">Lato · Warm</option>
+                        <option value="nunito-sans">Nunito Sans · Friendly</option>
+                        <option value="lora">Lora · Literary</option>
+                        <option value="merriweather">Merriweather · Readable</option>
+                        <option value="roboto-slab">Roboto Slab · Soft slab</option>
+                        <option value="libre-baskerville">Libre Baskerville · Classic</option>
+                        <option value="cormorant">Cormorant Garamond · Graceful</option>
+                        <option value="playfair">Playfair Display · Elegant</option>
+                        <option value="caveat">Caveat · Handwritten</option>
+                        <option value="roboto-mono">Roboto Mono · Typewriter</option>
+                        <option value="georgia">Georgia · System serif</option>
+                        <option value="courier">Courier New · System mono</option>
+                      </select>
+                    </label>
+                    <div class="story-background-field">
+                      <label for="story-background-hex">Reader background</label>
+                      <span class="color-control">
+                        <input id="story-background-hex" type="text" value="#fbfdff" maxlength="7" pattern="#[0-9A-Fa-f]{6}" placeholder="#fbfdff" aria-label="Reader background HEX color">
+                        <input id="story-background" name="backgroundColor" type="color" value="#fbfdff" aria-label="Choose reader background color">
+                      </span>
+                    </div>
+                    <div class="story-cover-field">
+                      <label for="story-image-url">Cover image</label>
+                      <span class="story-image-control">
+                        <input id="story-image-url" name="image" type="text" placeholder="Paste an image link, or upload with ↑"><span class="upload-chip hidden" id="story-image-chip"><img alt=""><span class="upload-chip-text"></span><button class="upload-chip-remove" type="button" aria-label="Remove cover image">Remove</button></span>
+                        <button class="upload-button" id="story-image-upload-button" type="button" aria-label="Upload a cover image">↑</button>
+                      </span>
+                    </div>
+                    <input class="visually-hidden" id="story-image-file" type="file" accept="image/*" tabindex="-1" aria-label="Choose a story cover image">
+                    <p class="story-style-hint">Choose a font for each part, set the reader background, and add a cover image by link or upload (up to 5 MB).</p>
+                  </div>
+                </details>
+                <details class="story-style-settings story-history-panel" id="story-history-panel">
+                  <summary>Version history <span id="story-history-count">None yet</span></summary>
+                  <div class="story-chapter-body">
+                    <p class="story-chapter-hint">A snapshot is kept each time you save (the latest 10). Select two versions to compare, or restore one to the editor. Restoring does not replace the saved story until you save.</p>
+                    <ul class="story-history-list" id="story-history-list"></ul>
+                    <div class="story-history-comparison hidden" id="story-history-comparison" aria-live="polite"></div>
+                  </div>
+                </details>
+              </div>
+            </section>
+          </div>
+        </section>
         <div class="story-compose-layout">
           <aside class="story-chapter-sidebar" aria-label="Chapter navigation and details">
             <div class="story-chapter-sidebar-heading"><strong>Chapters</strong><span id="story-chapter-count">None yet</span></div>
@@ -1645,15 +1773,44 @@
             <details class="story-toolbar-tools" id="story-toolbar-tools">
               <summary>Formatting &amp; chapter tools</summary>
               <div class="story-format-bar" id="story-format-bar" role="toolbar" aria-label="Formatting tools">
-                <button type="button" data-format="undo" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
-                <button type="button" data-format="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">↷</button>
-                <span class="story-format-divider" aria-hidden="true"></span>
-                <button type="button" data-format="bold" title="Bold" aria-label="Bold"><b>B</b></button>
-                <button type="button" data-format="italic" title="Italic" aria-label="Italic"><i>I</i></button>
-                <button type="button" data-format="quote" title="Quote" aria-label="Quote">❝</button>
-                <button type="button" data-format="break" title="Scene break" aria-label="Insert scene break">⁂</button>
-                <span class="story-format-divider" aria-hidden="true"></span>
-                <button type="button" data-format="chapter" title="Add a chapter at the cursor">＋ Chapter</button>
+                <div class="story-format-group" role="group" aria-label="History">
+                  <button type="button" data-format="undo" title="Undo (Ctrl+Z)" aria-label="Undo">↶</button>
+                  <button type="button" data-format="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">↷</button>
+                </div>
+                <div class="story-format-group" role="group" aria-label="Text formatting">
+                  <button type="button" data-format="bold" title="Bold" aria-label="Bold"><b>B</b></button>
+                  <button type="button" data-format="italic" title="Italic" aria-label="Italic"><i>I</i></button>
+                  <button type="button" data-format="underline" title="Underline" aria-label="Underline"><u>U</u></button>
+                  <button type="button" data-format="strikethrough" title="Strikethrough" aria-label="Strikethrough"><s>S</s></button>
+                </div>
+                <div class="story-format-group story-format-appearance" role="group" aria-label="Text appearance">
+                  <label for="story-text-size">Size
+                    <select id="story-text-size" aria-label="Text size">
+                      <option value="" selected disabled>Size</option>
+                      <option value="small">Small</option>
+                      <option value="normal">Normal</option>
+                      <option value="medium">Medium</option>
+                      <option value="large">Large</option>
+                      <option value="heading">Heading</option>
+                    </select>
+                  </label>
+                  <label for="story-text-color">Color
+                    <select id="story-text-color" aria-label="Font color">
+                      <option value="" selected disabled>Color</option>
+                      <option value="default">Default</option>
+                      <option value="blue">Blue</option>
+                      <option value="green">Green</option>
+                      <option value="amber">Amber</option>
+                      <option value="rose">Rose</option>
+                      <option value="violet">Violet</option>
+                    </select>
+                  </label>
+                </div>
+                <div class="story-format-group" role="group" aria-label="Chapter tools">
+                  <button type="button" data-format="quote" title="Format selected lines as a quotation" aria-label="Quote">❝</button>
+                  <button type="button" data-format="break" title="Insert a decorative scene separator" aria-label="Insert scene break">⁂</button>
+                  <button type="button" data-format="chapter" title="Add a chapter at the cursor" aria-label="Add chapter">＋ Chapter</button>
+                </div>
               </div>
             </details>
             <p class="story-mention-hint">Type <code>@</code> followed by a character name to link them in a chapter.</p>
@@ -1729,117 +1886,6 @@
           <span id="story-total-word-count">Story total: 0 words</span>
           <span id="story-word-count-extras"></span>
         </p>
-        <section class="story-planning-tools" id="story-planning-tools" aria-label="Story planning tools">
-          <div class="story-planning-tools-heading"><strong>Planning tools</strong><span>Open only what you need.</span></div>
-          <div class="story-planning-grid">
-            <section class="story-writing-goal" aria-label="Daily writing goal">
-              <div class="story-writing-goal-heading">
-                <strong id="story-writing-goal-label">Today’s writing goal</strong>
-                <span id="story-writing-streak">0 day streak</span>
-              </div>
-              <div class="story-goal-progress" role="progressbar" id="story-goal-progress" aria-label="Daily writing goal progress" aria-valuemin="0" aria-valuemax="500" aria-valuenow="0"><span id="story-goal-progress-fill"></span></div>
-              <div class="story-goal-controls">
-                <span id="story-writing-goal-count">0 / 500 words today</span>
-                <label for="story-daily-target">Daily target</label>
-                <input id="story-daily-target" type="number" min="50" max="20000" step="50" value="500" aria-label="Daily writing target in words">
-              </div>
-            </section>
-            <div class="story-starters" id="story-starters">
-              <span>Not sure where to begin?</span>
-              <button type="button" data-starter="scene">Scene</button>
-              <button type="button" data-starter="world">World note</button>
-              <button type="button" data-starter="outline">Plot outline</button>
-            </div>
-            <details class="story-style-settings story-chapters-panel" id="story-chapters-panel">
-              <summary>Pacing &amp; continuity</summary>
-              <div class="story-chapter-body">
-                <p class="story-chapter-hint" id="story-chapter-hint">Chapters are headings such as <code>## Chapter 1</code> or <code># Chapter 1</code>. Add in-world time and character snapshots to check chronology, age, availability, and locations. Checks are suggestions, not edits.</p>
-                <p class="story-pacing-summary" id="story-pacing-summary"></p>
-                <div class="story-continuity-checker" id="story-continuity-checker" aria-live="polite"></div>
-              </div>
-            </details>
-            <details class="story-style-settings story-notes-tasks" id="story-notes-tasks">
-              <summary>Margin notes &amp; to-do <span id="story-todo-count">0 tasks</span></summary>
-              <div class="story-writing-lists">
-                <section class="story-writing-list" aria-labelledby="story-notes-heading">
-                  <h3 id="story-notes-heading">Fix later / margin notes</h3>
-                  <div class="story-writing-add story-note-add-row"><input id="story-note-input" type="text" maxlength="300" placeholder="Add a note or select text first" aria-label="New margin note"><select id="story-note-chapter" aria-label="Chapter for this note"><option value="">Use cursor chapter</option><option value="__general__">No chapter</option></select><button class="button button-quiet" id="story-note-add" type="button">Add note</button></div>
-                  <ul id="story-notes-list" class="story-note-list"></ul>
-                  <input class="visually-hidden" id="story-notes-data" type="hidden">
-                </section>
-                <section class="story-writing-list" aria-labelledby="story-todos-heading">
-                  <h3 id="story-todos-heading">Story to-do</h3>
-                  <div class="story-writing-add"><input id="story-todo-input" type="text" maxlength="160" placeholder="e.g. Check the timeline in chapter 3" aria-label="New story task"><button class="button button-quiet" id="story-todo-add" type="button">Add task</button></div>
-                  <ul id="story-todos-list" class="story-note-list"></ul>
-                  <input class="visually-hidden" id="story-todos-data" type="hidden">
-                </section>
-              </div>
-            </details>
-            <details class="story-style-settings" id="story-style-settings">
-              <summary>Story appearance <span>Optional</span></summary>
-              <div class="story-style-grid">
-                <label for="story-title-font">Title font
-                  <select id="story-title-font" name="titleFont">
-                    <option value="playfair">Playfair Display · Elegant</option>
-                    <option value="lora">Lora · Literary</option>
-                    <option value="merriweather">Merriweather · Readable</option>
-                    <option value="cormorant">Cormorant Garamond · Graceful</option>
-                    <option value="libre-baskerville">Libre Baskerville · Classic</option>
-                    <option value="roboto-slab">Roboto Slab · Bold</option>
-                    <option value="dm-sans">DM Sans · Modern</option>
-                    <option value="lato">Lato · Warm</option>
-                    <option value="nunito-sans">Nunito Sans · Friendly</option>
-                    <option value="caveat">Caveat · Handwritten</option>
-                    <option value="roboto-mono">Roboto Mono · Typewriter</option>
-                    <option value="georgia">Georgia · System serif</option>
-                    <option value="courier">Courier New · System mono</option>
-                  </select>
-                </label>
-                <label for="story-body-font">Body font
-                  <select id="story-body-font" name="bodyFont">
-                    <option value="dm-sans">DM Sans · Modern</option>
-                    <option value="lato">Lato · Warm</option>
-                    <option value="nunito-sans">Nunito Sans · Friendly</option>
-                    <option value="lora">Lora · Literary</option>
-                    <option value="merriweather">Merriweather · Readable</option>
-                    <option value="roboto-slab">Roboto Slab · Soft slab</option>
-                    <option value="libre-baskerville">Libre Baskerville · Classic</option>
-                    <option value="cormorant">Cormorant Garamond · Graceful</option>
-                    <option value="playfair">Playfair Display · Elegant</option>
-                    <option value="caveat">Caveat · Handwritten</option>
-                    <option value="roboto-mono">Roboto Mono · Typewriter</option>
-                    <option value="georgia">Georgia · System serif</option>
-                    <option value="courier">Courier New · System mono</option>
-                  </select>
-                </label>
-                <div class="story-background-field">
-                  <label for="story-background-hex">Reader background</label>
-                  <span class="color-control">
-                    <input id="story-background-hex" type="text" value="#fbfdff" maxlength="7" pattern="#[0-9A-Fa-f]{6}" placeholder="#fbfdff" aria-label="Reader background HEX color">
-                    <input id="story-background" name="backgroundColor" type="color" value="#fbfdff" aria-label="Choose reader background color">
-                  </span>
-                </div>
-                <div class="story-cover-field">
-                  <label for="story-image-url">Cover image</label>
-                  <span class="story-image-control">
-                    <input id="story-image-url" name="image" type="text" placeholder="Paste an image link, or upload with ↑"><span class="upload-chip hidden" id="story-image-chip"><img alt=""><span class="upload-chip-text"></span><button class="upload-chip-remove" type="button" aria-label="Remove cover image">Remove</button></span>
-                    <button class="upload-button" id="story-image-upload-button" type="button" aria-label="Upload a cover image">↑</button>
-                  </span>
-                </div>
-                <input class="visually-hidden" id="story-image-file" type="file" accept="image/*" tabindex="-1" aria-label="Choose a story cover image">
-                <p class="story-style-hint">Choose a font for each part, set the reader background, and add a cover image by link or upload (up to 5 MB).</p>
-              </div>
-            </details>
-            <details class="story-style-settings story-history-panel" id="story-history-panel">
-              <summary>Version history <span id="story-history-count">None yet</span></summary>
-              <div class="story-chapter-body">
-                <p class="story-chapter-hint">A snapshot is kept each time you save (the latest 10). Select two versions to compare, or restore one to the editor. Restoring does not replace the saved story until you save.</p>
-                <ul class="story-history-list" id="story-history-list"></ul>
-                <div class="story-history-comparison hidden" id="story-history-comparison" aria-live="polite"></div>
-              </div>
-            </details>
-          </div>
-        </section>
         <div class="story-editor-actions">
           <span>Unfinished drafts are saved here automatically.</span>
           <div class="story-editor-buttons">
@@ -1917,55 +1963,12 @@
           <section class="tutorial-panel hidden" id="simple-tutorial-panel" aria-labelledby="simple-tutorial-title" tabindex="-1">
             <button class="tutorial-back button button-quiet" type="button">← All guides</button>
             <h2 id="simple-tutorial-title">Quick start</h2>
-            <ol class="tutorial-steps">
-              <li><strong>Choose a project.</strong> A project keeps its stories, characters, places, and plans together. Try an editable sample project to see how they connect, or create your own.</li>
-              <li><strong>Write a story.</strong> Open <strong>Writing → Stories</strong>, choose <strong>New story</strong>, and start typing. Your draft saves on this device. Add chapters or notes whenever they help.</li>
-              <li><strong>Organize your cast.</strong> Start each character with a name and short description. Put them in a <strong>Cast Group</strong> such as Main or Supporting; use tags for details like “Mage” or “Merchant.”</li>
-              <li><strong>Build your setting.</strong> Use <strong>Worldbuilding → Places</strong> for locations. Use <strong>World Entries</strong> for things such as groups, objects, magic, species, languages, or terms you want to remember.</li>
-              <li><strong>Find your next step.</strong> Use a prompt or scene card to get an idea moving. Search from the top of the workspace to find characters, stories, places, or world entries.</li>
-              <li><strong>Keep a backup.</strong> Check the workspace header for save and backup status. Open it to reach <strong>Settings → Data &amp; Storage</strong> and export a full backup. New backup imports become separate projects; replacing matching older data asks for confirmation. You can also download stories as Markdown, plain text, Word (.docx), or EPUB, and print profiles or story previews to PDF.</li>
-            </ol>
-            <p class="tutorial-privacy-note">Your work is stored in this browser, not in the cloud. Clearing this browser’s site data, switching browser profiles, or losing the device can remove it. Export a full backup and keep it somewhere separate.</p>
+            <div class="tutorial-document" id="simple-tutorial-content" aria-live="polite"></div>
           </section>
           <section class="tutorial-panel hidden" id="detailed-tutorial-panel" aria-labelledby="detailed-tutorial-title" tabindex="-1">
             <button class="tutorial-back button button-quiet" type="button">← All guides</button>
             <h2 id="detailed-tutorial-title">Detailed guide</h2>
-            <section class="about-guide-step">
-              <span class="creation-step-number">01</span>
-              <div><h3>Create characters</h3><p>Start with a name and short description. Everything else is optional. Put each character in one <strong>Cast Group</strong> to organize the cast; use tags for details that can apply to many characters. The optional questionnaire offers prompts to help you discover what a character thinks, feels, and chooses. Keep only the answers that help your story.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">02</span>
-              <div><h3>Write stories</h3><p>Create a story from scratch or use a template. Chapters keep a long draft in order; each chapter can have notes and an in-world time, such as “Day 2” or “Year 412.” The story timeline follows chapters in this one story. FictionTale can point out possible mix-ups in ages, places, or who is present, but it never changes your writing. Use Focus mode to hide extra controls. Version history lets you compare saved drafts or restore an earlier one.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">03</span>
-              <div><h3>Organize a book series</h3><p>Create a series, then open each book’s details to add it and set its book number. Mark characters and places shared across the books. The <strong>Series Timeline</strong> is a shared list of important events across the whole series; you can note which book and chapter each event belongs to. It sits alongside, rather than replaces, each book’s own chapter timeline.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">04</span>
-              <div><h3>Plan and track your writing</h3><p>The <strong>Dashboard</strong> shows a story’s word count, chapters, progress, and next tasks. In <strong>Plan</strong>, use scene cards, prompts, and the relationship map when they help. <strong>Relationship History</strong> records how a connection changes at a chapter or story point. A character snapshot records what that character knows, where they are, or who they trust at that point. Give both the same chapter or timeline label to see them together.</p><p><strong>Story timeline:</strong> dates chapters within one story. <strong>Master Chronology:</strong> brings character events, story events, and world events together across the project. Use it to compare what happens and when; it can show in-world order or writing order.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">05</span>
-              <div><h3>Build your setting</h3><p>Use <strong>Places</strong> for locations. Use <strong>World Entries</strong> for groups, objects, rules of magic or technology, species, languages, and terms. Add tags to make things easier to find.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">06</span>
-              <div><h3>Save and back up your work</h3><p>The header shows whether your latest changes are <strong>Saved</strong> on this device and whether a backup is due. Open it to reach <strong>Settings → Data &amp; Storage</strong> and export a full backup. Importing a new backup adds a separate project; replacing matching older data asks you first. Your work is not stored online, so keep a backup somewhere separate from this browser and device.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">07</span>
-              <div><h3>Appearance and offline use</h3><p>Choose a light or dark theme in <strong>Settings → Appearance</strong>. When opened from a secure website or local server, FictionTale can be installed and used without internet. Your writing still stays in this browser on this device; offline use is not an online backup.</p></div>
-            </section>
-            <section class="about-guide-step">
-              <span class="creation-step-number">08</span>
-              <div><h3>Draft conversations</h3><p>Use <strong>Dialogue</strong> to try out a conversation before adding it to your story. Choose who is speaking and note how the conversation feels. Add it to a story when you are ready.</p></div>
-            </section>
-            <aside class="about-note">
-              <span class="status-dot" aria-hidden="true"></span>
-              <p><strong>Keep your work safe:</strong> your writing is not backed up online. Export a full backup regularly and keep a copy somewhere separate from this browser and device.</p>
-            </aside>
+            <div class="tutorial-document" id="detailed-tutorial-content" aria-live="polite"></div>
           </section>
         </div>
       </div>
@@ -2082,7 +2085,7 @@
           <h1 id="changelog-title">The <em>changelog.</em></h1>
           <p>Every update to FictionTale, newest first.</p>
         </header>
-        <div class="changelog-list" id="changelog-list"></div>
+        <div class="changelog-list" id="changelog-list" aria-live="polite"><p class="documentation-status">Loading changelog…</p></div>
       </div>
     </div>
   </dialog>
