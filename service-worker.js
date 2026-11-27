@@ -59,11 +59,13 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(Promise.all([
-    caches.keys().then((keys) => Promise.all(
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(
       keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)),
-    )),
-  ]));
+    );
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('message', (event) => {
@@ -82,7 +84,15 @@ self.addEventListener('fetch', (event) => {
       } catch (error) {
         const cache = await caches.open(CACHE_NAME);
         const cached = await cache.match(request, { ignoreSearch: true });
-        if (cached) return cached;
+        if (cached) {
+          const headers = new Headers(cached.headers);
+          headers.set('X-FictionTale-Documentation-Source', 'cache');
+          return new Response(cached.body, {
+            status: cached.status,
+            statusText: cached.statusText,
+            headers,
+          });
+        }
         throw error;
       }
 
@@ -101,14 +111,17 @@ self.addEventListener('fetch', (event) => {
   if (CORE_PATHS.has(url.pathname)) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(request, { ignoreSearch: true });
-      if (cached) return cached;
-
-      const response = await fetch(request);
-      if (response.ok && response.type === 'basic') {
-        await cache.put(request, response.clone());
+      try {
+        const response = await fetch(new Request(request, { cache: 'no-cache' }));
+        if (response.ok && response.type === 'basic') {
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch (error) {
+        const cached = await cache.match(request, { ignoreSearch: true });
+        if (cached) return cached;
+        throw error;
       }
-      return response;
     })());
     return;
   }

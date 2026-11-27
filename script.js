@@ -699,6 +699,29 @@ function renderStoryMarkdown(container, rawText) {
       }
       return;
     }
+    const image = parseStoryImageLine(line);
+    if (image) {
+      flushAll();
+      if (!validImageSource(image.source)) {
+        const element = document.createElement('p');
+        element.textContent = line;
+        container.append(element);
+        return;
+      }
+      const figure = document.createElement('figure');
+      figure.className = 'story-inline-image';
+      const imageElement = document.createElement('img');
+      imageElement.src = image.source;
+      imageElement.alt = image.alt;
+      figure.append(imageElement);
+      if (image.alt) {
+        const caption = document.createElement('figcaption');
+        caption.textContent = image.alt;
+        figure.append(caption);
+      }
+      container.append(figure);
+      return;
+    }
     if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line.trim())) {
       flushAll();
       const rule = document.createElement('hr');
@@ -743,6 +766,11 @@ function renderStoryMarkdown(container, rawText) {
     nav.append(heading, ol);
     container.prepend(nav);
   }
+}
+
+function parseStoryImageLine(line) {
+  const match = line.match(/^!\[([^\]]*)\]\((.+)\)$/);
+  return match ? { alt: match[1].trim(), source: match[2].trim() } : null;
 }
 
 const storedStories = readStorage(STORIES_STORAGE_KEY, null);
@@ -4811,6 +4839,7 @@ function renderStories() {
     date.textContent = story.updatedAt
       ? new Date(story.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
       : '';
+    date.style.marginRight = '30px';
     header.append(label, date);
     const title = document.createElement('strong');
     title.textContent = story.title || 'Untitled story';
@@ -4852,10 +4881,6 @@ function renderStories() {
     cast.textContent = castNames.length
       ? `✦ ${castNames.slice(0, 2).join(', ')}${castNames.length > 2 ? ` +${castNames.length - 2}` : ''}`
       : '';
-    const action = document.createElement('span');
-    action.className = 'story-card-action';
-    action.textContent = story.isDraft ? 'Continue writing →' : 'Open story →';
-    date.style.marginRight = '30px';
     if (story.image && validImageSource(story.image)) {
       const cover = document.createElement('img');
       cover.className = 'story-card-cover';
@@ -4872,11 +4897,32 @@ function renderStories() {
       settings.textContent = `◈ ${placeNames.slice(0, 2).join(', ')}${placeNames.length > 2 ? ` +${placeNames.length - 2}` : ''}`;
       card.append(settings);
     }
-    card.append(action);
     card.addEventListener('click', () => {
       previewStoryId = story.id;
       updateStoryPreview(story);
       openStoryEditor(story.id, card);
+    });
+    const actions = document.createElement('div');
+    actions.className = 'story-card-actions';
+    const openStory = document.createElement('a');
+    openStory.className = 'story-card-action';
+    openStory.href = '#story-dialog';
+    openStory.textContent = story.isDraft ? 'Continue writing →' : 'Open story →';
+    openStory.addEventListener('click', (event) => {
+      event.preventDefault();
+      previewStoryId = story.id;
+      openStoryEditor(story.id, openStory);
+    });
+    const preview = document.createElement('a');
+    preview.className = 'story-card-action';
+    preview.href = '#story-dialog';
+    preview.textContent = 'Open full preview ↗';
+    preview.setAttribute('aria-label', `Open full preview: ${story.title || 'Untitled story'}`);
+    preview.addEventListener('click', (event) => {
+      event.preventDefault();
+      previewStoryId = story.id;
+      updateStoryPreview(story);
+      openStoryPreview();
     });
     const remove = document.createElement('button');
     remove.className = 'card-delete-button story-delete-button';
@@ -4888,7 +4934,8 @@ function renderStories() {
       event.stopPropagation();
       requestDeleteItem(story.id, 'story', story, remove);
     });
-    item.append(card, remove);
+    actions.append(openStory, preview);
+    item.append(card, actions, remove);
     library.append(item);
   });
   library.classList.toggle('is-horizontal', items.length >= 4);
@@ -5646,7 +5693,7 @@ function flushPendingDrafts() {
 }
 
 function flushStoryDraft() {
-  if (!storyDraftPending) return;
+  if (!storyDraftPending) return true;
   cancelStoryDraftSave();
   const draft = currentStoryDraft();
   const saved = savedStories.find((story) => story.id === draft.id);
@@ -5656,22 +5703,24 @@ function flushStoryDraft() {
     && storyMetaEqual(saved, draft);
   if (unchanged) {
     delete storyDrafts[draft.id];
-    if (writeStorage(STORY_DRAFTS_KEY, storyDrafts)) scheduleFolderBackup();
+    const saved = writeStorage(STORY_DRAFTS_KEY, storyDrafts);
+    if (saved) scheduleFolderBackup();
     window.dispatchEvent(new CustomEvent('FictionTales:story-draft-updated', { detail: { id: draft.id } }));
-    updateStorySaveStatus('saved');
-    return;
+    updateStorySaveStatus(saved ? 'saved' : 'unsaved');
+    return saved;
   }
   storyDrafts[draft.id] = draft;
   updateStorySaveStatus('saving');
   if (!writeStorage(STORY_DRAFTS_KEY, storyDrafts)) {
     updateStorySaveStatus('unsaved');
     showToast('Could not autosave this draft. Save the story before closing.');
-    return;
+    return false;
   }
   scheduleFolderBackup();
   updateStorySaveStatus('saved');
   document.querySelector('#story-editor-title').textContent = draft.title || 'Write a story';
   window.dispatchEvent(new CustomEvent('FictionTales:story-draft-updated', { detail: { id: draft.id } }));
+  return true;
 }
 
 var storageMeterTimer = 0;
@@ -8274,11 +8323,45 @@ let changelogLoadPromise = null;
 const tutorialLoadPromises = new Map();
 
 async function fetchDocumentation(path) {
-  const response = await fetch(path, { cache: 'no-cache' });
-  if (!response.ok) throw new Error(`Request failed with status ${response.status}.`);
+  const url = new URL(path, document.baseURI);
+  const controller = navigator.serviceWorker?.controller;
+  const serviceWorkerStatus = controller
+    ? `controlled by ${controller.scriptURL}`
+    : 'not controlled';
+  if (location.protocol === 'file:') {
+    throw new Error('Documentation is stored in separate Markdown files, but browsers block file:// pages from fetching sibling files. Open this folder with a local web server, such as VS Code Live Server. If Python is installed, run "python -m http.server 8000" in the FictionTale folder and open http://localhost:8000/.');
+  }
+  if (url.origin !== location.origin) {
+    throw new Error(`Documentation request must be same-origin. URL: ${url.href}; Service worker: ${serviceWorkerStatus}.`);
+  }
+
+  let response;
+  let servedFromCache = false;
+  try {
+    response = await fetch(url.href, { cache: 'no-cache' });
+  } catch (error) {
+    const fetchError = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    try {
+      const cache = await caches.open(`fictiontales-shell-v${window.FICTION_TALE_VERSION}`);
+      response = await cache.match(url.href, { ignoreSearch: true });
+      if (!response) throw new Error('No cached response was found.');
+      servedFromCache = true;
+    } catch (cacheError) {
+      const fallbackError = cacheError instanceof Error ? `${cacheError.name}: ${cacheError.message}` : String(cacheError);
+      throw new Error(`Documentation network request failed. URL: ${url.href}; HTTP status: unavailable; Content-Type: unavailable; Service worker: ${serviceWorkerStatus}; Fetch error: ${fetchError}; Cache fallback error: ${fallbackError}`, { cause: error });
+    }
+  }
+
+  const contentType = response.headers.get('content-type') || 'not provided';
+  const responseDetails = `URL: ${url.href}; HTTP status: ${response.status}; Content-Type: ${contentType}; Service worker: ${serviceWorkerStatus}`;
+  if (!response.ok) throw new Error(`Documentation request failed. ${responseDetails}.`);
+  if (/text\/html\b/i.test(contentType)) throw new Error(`Expected Markdown but received HTML. ${responseDetails}.`);
   const markdown = await response.text();
-  if (!markdown.trim()) throw new Error('The documentation file is empty.');
-  return markdown;
+  if (!markdown.trim()) throw new Error(`The documentation file is empty. ${responseDetails}.`);
+  return {
+    markdown,
+    servedFromCache: servedFromCache || response.headers.get('X-FictionTale-Documentation-Source') === 'cache',
+  };
 }
 
 function showDocumentationStatus(container, message, isError = false) {
@@ -8287,6 +8370,14 @@ function showDocumentationStatus(container, message, isError = false) {
   status.setAttribute('role', isError ? 'alert' : 'status');
   status.textContent = message;
   container.replaceChildren(status);
+}
+
+function showDocumentationNotice(container, message) {
+  const notice = document.createElement('p');
+  notice.className = 'documentation-status';
+  notice.setAttribute('role', 'status');
+  notice.textContent = message;
+  container.prepend(notice);
 }
 
 function appendDocumentationInline(parent, text, baseUrl) {
@@ -8440,15 +8531,16 @@ function parseChangelogMarkdown(markdown) {
   });
   if (!starts.length) throw new Error('No version entries were found.');
 
-  return starts.map((start, index) => {
-    const end = index + 1 < starts.length ? starts[index + 1].index : lines.length;
+  return starts.map((start) => {
+    const nextHeading = lines.findIndex((line, lineIndex) => lineIndex > start.index && /^##[ \t]+/.test(line));
+    const end = nextHeading === -1 ? lines.length : nextHeading;
     const entryLines = lines.slice(start.index + 1, end);
     let date = '';
     const sections = [];
     let currentSection = null;
     const preamble = [];
     entryLines.forEach((line) => {
-      const dateLine = line.match(/^[ \t]*Release date:[ \t]*(\d{4}\/\d{2}\/\d{2})[ \t]*$/i);
+      const dateLine = line.match(/^[ \t]*(?:Release date|App Release):[ \t]*(\d{4}\/\d{2}\/\d{2})[ \t]*$/i);
       if (dateLine) {
         if (date) throw new Error(`Version ${start.version} has more than one release date.`);
         date = dateLine[1];
@@ -8545,15 +8637,22 @@ function loadChangelog() {
   if (changelogLoadPromise) return changelogLoadPromise;
   changelogLoadPromise = (async () => {
     try {
-      const markdown = await fetchDocumentation(DOCUMENTATION_FILES.changelog);
+      const { markdown, servedFromCache } = await fetchDocumentation(DOCUMENTATION_FILES.changelog);
       changelogEntries = parseChangelogMarkdown(markdown);
       if (changelogEntries[0].version !== window.FICTION_TALE_VERSION) {
         console.error(`FictionTale version mismatch: changelogs.md starts with ${changelogEntries[0].version}, but app-version.js sets ${window.FICTION_TALE_VERSION}. Update both files manually.`);
       }
       renderChangelog();
+      if (servedFromCache) {
+        const notice = 'Showing a saved offline copy of the changelog; it may be out of date.';
+        showDocumentationNotice(document.querySelector('#changelog-list'), notice);
+        showDocumentationNotice(document.querySelector('#landing-changelog-list'), notice);
+      }
     } catch (error) {
       console.error('FictionTale could not load its changelog.', error);
-      const message = 'Updates could not be loaded. Please try again later.';
+      const message = location.protocol === 'file:'
+        ? 'Updates need the app to be opened through a local web server, such as VS Code Live Server. If Python is installed, run "python -m http.server 8000" in the FictionTale folder, then visit http://localhost:8000/.'
+        : 'Updates could not be loaded. Please try again later.';
       showDocumentationStatus(document.querySelector('#changelog-list'), message, true);
       showDocumentationStatus(document.querySelector('#landing-changelog-list'), message, true);
       changelogLoadPromise = null;
@@ -8571,12 +8670,18 @@ async function loadTutorial(key, container) {
     tutorialLoadPromises.set(key, load);
   }
   try {
-    const markdown = await load;
+    const { markdown, servedFromCache } = await load;
     container.replaceChildren(renderDocumentationMarkdown(markdown, path, 'tutorial'));
+    if (servedFromCache) {
+      showDocumentationNotice(container, 'Showing a saved offline copy of this guide; it may be out of date.');
+    }
   } catch (error) {
     tutorialLoadPromises.delete(key);
     console.error(`FictionTale could not load the ${key} tutorial.`, error);
-    showDocumentationStatus(container, 'This guide could not be loaded. Please try again later.', true);
+    const message = location.protocol === 'file:'
+      ? 'This guide needs the app to be opened through a local web server, such as VS Code Live Server. If Python is installed, run "python -m http.server 8000" in the FictionTale folder, then visit http://localhost:8000/.'
+      : 'This guide could not be loaded. Please try again later.';
+    showDocumentationStatus(container, message, true);
   }
 }
 
@@ -8934,6 +9039,12 @@ function storyExportBlocks(story) {
   };
   String(story.text || '').replace(/\r\n/g, '\n').split('\n').forEach((line) => {
     if (!line.trim()) { flush(); return; }
+    const image = parseStoryImageLine(line);
+    if (image) {
+      flush();
+      blocks.push({ type: 'image', ...image });
+      return;
+    }
     const markdownHeading = line.match(/^(#{1,3})[ \t]+(\S.*)$/);
     const plainChapterLine = /chapter/i.test(line) ? storyPlainInlineText(line) : line;
     const plainChapterHeading = plainChapterLine.match(/^(Chapter[ \t]+\d+\b.*)$/i);
@@ -9082,13 +9193,165 @@ function storyPlainInlineText(text) {
 }
 
 function storyExportMeta(story) {
+  const series = bookSeries.find((item) => item.id === story.seriesId);
+  const castNames = storyCharacterNames(story);
   return [
     STORY_KINDS[story.kind] || 'Story',
     STORY_PROGRESS[story.progress] || 'Drafting',
     story.isDraft && 'Unpublished draft',
     story.setting && `Setting: ${story.setting}`,
+    series && `${series.name} · Book ${story.seriesOrder}`,
+    castNames.length && `Featuring ${castNames.join(', ')}`,
     story.tags?.length && `Tags: ${story.tags.join(', ')}`,
   ].filter(Boolean).join(' · ');
+}
+
+function prepareStoryDocument(story) {
+  const images = [];
+  const addImage = (source, alt, caption = '') => {
+    if (!source) return null;
+    if (!validImageSource(source)) throw new Error(`An attached image has an invalid source: ${alt || 'untitled image'}.`);
+    const image = {
+      id: `story-image-${images.length + 1}`,
+      source,
+      alt,
+      caption,
+    };
+    images.push(image);
+    return image;
+  };
+  const coverImage = addImage(story.image, story.title ? `${story.title} cover` : 'Story cover');
+  if (coverImage) coverImage.isCover = true;
+  let chapterIndex = 0;
+  const blocks = storyExportBlocks(story).map((block) => {
+    if (block.type === 'image') {
+      return { ...block, image: addImage(block.source, block.alt, block.alt) };
+    }
+    const isChapterHeading = block.type === 'heading' && (
+      block.level === 1 || /^chapter\b/i.test(storyPlainInlineText(block.text).trim())
+    );
+    if (isChapterHeading) {
+      chapterIndex += 1;
+      return {
+        ...block,
+        chapterId: `chapter-${chapterIndex}`,
+        chapterStart: true,
+        pageBreakBefore: chapterIndex > 1,
+      };
+    }
+    return block;
+  });
+  return {
+    title: story.title || 'Untitled story',
+    summary: story.summary || '',
+    metadata: storyExportMeta(story),
+    titleFont: story.titleFont,
+    bodyFont: story.bodyFont,
+    blocks,
+    images,
+    coverImage,
+  };
+}
+
+function storyImageBlobFromDataUrl(source) {
+  const match = source.match(/^data:(image\/[^;,]+)((?:;[^,]*)?),(.*)$/is);
+  if (!match) throw new Error('The image data URL is malformed.');
+  const mimeType = match[1].toLowerCase();
+  const parameters = match[2];
+  const payload = match[3];
+  if (/;base64(?:;|$)/i.test(parameters)) {
+    const binary = atob(payload);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return new Blob([bytes], { type: mimeType });
+  }
+  return new Blob([decodeURIComponent(payload)], { type: mimeType });
+}
+
+async function loadStoryDocumentAssets(storyDocument, { includeBytes = true } = {}) {
+  for (const asset of storyDocument.images) {
+    if (!includeBytes) {
+      const image = new Image();
+      try {
+        image.src = asset.source;
+        if (typeof image.decode === 'function') await image.decode();
+        else await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error('The image could not be decoded.'));
+        });
+        asset.width = image.naturalWidth;
+        asset.height = image.naturalHeight;
+        if (!asset.width || !asset.height) throw new Error('The image has no readable dimensions.');
+        asset.printSource = asset.source;
+      } catch (error) {
+        throw new Error(`Could not retrieve ${asset.alt || 'an attached image'}: ${error.message}`);
+      }
+      continue;
+    }
+    let blob;
+    if (asset.source.startsWith('data:image/')) {
+      try {
+        blob = storyImageBlobFromDataUrl(asset.source);
+      } catch (error) {
+        throw new Error(`Could not retrieve ${asset.alt || 'an attached image'}: ${error.message}`);
+      }
+    } else {
+      let response;
+      try {
+        response = await fetch(asset.source);
+      } catch (error) {
+        throw new Error(`Could not retrieve ${asset.alt || 'an attached image'}: ${error.message}`);
+      }
+      if (!response.ok) {
+        throw new Error(`Could not retrieve ${asset.alt || 'an attached image'} (HTTP ${response.status}).`);
+      }
+      blob = await response.blob();
+    }
+    if (!blob.type.startsWith('image/') || !blob.size) {
+      throw new Error(`${asset.alt || 'An attached image'} is not a readable image.`);
+    }
+    const objectUrl = URL.createObjectURL(blob);
+    const image = new Image();
+    try {
+      if (typeof image.decode === 'function') {
+        image.src = objectUrl;
+        await image.decode();
+      } else {
+        await new Promise((resolve, reject) => {
+          image.onload = resolve;
+          image.onerror = () => reject(new Error('The image could not be decoded.'));
+          image.src = objectUrl;
+        });
+      }
+      asset.width = image.naturalWidth;
+      asset.height = image.naturalHeight;
+      if (!asset.width || !asset.height) throw new Error('The image has no readable dimensions.');
+      if (!['image/png', 'image/jpeg', 'image/gif'].includes(blob.type.toLowerCase())) {
+        const canvas = document.createElement('canvas');
+        canvas.width = asset.width;
+        canvas.height = asset.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('The browser could not prepare an image for export.');
+        context.drawImage(image, 0, 0);
+        blob = await new Promise((resolve, reject) => {
+          canvas.toBlob((result) => {
+            if (result) resolve(result);
+            else reject(new Error('The browser could not convert an image for export.'));
+          }, 'image/png');
+        });
+      }
+      asset.blob = blob;
+      asset.mimeType = blob.type.toLowerCase();
+      asset.extension = asset.mimeType === 'image/jpeg' ? 'jpg'
+        : asset.mimeType === 'image/gif' ? 'gif' : 'png';
+      asset.bytes = new Uint8Array(await blob.arrayBuffer());
+    } catch (error) {
+      throw new Error(`Could not prepare ${asset.alt || 'an attached image'}: ${error.message}`);
+    } finally {
+      URL.revokeObjectURL(objectUrl);
+    }
+  }
+  return storyDocument;
 }
 
 function storyXhtmlInline(text) {
@@ -9107,7 +9370,14 @@ function storyXhtmlInline(text) {
 function storyXhtmlBlock(block) {
   const text = block.lines?.map(storyXhtmlInline).join('<br/>') || '';
   if (block.type === 'heading') {
-    return `<h${Math.min(4, block.level + 1)}>${storyXhtmlInline(block.text)}</h${Math.min(4, block.level + 1)}>`;
+    const level = Math.min(4, block.level + 1);
+    const id = block.chapterId ? ` id="${block.chapterId}"` : '';
+    const className = block.pageBreakBefore ? ' class="chapter-start"' : '';
+    return `<h${level}${id}${className}>${storyXhtmlInline(block.text)}</h${level}>`;
+  }
+  if (block.type === 'image') {
+    const caption = block.image.caption ? `<figcaption>${xmlEscape(block.image.caption)}</figcaption>` : '';
+    return `<figure><img src="${block.image.epubPath}" alt="${xmlEscape(block.image.alt)}"/>${caption}</figure>`;
   }
   if (block.type === 'quote') return `<blockquote><p>${text}</p></blockquote>`;
   if (block.type === 'list') return `<ul>${block.lines.map((line) => `<li>${storyXhtmlInline(line)}</li>`).join('')}</ul>`;
@@ -9115,13 +9385,18 @@ function storyXhtmlBlock(block) {
   return `<p>${text}</p>`;
 }
 
-function createDocx(stories) {
+function createDocx(storyDocuments) {
   const paragraphs = [];
+  const imageRelationships = [];
+  const imageFiles = [];
+  let nextRelationshipId = 2;
+  let nextDrawingId = 1;
   const paragraph = (text, style = '', options = {}) => {
     const properties = [
       style && `<w:pStyle w:val="${style}"/>`,
       options.pageBreak && '<w:pageBreakBefore/>',
       options.center && '<w:jc w:val="center"/>',
+      options.keepNext && '<w:keepNext/>',
     ].filter(Boolean).join('');
     return `<w:p>${properties ? `<w:pPr>${properties}</w:pPr>` : ''}${text}</w:p>`;
   };
@@ -9136,15 +9411,34 @@ function createDocx(stories) {
     ].filter(Boolean).join('');
     return `<w:r>${formatting ? `<w:rPr>${formatting}</w:rPr>` : ''}<w:t xml:space="preserve">${xmlEscape(token.text)}</w:t></w:r>`;
   }).join('');
-  stories.forEach((story, storyIndex) => {
-    const title = story.title || `Untitled story ${storyIndex + 1}`;
-    paragraphs.push(paragraph(runs(title), 'Title', { pageBreak: storyIndex > 0 }));
+  const imageParagraph = (image) => {
+    const relationshipId = `rId${nextRelationshipId}`;
+    const drawingId = nextDrawingId;
+    nextRelationshipId += 1;
+    nextDrawingId += 1;
+    const fileName = `${image.id}.${image.extension}`;
+    imageRelationships.push(`<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${fileName}"/>`);
+    imageFiles.push({ name: `word/media/${fileName}`, content: image.bytes });
+    const maxWidth = 6_110_000;
+    const maxHeight = 8_800_000;
+    const emusPerPixel = 9525;
+    const scale = Math.min(1, maxWidth / (image.width * emusPerPixel), maxHeight / (image.height * emusPerPixel));
+    const width = Math.max(1, Math.round(image.width * scale * emusPerPixel));
+    const height = Math.max(1, Math.round(image.height * scale * emusPerPixel));
+    const drawing = `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${width}" cy="${height}"/><wp:effectExtent l="0" t="0" r="0" b="0"/><wp:docPr id="${drawingId}" name="${xmlEscape(image.alt || 'Story image')}" descr="${xmlEscape(image.alt)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${drawingId}" name="${xmlEscape(image.alt || 'Story image')}"/><pic:cNvPicPr><a:picLocks noChangeAspect="1"/></pic:cNvPicPr></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${width}" cy="${height}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+    return paragraph(drawing, '', { center: true, keepNext: Boolean(image.caption) });
+  };
+  storyDocuments.forEach((story, storyIndex) => {
+    paragraphs.push(paragraph(runs(story.title), 'Title', { pageBreak: storyIndex > 0 }));
     if (story.summary) paragraphs.push(paragraph(runs(story.summary), 'Subtitle'));
-    const meta = storyExportMeta(story);
-    if (meta) paragraphs.push(paragraph(runs(meta), 'StoryMeta'));
-    storyExportBlocks(story).forEach((block) => {
+    if (story.metadata) paragraphs.push(paragraph(runs(story.metadata), 'StoryMeta'));
+    if (story.coverImage) paragraphs.push(imageParagraph(story.coverImage));
+    story.blocks.forEach((block) => {
       if (block.type === 'heading') {
-        paragraphs.push(paragraph(runs(block.text), `Heading${Math.min(3, block.level)}`));
+        paragraphs.push(paragraph(runs(block.text), `Heading${Math.min(3, block.level)}`, { pageBreak: block.pageBreakBefore }));
+      } else if (block.type === 'image') {
+        paragraphs.push(imageParagraph(block.image));
+        if (block.image.caption) paragraphs.push(paragraph(runs(block.image.caption), 'ImageCaption', { center: true }));
       } else if (block.type === 'scene-break') {
         paragraphs.push(paragraph(runs('* * *'), 'SceneBreak', { center: true }));
       } else if (block.type === 'list') {
@@ -9156,7 +9450,16 @@ function createDocx(stories) {
       }
     });
   });
-  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${paragraphs.join('')}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>`;
+  const contentTypes = [
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>',
+    '<Default Extension="xml" ContentType="application/xml"/>',
+    '<Default Extension="png" ContentType="image/png"/>',
+    '<Default Extension="jpg" ContentType="image/jpeg"/>',
+    '<Default Extension="gif" ContentType="image/gif"/>',
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>',
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>',
+  ].join('');
+  const documentXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>${paragraphs.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>`;
   const stylesXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
     <w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Georgia" w:hAnsi="Georgia"/><w:sz w:val="24"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="160" w:line="360" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>
     <w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>
@@ -9167,70 +9470,257 @@ function createDocx(stories) {
     <w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="120"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style>
     <w:style w:type="paragraph" w:styleId="Quote"><w:name w:val="Quote"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="480"/><w:spacing w:before="120" w:after="120"/></w:pPr><w:rPr><w:i/><w:color w:val="555555"/></w:rPr></w:style>
     <w:style w:type="paragraph" w:styleId="ListParagraph"><w:name w:val="List Paragraph"/><w:basedOn w:val="Normal"/><w:pPr><w:ind w:left="480"/></w:pPr></w:style>
+    <w:style w:type="paragraph" w:styleId="ImageCaption"><w:name w:val="Image caption"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="240"/></w:pPr><w:rPr><w:i/><w:color w:val="666666"/><w:sz w:val="20"/></w:rPr></w:style>
     <w:style w:type="paragraph" w:styleId="StoryMeta"><w:name w:val="Story metadata"/><w:basedOn w:val="Normal"/><w:pPr><w:jc w:val="center"/><w:spacing w:after="600"/></w:pPr><w:rPr><w:color w:val="666666"/><w:sz w:val="20"/></w:rPr></w:style>
     <w:style w:type="paragraph" w:styleId="SceneBreak"><w:name w:val="Scene break"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:before="240" w:after="240"/></w:pPr></w:style>
   </w:styles>`;
   return zipBytes([
-    { name: '[Content_Types].xml', content: '<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>' },
+    { name: '[Content_Types].xml', content: `<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">${contentTypes}</Types>` },
     { name: '_rels/.rels', content: '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
-    { name: 'word/_rels/document.xml.rels', content: '<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+    { name: 'word/_rels/document.xml.rels', content: `<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${imageRelationships.join('')}</Relationships>` },
     { name: 'word/document.xml', content: documentXml },
     { name: 'word/styles.xml', content: stylesXml },
+    ...imageFiles,
   ]);
 }
 
-function createEpub(stories) {
+function createEpub(storyDocuments) {
   const modified = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  const entries = stories.map((story, index) => {
+  const entries = storyDocuments.map((story, index) => {
     const id = `story-${index + 1}`;
     const title = story.title || `Untitled story ${index + 1}`;
     const summary = story.summary ? `<p class="summary">${xmlEscape(story.summary)}</p>` : '';
-    const meta = storyExportMeta(story);
-    const metadata = meta ? `<p class="story-meta">${xmlEscape(meta)}</p>` : '';
-    const body = storyExportBlocks(story).map(storyXhtmlBlock).join('');
+    const metadata = story.metadata ? `<p class="story-meta">${xmlEscape(story.metadata)}</p>` : '';
+    story.images.forEach((image) => { image.epubPath = `images/${id}-${image.id}.${image.extension}`; });
+    const cover = story.coverImage
+      ? `<figure class="story-cover"><img src="${story.coverImage.epubPath}" alt="${xmlEscape(story.coverImage.alt)}"/></figure>` : '';
+    const body = story.blocks.map(storyXhtmlBlock).join('');
+    const chapters = story.blocks.filter((block) => block.chapterId);
     return {
       id,
       title,
-      html: `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><title>${xmlEscape(title)}</title><meta charset="utf-8"/><link rel="stylesheet" type="text/css" href="style.css"/></head><body><h1>${xmlEscape(title)}</h1>${summary}${metadata}${body}</body></html>`,
+      chapters,
+      images: story.images,
+      coverImage: story.coverImage,
+      html: `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"><head><title>${xmlEscape(title)}</title><meta charset="utf-8"/><link rel="stylesheet" type="text/css" href="style.css"/></head><body><h1>${xmlEscape(title)}</h1>${summary}${metadata}${cover}${body}</body></html>`,
     };
   });
+  const imageItems = entries.flatMap((entry) => entry.images.map((image) => `<item id="${entry.id}-${image.id}" href="${image.epubPath}" media-type="${image.mimeType}"${image === entry.coverImage ? ' properties="cover-image"' : ''}/>`)).join('');
   const manifest = entries.map((entry) => `<item id="${entry.id}" href="${entry.id}.xhtml" media-type="application/xhtml+xml"/>`).join('')
+    + imageItems
     + '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/><item id="style" href="style.css" media-type="text/css"/>';
   const spine = '<itemref idref="nav"/>'
     + entries.map((entry) => `<itemref idref="${entry.id}"/>`).join('');
-  const nav = entries.map((entry) => `<li><a href="${entry.id}.xhtml">${xmlEscape(entry.title)}</a></li>`).join('');
+  const nav = entries.map((entry) => {
+    const chapterLinks = entry.chapters.map((chapter) => `<li><a href="${entry.id}.xhtml#${chapter.chapterId}">${xmlEscape(storyPlainInlineText(chapter.text))}</a></li>`).join('');
+    return `<li><a href="${entry.id}.xhtml">${xmlEscape(entry.title)}</a>${chapterLinks ? `<ol>${chapterLinks}</ol>` : ''}</li>`;
+  }).join('');
   const bookTitle = entries.length === 1 ? entries[0].title : 'FictionTale Story Collection';
+  const files = entries.flatMap((entry) => entry.images.map((image) => ({
+    name: `OEBPS/${image.epubPath}`,
+    content: image.bytes,
+  })));
   return zipBytes([
     { name: 'mimetype', content: 'application/epub+zip' },
     { name: 'META-INF/container.xml', content: '<?xml version="1.0" encoding="UTF-8"?><container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container"><rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/></rootfiles></container>' },
     { name: 'OEBPS/content.opf', content: `<?xml version="1.0" encoding="UTF-8"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid" xml:lang="en"><metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:identifier id="bookid">urn:fictiontale:${Date.now()}</dc:identifier><dc:title>${xmlEscape(bookTitle)}</dc:title><dc:creator>FictionTale</dc:creator><dc:language>en</dc:language><dc:date>${modified.slice(0, 10)}</dc:date><meta property="dcterms:modified">${modified}</meta></metadata><manifest>${manifest}</manifest><spine>${spine}</spine></package>` },
     { name: 'OEBPS/nav.xhtml', content: `<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"><head><title>Contents</title></head><body><nav epub:type="toc" id="toc"><h1>Contents</h1><ol>${nav}</ol></nav></body></html>` },
-    { name: 'OEBPS/style.css', content: 'body{font-family:serif;line-height:1.65;margin:5%}h1{text-align:center;margin:2em 0 1em}h2,h3,h4{margin-top:2em;page-break-after:avoid}.summary{text-align:center;font-style:italic}.story-meta{text-align:center;color:#555;font-size:.9em;margin-bottom:3em}blockquote{margin:1em 1.5em;font-style:italic}ul{padding-left:1.5em}li{margin:.4em 0}.scene-break{border:0;text-align:center;margin:2em auto;width:30%}.scene-break:after{content:"⁂"}.ft-size-small{font-size:.85em}.ft-size-normal{font-size:1em}.ft-size-medium{font-size:1.15em}.ft-size-large{font-size:1.35em}.ft-size-heading{font-size:1.6em}.ft-color-blue{color:#1d4ed8}.ft-color-green{color:#047857}.ft-color-amber{color:#b45309}.ft-color-rose{color:#be123c}.ft-color-violet{color:#6d28d9}.ft-underline{text-decoration:underline}.ft-strikethrough{text-decoration:line-through}' },
+    { name: 'OEBPS/style.css', content: 'body{font-family:serif;line-height:1.65;margin:5%}h1{text-align:center;margin:2em 0 1em}h2,h3,h4{margin-top:2em;page-break-after:avoid;break-after:avoid}.chapter-start{page-break-before:always;break-before:page}.summary{text-align:center;font-style:italic}.story-meta{text-align:center;color:#555;font-size:.9em;margin-bottom:3em}blockquote{margin:1em 1.5em;font-style:italic}ul{padding-left:1.5em}li{margin:.4em 0}figure{margin:1.5em auto;text-align:center;break-inside:avoid}figure img{display:block;max-width:100%;max-height:80vh;width:auto;height:auto;margin:auto;object-fit:contain}figcaption{font-size:.9em;font-style:italic;margin-top:.5em}.scene-break{border:0;text-align:center;margin:2em auto;width:30%}.scene-break:after{content:"⁂"}.ft-size-small{font-size:.85em}.ft-size-normal{font-size:1em}.ft-size-medium{font-size:1.15em}.ft-size-large{font-size:1.35em}.ft-size-heading{font-size:1.6em}.ft-color-blue{color:#1d4ed8}.ft-color-green{color:#047857}.ft-color-amber{color:#b45309}.ft-color-rose{color:#be123c}.ft-color-violet{color:#6d28d9}.ft-underline{text-decoration:underline}.ft-strikethrough{text-decoration:line-through}' },
     ...entries.map((entry) => ({ name: `OEBPS/${entry.id}.xhtml`, content: entry.html })),
+    ...files,
   ]);
 }
 
-function exportStoryDocument(format) {
-  const story = storyDrafts[previewStoryId]
-    || savedStories.find((item) => item.id === previewStoryId);
-  if (!story) {
-    showToast('Open a story preview before exporting it.');
+async function getStoryDocumentForExport(includeImageBytes = true) {
+  const form = document.querySelector('#story-form');
+  if (document.querySelector('#story-dialog').open
+    && !form.classList.contains('hidden') && activeStoryId === previewStoryId) {
+    handleStoryEditorInput();
+  }
+  if (!flushStoryDraft()) throw new Error('The latest draft could not be saved. Save the story and try again.');
+  const story = storyDrafts[previewStoryId] || savedStories.find((item) => item.id === previewStoryId);
+  if (!story) throw new Error('Open a story preview before exporting it.');
+  const snapshot = { ...story, isDraft: Boolean(storyDrafts[story.id] || story.isDraft) };
+  return loadStoryDocumentAssets(prepareStoryDocument(snapshot), { includeBytes: includeImageBytes });
+}
+
+function appendStoryPrintInline(element, text) {
+  element.innerHTML = storyXhtmlInline(text);
+}
+
+function appendStoryPrintImage(parent, asset, objectUrls, className = '') {
+  const figure = document.createElement('figure');
+  if (className) figure.className = className;
+  const image = document.createElement('img');
+  if (asset.printSource) {
+    image.src = asset.printSource;
+  } else {
+    const objectUrl = URL.createObjectURL(asset.blob);
+    objectUrls.push(objectUrl);
+    image.src = objectUrl;
+  }
+  image.alt = asset.alt;
+  figure.append(image);
+  if (asset.caption) {
+    const caption = document.createElement('figcaption');
+    caption.textContent = asset.caption;
+    figure.append(caption);
+  }
+  parent.append(figure);
+}
+
+function renderStoryPrintDocument(storyDocument, objectUrls) {
+  const printDocument = document.createElement('article');
+  printDocument.className = 'story-print-document';
+  printDocument.style.setProperty('--story-print-font', STORY_FONTS[storyDocument.bodyFont] || STORY_FONTS['dm-sans']);
+  const title = document.createElement('h1');
+  title.textContent = storyDocument.title;
+  title.style.fontFamily = STORY_FONTS[storyDocument.titleFont] || STORY_FONTS.playfair;
+  printDocument.append(title);
+  if (storyDocument.summary) {
+    const summary = document.createElement('p');
+    summary.className = 'story-print-summary';
+    summary.textContent = storyDocument.summary;
+    printDocument.append(summary);
+  }
+  if (storyDocument.metadata) {
+    const metadata = document.createElement('p');
+    metadata.className = 'story-print-meta';
+    metadata.textContent = storyDocument.metadata;
+    printDocument.append(metadata);
+  }
+  if (storyDocument.coverImage) appendStoryPrintImage(printDocument, storyDocument.coverImage, objectUrls, 'story-print-cover');
+  const body = document.createElement('div');
+  body.className = 'story-print-body';
+  storyDocument.blocks.forEach((block) => {
+    let element;
+    if (block.type === 'heading') {
+      element = document.createElement(`h${Math.min(4, block.level + 1)}`);
+      if (block.chapterStart) element.classList.add('chapter-heading');
+      if (block.pageBreakBefore) element.classList.add('chapter-start');
+      appendStoryPrintInline(element, block.text);
+    } else if (block.type === 'image') {
+      appendStoryPrintImage(body, block.image, objectUrls);
+      return;
+    } else if (block.type === 'quote') {
+      element = document.createElement('blockquote');
+      block.lines.forEach((line, index) => {
+        if (index) element.append(document.createElement('br'));
+        const lineContent = document.createElement('span');
+        appendStoryPrintInline(lineContent, line);
+        element.append(lineContent);
+      });
+    } else if (block.type === 'list') {
+      element = document.createElement('ul');
+      block.lines.forEach((line) => {
+        const item = document.createElement('li');
+        appendStoryPrintInline(item, line);
+        element.append(item);
+      });
+    } else if (block.type === 'scene-break') {
+      element = document.createElement('hr');
+      element.className = 'story-scene-break';
+    } else {
+      element = document.createElement('p');
+      block.lines.forEach((line, index) => {
+        if (index) element.append(document.createElement('br'));
+        const lineContent = document.createElement('span');
+        appendStoryPrintInline(lineContent, line);
+        element.append(lineContent);
+      });
+    }
+    body.append(element);
+  });
+  printDocument.append(body);
+  return printDocument;
+}
+
+let storyPrintObjectUrls = [];
+
+function cleanupStoryPrintAssets() {
+  storyPrintObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  storyPrintObjectUrls = [];
+}
+
+function populateStoryPrintWindow(printWindow, storyDocument, printDocument) {
+  const printPage = printWindow.document;
+  printPage.documentElement.lang = 'en';
+  printPage.title = storyDocument.title;
+  const meta = printPage.createElement('meta');
+  meta.setAttribute('charset', 'utf-8');
+  const style = printPage.createElement('style');
+  style.textContent = `
+    @page { size: A4; margin: 20mm; }
+    html, body { margin: 0; padding: 0; background: #fff; color: #172b3b; }
+    body { font: 11pt/1.55 Georgia, "Times New Roman", serif; }
+    .story-print-document { display: block; max-width: none; margin: 0; padding: 0; overflow: visible; }
+    .story-print-document h1 { margin: 0 0 12mm; color: #172b3b; font: 700 25pt/1.15 var(--story-print-font, Georgia, serif); text-align: center; overflow-wrap: anywhere; }
+    .story-print-summary { margin: 0 0 5mm; font-size: 13pt; font-style: italic; text-align: center; }
+    .story-print-meta { margin: 0 0 12mm; padding-bottom: 5mm; border-bottom: 1px solid #999; color: #444; font-size: 9pt; text-align: center; }
+    .story-print-body { font: inherit; }
+    .story-print-document h2, .story-print-document h3, .story-print-document h4 { color: #172b3b; break-after: avoid-page; page-break-after: avoid; orphans: 3; widows: 3; }
+    .story-print-document .chapter-start { break-before: page; page-break-before: always; }
+    .story-print-document p, .story-print-document blockquote, .story-print-document li { color: #172b3b; orphans: 3; widows: 3; overflow-wrap: anywhere; }
+    .story-print-document figure { margin: 7mm auto; text-align: center; break-inside: avoid; page-break-inside: avoid; }
+    .story-print-document figure img { display: block; width: auto; height: auto; max-width: 100%; max-height: 235mm; margin: 0 auto; object-fit: contain; }
+    .story-print-document figcaption { margin-top: 3mm; color: #444; font-size: 9pt; font-style: italic; }
+    .story-print-document .ft-size-small { font-size: .85em; }
+    .story-print-document .ft-size-normal { font-size: 1em; }
+    .story-print-document .ft-size-medium { font-size: 1.15em; }
+    .story-print-document .ft-size-large { font-size: 1.35em; }
+    .story-print-document .ft-size-heading { font-size: 1.6em; }
+    .story-print-document .ft-color-blue { color: #1d4ed8; }
+    .story-print-document .ft-color-green { color: #047857; }
+    .story-print-document .ft-color-amber { color: #b45309; }
+    .story-print-document .ft-color-rose { color: #be123c; }
+    .story-print-document .ft-color-violet { color: #6d28d9; }
+    .story-print-document .ft-underline { text-decoration: underline; }
+    .story-print-document .ft-strikethrough { text-decoration: line-through; }
+  `;
+  printPage.head.replaceChildren(meta, printPage.createElement('title'), style);
+  printPage.querySelector('title').textContent = storyDocument.title;
+  printPage.body.replaceChildren(printPage.importNode(printDocument, true));
+}
+
+async function exportStoryPdf() {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    showToast('Allow pop-ups to open the print-ready PDF document.');
     return;
   }
   try {
-    const title = story.title || 'Untitled story';
-    const downloadableStory = { ...story, isDraft: Boolean(storyDrafts[story.id] || story.isDraft) };
+    cleanupStoryPrintAssets();
+    const storyDocument = await getStoryDocumentForExport(false);
+    const printDocument = renderStoryPrintDocument(storyDocument, storyPrintObjectUrls);
+    await Promise.all([...printDocument.querySelectorAll('img')].map((image) => image.decode()));
+    if (document.fonts?.ready) await document.fonts.ready;
+    populateStoryPrintWindow(printWindow, storyDocument, printDocument);
+    await Promise.all([...printWindow.document.images].map((image) => image.decode()));
+    if (printWindow.document.fonts?.ready) await printWindow.document.fonts.ready;
+    printWindow.addEventListener('afterprint', () => printWindow.close(), { once: true });
+    printWindow.focus();
+    printWindow.print();
+  } catch (error) {
+    if (!printWindow.closed) printWindow.close();
+    console.error('Could not prepare story PDF.', error);
+    showToast(`Could not prepare PDF: ${error.message}`);
+  }
+}
+
+async function exportStoryDocument(format) {
+  try {
+    const storyDocument = await getStoryDocumentForExport();
     const isDocx = format === 'docx';
     if (!isDocx && format !== 'epub') throw new Error(`Unsupported story export format: ${format}`);
-    const content = isDocx ? createDocx([downloadableStory]) : createEpub([downloadableStory]);
+    const content = isDocx ? createDocx([storyDocument]) : createEpub([storyDocument]);
     const mimeType = isDocx
       ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
       : 'application/epub+zip';
-    downloadFile(`${safeFilename(title)}.${format}`, content, mimeType);
+    downloadFile(`${safeFilename(storyDocument.title)}.${format}`, content, mimeType);
     showToast(`Story exported as ${format.toUpperCase()}.`);
   } catch (error) {
     console.error(`Could not export story as ${format}.`, error);
-    showToast('Story export failed. Check browser download permissions.');
+    showToast(`Could not export ${format.toUpperCase()}: ${error.message}`);
   }
 }
 
@@ -9633,12 +10123,15 @@ function storiesToReadable(items, markdown) {
 
 async function exportStories() {
   const format = document.querySelector('#story-export-format').value;
-  const drafts = { ...storyDrafts };
   const dialog = document.querySelector('#story-dialog');
   if (dialog.open && !document.querySelector('#story-form').classList.contains('hidden')) {
-    const currentDraft = currentStoryDraft();
-    if (currentDraft.title || currentDraft.text.trim() || currentDraft.image) drafts[currentDraft.id] = currentDraft;
+    handleStoryEditorInput();
   }
+  if (!flushStoryDraft()) {
+    showToast('The latest draft could not be saved. Save the story and try again.');
+    return;
+  }
+  const drafts = { ...storyDrafts };
   const data = {
     format: 'FictionTales-story-library',
     version: 1,
@@ -9652,11 +10145,21 @@ async function exportStories() {
   try {
     const readable = format === 'md' || format === 'txt';
     const extension = ['md', 'txt', 'yaml', 'docx', 'epub'].includes(format) ? format : 'json';
-    const content = format === 'docx' ? createDocx([...data.stories, ...data.drafts.map((draft) => ({ ...draft, isDraft: true }))])
-      : format === 'epub' ? createEpub([...data.stories, ...data.drafts.map((draft) => ({ ...draft, isDraft: true }))])
-        : readable
-      ? storiesToReadable([...data.stories, ...data.drafts.map((draft) => ({ ...draft, isDraft: true }))], format === 'md')
-      : format === 'yaml' ? toYaml(data) : JSON.stringify(data, null, 2);
+    const sourceStories = [...data.stories, ...data.drafts.map((draft) => ({ ...draft, isDraft: true }))];
+    let content;
+    if (format === 'docx' || format === 'epub') {
+      const storyDocuments = [];
+      for (const story of sourceStories) {
+        storyDocuments.push(await loadStoryDocumentAssets(prepareStoryDocument(story)));
+      }
+      content = format === 'docx' ? createDocx(storyDocuments) : createEpub(storyDocuments);
+    } else if (readable) {
+      content = storiesToReadable(sourceStories, format === 'md');
+    } else if (format === 'yaml') {
+      content = toYaml(data);
+    } else {
+      content = JSON.stringify(data, null, 2);
+    }
     const mimeType = format === 'md' ? 'text/markdown;charset=utf-8' : format === 'txt' ? 'text/plain;charset=utf-8'
       : format === 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         : format === 'epub' ? 'application/epub+zip' : format === 'yaml' ? 'text/yaml;charset=utf-8' : 'application/json;charset=utf-8';
@@ -9669,8 +10172,9 @@ async function exportStories() {
     showToast(readable
       ? `Stories exported as ${extension.toUpperCase()} for reading. Use JSON or YAML for backups you can import.`
       : `Story library and drafts exported as ${extension.toUpperCase()}.`);
-  } catch {
-    showToast('Story export failed. Check browser download permissions.');
+  } catch (error) {
+    console.error('Could not export the story library.', error);
+    showToast(`Could not export stories: ${error.message}`);
   }
 }
 
@@ -10203,9 +10707,10 @@ document.querySelector('#profile-export-image').addEventListener('click', () => 
   exportCharacterSheetImage(profile);
 });
 document.querySelector('#story-export-stories').addEventListener('click', exportStories);
-document.querySelector('#story-print').addEventListener('click', () => window.print());
+document.querySelector('#story-print').addEventListener('click', exportStoryPdf);
 document.querySelector('#story-export-docx').addEventListener('click', () => exportStoryDocument('docx'));
 document.querySelector('#story-export-epub').addEventListener('click', () => exportStoryDocument('epub'));
+window.addEventListener('afterprint', cleanupStoryPrintAssets);
 window.addEventListener('beforeprint', () => {
   if (!characterDialog.open || printSectionState) return;
   renderProfileGallery();

@@ -1,5 +1,18 @@
 # FictionTale Changelog
 
+## Version 1.6.1
+Release date: 2026/11/27
+
+### Changes made
+- Optimized Writing >> Stories Main Page UI 
+- made 'Open Full Preview' button to be accessible on every created story content.
+
+### Fixed bugs
+- Saved PDF Functionality fix to be same as Docx file.
+
+### Known Issues
+- Stories Preview context do not shown properly, may fix in the future updates.
+
 ## Version 1.6.0
 Release date: 2026/11/27
 

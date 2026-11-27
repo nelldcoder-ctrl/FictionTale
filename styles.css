@@ -9585,3 +9585,55 @@ body { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   .story-starters > span { flex-basis: 100%; }
   .story-starters button { flex: 1 1 0; padding: 0 10px; }
 }
+
+/* Keep the Stories filters and export controls from competing for the same row. */
+#lore .story-library-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: start;
+  gap: 12px 20px;
+}
+#lore .story-filter-bar { min-width: 0; }
+#lore .story-filter-bar > *,
+#lore .story-library-tools > * { min-width: 0; }
+#lore .story-library-tools {
+  max-width: 100%;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+#lore .story-library-tools .export-format { flex: 0 0 auto; }
+#lore .story-library-tools .export-format select { min-width: 94px; }
+
+@media (max-width: 1400px) {
+  #lore .story-library-toolbar { grid-template-columns: minmax(0, 1fr); }
+  #lore .story-filter-bar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #lore .story-filter-bar .search-box { grid-column: 1 / -1; }
+  #lore .story-library-tools { justify-content: flex-start; }
+}
+
+@media (max-width: 760px) {
+  #lore .story-filter-bar { grid-template-columns: minmax(0, 1fr); }
+  #lore .story-filter-bar .search-box { grid-column: 1; }
+  #lore .story-library-tools { display: grid; grid-template-columns: minmax(0, 1fr); }
+  #lore .story-library-tools .export-format { justify-content: space-between; }
+  #lore .story-library-tools .export-format select { min-width: 0; max-width: 58%; }
+}
+
+#lore .story-card-actions { gap: 0 20px; }
+@media (max-width: 520px) {
+  #lore .story-card-actions { gap: 0 14px; }
+  #lore .story-card-actions .story-card-action { font-size: 11px; letter-spacing: 1px; }
+}
+
+#story-reading-text .story-inline-image {
+  margin: 1.5em 0;
+  text-align: center;
+}
+#story-reading-text .story-inline-image img {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+#story-reading-text .story-inline-image figcaption { margin-top: .5em; color: var(--story-muted-color, var(--muted)); font-size: .9em; }
